@@ -1,0 +1,9 @@
+Order polygons
+Parse the rest ot RGN/TRE
+	- Point, Polyline, Polygone overview sections
+Parse NET
+Parse NOD
+Parse TYP
+Parse TDB
+Parse MDR
+Parse SRT

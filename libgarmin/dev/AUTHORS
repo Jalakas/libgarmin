@@ -1,0 +1,14 @@
+Alexander Atanasov <aatanasov@gmail.com>
+
+
+The decoding of the *.img files is based on John Mechalas 
+Garmin IMG File Format  documentation.
+http://sourceforge.net/projects/garmin-img/
+
+QLandKarte source code by  Oliver Eichler (oliver.eichler@gmx.de)
+was used too. http://qlandkarte.sf.net/
+
+The missing bits and errors where rectified by studying the source code 
+of Konstantin Galichsky's (kg@geopainting.com) GPSMapEdit. 
+http://www.geopainting.com/
+
