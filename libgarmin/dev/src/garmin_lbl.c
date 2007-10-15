@@ -171,7 +171,7 @@ static struct gar_lbl_t *gar_alloc_lbl(void)
 
 static u_int32_t gar_lbl_offset(struct gar_subfile *sub ,u_int32_t offlbl, int type)
 {
-	u_int32_t off = 0xFFFFFFFF;
+	u_int32_t off1, off = 0xFFFFFFFF;
 	switch(type) {
 		case L_LBL:
 			if (sub->lbl)
@@ -196,11 +196,10 @@ static u_int32_t gar_lbl_offset(struct gar_subfile *sub ,u_int32_t offlbl, int t
 			}
 			break; 
 		case L_NET:
-			off = gar_net_get_lbl_offset(sub, offlbl, 0);
-			if (off!=0xFFFFFFFF) {
-				off = sub->lbl->offset + sub->lbl->lbl1off + ( off << sub->lbl->addrshift);
+			off1 = gar_net_get_lbl_offset(sub, offlbl, 0);
+			if (off1) {
+				off = sub->lbl->offset + sub->lbl->lbl1off + (off1 << sub->lbl->addrshift);
 			}
-#warning FIXME when implementing net
 			break;
 		default:
 			log(1, "Unknown label type: %d\n", type);

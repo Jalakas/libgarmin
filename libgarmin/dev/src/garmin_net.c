@@ -79,12 +79,12 @@ off_t gar_net_get_lbl_offset(struct gar_subfile *sub, off_t offset, int idx)
 	u_int32_t i;
 
 	if (!sub->net || idx > 3)
-		return 0xFFFFFFFF;
+		return 0;
 
 	o = sub->net->netoff + sub->net->net1_offset + (offset << sub->net->net1_addr_shift);
 	if (lseek(gimg->fd, o, SEEK_SET) != o) {
 		log(1, "NET: Error can not seek to %ld\n", o);
-		return 0xFFFFFFFF;
+		return 0;
 	}
 	rc = read(gimg->fd, buf, sizeof(buf));
 	if (rc > 3) {
@@ -95,9 +95,7 @@ off_t gar_net_get_lbl_offset(struct gar_subfile *sub, off_t offset, int idx)
 			i = *(u_int32_t*)cp;
 		}
 		i &= 0x3FFFFF;
-		if (!i)
-			i = 0xFFFFFFFF;
 		return i;
 	} else
-		return 0xFFFFFFFF;
+		return 0;
 }

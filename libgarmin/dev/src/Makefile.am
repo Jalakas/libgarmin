@@ -1,5 +1,7 @@
 include $(top_srcdir)/Makefile.inc
 
+AM_CPPFLAGS += -DDATAPREFIX=\"@datarootdir@\" 
+
 lib_LIBRARIES = libgarmin.a
 
 libgarmin_a_SOURCES = GarminTypedef.h  garmin_fat.c  garmin_rgn.h libgarmin.h \

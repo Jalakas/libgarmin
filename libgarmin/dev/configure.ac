@@ -47,5 +47,6 @@ fi
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  data/Makefile
-                 utils/Makefile])
+                 utils/Makefile
+		 libgarmin.pc])
 AC_OUTPUT

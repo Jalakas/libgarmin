@@ -26,6 +26,7 @@
 #include "garmin_rgn.h"
 #include "garmin_fat.h"
 #include "garmin_lbl.h"
+#include "garmin_net.h"
 #include "garmin_subdiv.h"
 #include "garmin_order.h"
 #include "geoutils.h"

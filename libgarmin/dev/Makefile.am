@@ -6,5 +6,8 @@ SUBDIRS=src utils data
 pkgdoc_DATA = README COPYING TODO
 EXTRA_DIST = README COPYING TODO autosh.sh
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libgarmin.pc
+
 clean-local:
 	rm -rf *~ *.bak core

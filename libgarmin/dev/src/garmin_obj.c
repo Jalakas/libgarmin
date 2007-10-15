@@ -414,7 +414,7 @@ char *gar_get_object_lbl(struct gobject *o)
 	}
 	rc = gar_get_lbl(gs, off, type, (unsigned char *)buf, sizeof(buf));
 	if (rc > 0) {
-		log(1, "LBL: type:%d [%d] offset=%03X [%s]\n", o->type, type, off,buf);
+		log(15, "LBL: type:%d [%d] offset=%03X [%s]\n", o->type, type, off,buf);
 		return strdup(buf);
 	}
 	return NULL;
