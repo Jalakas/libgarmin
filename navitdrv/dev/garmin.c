@@ -122,11 +122,6 @@ garmin_object_label(struct gobject *o, struct attr *attr)
 	return 0;
 }
 
-static struct item *gmap_rect_get_item_byid(struct map_rect_priv *mr, int id_hi, int id_lo)
-{
-	
-	return NULL;
-}
 
 static struct map_search_priv *gmap_search_new(struct map_priv *map, struct item *item, struct attr *search, int partial)
 {
@@ -320,6 +315,30 @@ garmin_obj2item(struct map_rect_priv *mr, struct gobject *o)
 			dlog(1, "Unknown garmin object type:%d\n",
 				o->type);
 	}
+	return NULL;
+}
+
+static struct item *gmap_rect_get_item_byid(struct map_rect_priv *mr, int id_hi, int id_lo)
+{
+	struct gobject *o;
+	dlog(1, "id_hi=%04X id_lo=%04X\n", id_hi, id_lo);
+	if (!mr->objs) {
+		dlog(1, "Error no objects\n");
+		return NULL;
+	}
+	o = mr->objs;
+	while (o) {
+		if (id_lo == (int)o->gptr) {
+			mr->item.id_hi = (int)mr;
+			mr->item.id_lo = (int)o->gptr;
+			mr->item.priv_data = o;
+			mr->item.type = type_none;
+			o->priv_data = mr;
+			return garmin_obj2item(mr, o);
+		}
+		o = o->next;
+	}
+	dlog(1, "Can not find object\n");
 	return NULL;
 }
 
