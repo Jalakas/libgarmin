@@ -5,10 +5,35 @@
 The project files are available via svn only for now.<br>
 To get the source use:<br>
 <b>svn co http://libgarmin.svn.sourceforge.net/svnroot/libgarmin/libgarmin/dev libgarmin</b><br>
-For more visit project Wiki:<a href="http://libgarmin.wiki.sourceforge.net/">libgarmin wiki</a><br>
+build with<br>
+./configure<br>
+make<br>
+make install<br>
 <hr>
-Navit patches:<br>
+How to build Navit driver:<br>
+Get these Navit patches:<br>
 <a href="http://libgarmin.sf.net/navit-garmin-items.diff">Add Garmin types</a><br>
+<a href="http://libgarmin.sf.net/navit-configure.diff">Navit's configure script</a><br>
+<a href="http://libgarmin.sf.net/navit-data-makefile.diff">Navit Makefiles</a><br>
+Apply with:<br>
+cd navitsrcdir<br>
+cat patchname | patch -p1<br>
+If you got rejects you have to fix them.<br>
+Next go to<br>
+cd navitsrcdir/src/data<br>
+And checkout navit's driver<br>
+<b>svn co http://libgarmin.svn.sourceforge.net/svnroot/libgarmin/navitdrv/dev garmin</b><br>
+Next reconfigure and build navit.<br>
+Now add your first garmin map to navit.xml<br>
+<pre>
+        &lt;mapset enabled="yes"&gt;
+                &lt;map type="garmin" enabled="yes" data="/path/to/gmapsupp.img"/&gt;
+        &lt;/mapset&gt;
+</pre>
+
+<hr>
+For more visit project Wiki:<a href="http://libgarmin.wiki.sourceforge.net/">libgarmin wiki</a><br>
+or email libgarmin at gmail dot com<br>
 <hr>
 <a href="http://sourceforge.net/donate/index.php?group_id=206357"><img src="http://images.sourceforge.net/images/project-support.jpg" width="88" height="32" border="0" alt="Support This Project" /></a>
 </body></html>
