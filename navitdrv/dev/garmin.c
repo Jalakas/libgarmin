@@ -124,16 +124,19 @@ garmin_object_label(struct gobject *o, struct attr *attr)
 }
 
 
-static struct map_search_priv *gmap_search_new(struct map_priv *map, struct item *item, struct attr *search, int partial)
+static struct map_search_priv *
+gmap_search_new(struct map_priv *map, struct item *item, struct attr *search, int partial)
 {
 	return NULL;
 }
 
-static void gmap_search_destroy(struct map_search_priv *ms)
+static void 
+gmap_search_destroy(struct map_search_priv *ms)
 {
 }
 
-static struct item *gmap_search_get_item(struct map_search_priv *ms)
+static struct item *
+gmap_search_get_item(struct map_search_priv *ms)
 {
 	return NULL;
 }
@@ -319,7 +322,8 @@ garmin_obj2item(struct map_rect_priv *mr, struct gobject *o)
 	return NULL;
 }
 
-static struct item *gmap_rect_get_item_byid(struct map_rect_priv *mr, int id_hi, int id_lo)
+static struct item *
+gmap_rect_get_item_byid(struct map_rect_priv *mr, int id_hi, int id_lo)
 {
 	struct gobject *o;
 	o = mr->objs = gar_get_object(mr->mpriv->g, (void *)id_lo);
