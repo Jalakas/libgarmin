@@ -117,6 +117,7 @@ garmin_object_label(struct gobject *o, struct attr *attr)
 	if (mr->label) {
 	//	dlog(1, "Label[%d]:%s\n", o->type, mr->label);
 		attr->u.str = mr->label;
+		// FIXME: who frees this
 		return 1;
 	}
 	return 0;
@@ -244,7 +245,7 @@ point_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 	case attr_limit:
 		return 0;
 	default:
-		dlog(1, "Dont know about attribute %d[%04X] yet\n", attr_type,attr_type);
+		dlog(1, "Dont know about attribute %d[%04X]=%s yet\n", attr_type,attr_type, attr_to_name(attr_type));
 	}
 
 	return 0;
@@ -321,25 +322,20 @@ garmin_obj2item(struct map_rect_priv *mr, struct gobject *o)
 static struct item *gmap_rect_get_item_byid(struct map_rect_priv *mr, int id_hi, int id_lo)
 {
 	struct gobject *o;
-	dlog(1, "id_hi=%04X id_lo=%04X\n", id_hi, id_lo);
-	if (!mr->objs) {
-		dlog(1, "Error no objects\n");
+	o = mr->objs = gar_get_object(mr->mpriv->g, (void *)id_lo);
+	if (!o) {
+		dlog(1, "Can not find object\n");
 		return NULL;
 	}
-	o = mr->objs;
-	while (o) {
-		if (id_lo == (int)o->gptr) {
-			mr->item.id_hi = (int)mr;
-			mr->item.id_lo = (int)o->gptr;
-			mr->item.priv_data = o;
-			mr->item.type = type_none;
-			o->priv_data = mr;
-			return garmin_obj2item(mr, o);
-		}
-		o = o->next;
-	}
-	dlog(1, "Can not find object\n");
-	return NULL;
+
+	mr->item.id_hi = (int)mr;
+	mr->item.id_lo = (int)o->gptr;
+	mr->item.priv_data = o;
+	mr->item.type = type_none;
+	o->priv_data = mr;
+	if (!garmin_obj2item(mr, o))
+		return NULL;
+	return &mr->item;
 }
 
 static struct item *
@@ -385,8 +381,8 @@ garmin_get_selection(struct map_rect_priv *map, struct map_selection *sel)
 	struct gmap *gm;
 	struct gobject **glast = NULL;
 	int rc;
-	int level = 15;	/* max level for maps, overview maps can have bigger
-			   levels we do not deal w/ them
+	int level = 0; // 18;	/* max level for maps, overview maps can have bigger
+			   /* levels we do not deal w/ them
 			*/
 	int flags = 0;
 	if (sel && sel->order[layer_town] == 0 && sel->order[layer_poly] == 0
@@ -440,13 +436,13 @@ gmap_rect_new(struct map_priv *map, struct map_selection *sel)
 		return mr;
 	mr->mpriv = map;
 	if (!sel) {
-		garmin_get_selection(mr, NULL);
+		return mr; //garmin_get_selection(mr, NULL);
 	} else {
 		while (ms) {
 			dlog(1, "order town:%d street=%d poly=%d\n",
-				sel->order[layer_town],
-				sel->order[layer_street],
-				sel->order[layer_poly]);
+				ms->order[layer_town],
+				ms->order[layer_street],
+				ms->order[layer_poly]);
 			if (garmin_get_selection(mr, ms) < 0) {
 			//	free(mr);
 			//	return NULL;
