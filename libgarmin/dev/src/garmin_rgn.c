@@ -540,13 +540,13 @@ int gar_load_subfiles(struct gimg *g)
 
 		sub->transparent = tre.POI_flags & 0x0002;
 		i32 = (*(u_int32_t*)tre.northbound) & 0x00FFFFFF;
-		sub->north = i32;
+		sub->north = SIGN3B(i32);
 		i32 = (*(u_int32_t*)tre.eastbound) & 0x00FFFFFF;
-		sub->east = i32;
+		sub->east = SIGN3B(i32);
 		i32 = (*(u_int32_t*)tre.southbound) & 0x00FFFFFF;
-		sub->south = i32;
+		sub->south = SIGN3B(i32);
 		i32 = (*(u_int32_t*)tre.westbound) & 0x00FFFFFF;
-		sub->west = i32;
+		sub->west = SIGN3B(i32);
 		log(1, "Boundaries - North: %fC, East: %fC, South: %fC, West: %fC\n",
 			RAD_TO_DEG(RAD(sub->north)),
 			RAD_TO_DEG(RAD(sub->east)),
