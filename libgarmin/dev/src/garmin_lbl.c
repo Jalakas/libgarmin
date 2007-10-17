@@ -524,7 +524,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		log(1, "LBL: ZIP[%d] off=%03X [%s]\n", idx, off, buf);
 		sub->zips[idx]->code = strdup(buf);
 		idx++;
-		cp += 5;
+		cp += lbl.lbl8_rec_size;
 	}
 	free(rb);
 	sub->czips = idx;
