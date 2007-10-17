@@ -288,12 +288,19 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	int lvl = level;
 	int bits,i,j;
 	int nsub = 0;
+	int lvlmax = 0;
 
 // Find a basemap and give it first
 // don't give inherited maplevels
 	gsub = gm->subs[0];
 	if (!gsub)
 		return -1;
+	for (nsub = 0; nsub < gm->subfiles ; nsub++) {
+		if (gm->subs[nsub]->nlevels > lvlmax) {
+			gsub = gm->subs[nsub];
+			lvlmax = gm->subs[nsub]->nlevels;
+		}
+	}
 #if 1
 	if (1 || lvl >= gsub->nlevels) {
 		lvl = (gsub->nlevels/18.0) * lvl;
