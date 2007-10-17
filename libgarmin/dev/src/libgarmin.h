@@ -42,7 +42,6 @@ struct gar_subfile;
 struct gar_objdraworder;
 
 struct gmap {
-	int shift;
 	struct gar_objdraworder *draworder;
 	int subfiles;
 	struct gar_subfile **subs;
@@ -76,6 +75,7 @@ int gar_get_zoomlevels(struct gar_subfile *sub);
 #define GO_GET_SORTED	(1<<0)
 #define GO_GET_ROUTABLE	(1<<1)
 
+struct gobject *gar_get_object(struct gar *gar, void *ptr);
 int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect, 
 			struct gobject **ret, int flags);
 void gar_free_objects(struct gobject *g);

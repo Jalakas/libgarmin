@@ -484,7 +484,7 @@ int gar_load_subfiles(struct gimg *g)
 	struct hdr_tre_t tre;
 	struct gar_subfile *sub;
 	int32_t i32;
-#define MAXSUBFILES	30
+#define MAXSUBFILES	40
 	char *imgs[MAXSUBFILES];
 	int nimgs;
 	char *cp;

@@ -27,7 +27,7 @@
 #include "garmin_order.h"
 #include "geoutils.h"
 
-static struct gobject *gar_alloc_object(int type, void *obj, struct gcoord *c)
+static struct gobject *gar_alloc_object(int type, void *obj)
 {
 	struct gobject *o;
 	o = calloc(1, sizeof(*o));
@@ -35,7 +35,6 @@ static struct gobject *gar_alloc_object(int type, void *obj, struct gcoord *c)
 		return o;
 	o->type = type;
 	o->gptr = obj;
-//	o->c = *c;
 	return o;
 }
 
@@ -129,9 +128,12 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 		gsd->n, gsd->icenterlng, gsd->icenterlat, gsd->north, gsd->west,
 		gsd->south, gsd->east); 
 	list_for_entry(gpoly, &gsd->lpolygons, l) {
+		/* Do not return definition areas */
+		if (gpoly->type == 0x4b)
+			continue;
 		if (!start && !gar_is_pgone_visible(gsub, level, gpoly))
 			continue;
-		p = gar_alloc_object(GO_POLYGON, gpoly, &gpoly->c);
+		p = gar_alloc_object(GO_POLYGON, gpoly);
 		if (!p)
 			goto out_err;
 		if (first) {
@@ -144,7 +146,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 	list_for_entry(gpoly, &gsd->lpolylines, l) {
 		if (!start && !gar_is_line_visible(gsub, level, gpoly))
 			continue;
-		p = gar_alloc_object(GO_POLYLINE, gpoly, &gpoly->c);
+		p = gar_alloc_object(GO_POLYLINE, gpoly);
 		if (!p)
 			goto out_err;
 		if (first) {
@@ -158,7 +160,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 	list_for_entry(gp, &gsd->lpoints, l) {
 		if (!start && !gar_is_point_visible(gsub, level, gp))
 			continue;
-		p = gar_alloc_object(GO_POINT, gp, &gp->c);
+		p = gar_alloc_object(GO_POINT, gp);
 		if (!p)
 			goto out_err;
 		if (first) {
@@ -171,7 +173,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 	list_for_entry(gp, &gsd->lpois, l) {
 		if (!start && !gar_is_point_visible(gsub, level, gp))
 			continue;
-		p = gar_alloc_object(GO_POI, gp, &gp->c);
+		p = gar_alloc_object(GO_POI, gp);
 		if (!p)
 			goto out_err;
 		if (first) {
@@ -232,6 +234,49 @@ static int gar_subdiv_visible(struct gar_subdiv *sd, struct gar_rect *rect)
 	return gar_rects_intersectboth(&sr, rect);
 }
 
+// FIXME: This is very very slow
+struct gobject *gar_get_object(struct gar *gar, void *ptr)
+{
+	struct gimg *g;
+	struct gar_subfile *sub;
+	struct gar_subdiv *gsd;
+	struct gar_maplevel *ml;
+	struct gpoint *gp;
+	struct gpoly *gpoly;
+
+	int i;
+	list_for_entry(g, &gar->limgs,l) {
+		list_for_entry(sub, &g->lsubfiles, l) {
+			for (i=0; i < sub->nlevels; i++) {
+				ml = sub->maplevels[i];
+				list_for_entry(gsd, &ml->lsubdivs, l) {
+					list_for_entry(gpoly, &gsd->lpolygons, l) {
+						if (gpoly == ptr) {
+							return gar_alloc_object(GO_POLYGON, gpoly);
+						}
+					}
+					list_for_entry(gpoly, &gsd->lpolylines, l) {
+						if (gpoly == ptr) {
+							return gar_alloc_object(GO_POLYLINE, gpoly);
+						}
+					}
+					list_for_entry(gp, &gsd->lpoints, l) {
+						if (gp == ptr) {
+							return gar_alloc_object(GO_POINT, gp);
+						}
+					}
+					list_for_entry(gp, &gsd->lpois, l) {
+						if (gp == ptr) {
+							return gar_alloc_object(GO_POI, gp);
+						}
+					}
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
 int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect, 
 			struct gobject **ret, int flags)
 {
@@ -264,10 +309,10 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	bits = ml->ml.bits;
 	log(7, "Level in=%d => Level = %d bits = %d\n", level, lvl, bits);
 	if (rect) {
-	log(15, "Rect: lulong=%f lulat=%f rllong=%f rllat=%f\n",
-		rect->lulong, rect->lulat, rect->rllong, rect->rllat);
+		log(15, "Rect: lulong=%f lulat=%f rllong=%f rllat=%f\n",
+			rect->lulong, rect->lulat, rect->rllong, rect->rllat);
 	}
-	for (nsub = 0; nsub < 1 /*gm->subfiles */; nsub++) {
+	for (nsub = 0; nsub < gm->subfiles ; nsub++) {
 		gsub = gm->subs[nsub];
 		for (i = 0; i < gsub->nlevels; i++) {
 			ml = gsub->maplevels[i];
@@ -275,7 +320,6 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 				continue;
 			if (ml->ml.bits < bits)
 				continue;
-			gm->shift = 0; //24 - ml->ml.bits;
 			list_for_entry(gsd, &ml->lsubdivs, l) {
 				if (rect && !gar_subdiv_visible(gsd, rect))
 					continue;
@@ -353,13 +397,13 @@ int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 	struct gpoly *gl;
 	if  (o->type == GO_POINT || o->type == GO_POI) {
 		gp = o->gptr;
-		ret->x = gp->c.x; // gp->subdiv->icenterlng + (gp->c.x << gm->shift);
-		ret->y = gp->c.y; // gp->subdiv->icenterlat + (gp->c.y << gm->shift);
+		ret->x = gp->c.x;
+		ret->y = gp->c.y;
 		return 1;
 	}
 	gl = o->gptr;
-	ret->x = gl->c.x; // gl->subdiv->icenterlng + (gl->c.x << gm->shift);
-	ret->y = gl->c.y; // gl->subdiv->icenterlat + (gl->c.y << gm->shift);
+	ret->x = gl->c.x;
+	ret->y = gl->c.y;
 	return 1;
 }
 
@@ -371,8 +415,6 @@ int gar_get_object_dcoord(struct gmap *gm, struct gobject *o, int ndelta, struct
 	gp = o->gptr;
 	if (ndelta < gp->npoints) {
 		*ret = gp->deltas[ndelta];
-//		ret->x <<= gm->shift;
-//		ret->y <<= gm->shift;
 		return 1;
 	}
 	return 0;
@@ -406,7 +448,7 @@ char *gar_get_object_lbl(struct gobject *o)
 		if (gpl->netlbl)
 			type = L_NET;
 		gs = gpl->subdiv->subfile;
-		off = ((struct gpoly *)o->gptr)->lbloffset;
+		off = gpl->lbloffset;
 		break;
 	default:
 		log(1, "Error unknown object type:%d\n", o->type);
