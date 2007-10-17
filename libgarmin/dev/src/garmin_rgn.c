@@ -444,6 +444,38 @@ static struct gar_subfile *gar_alloc_subfile(struct gimg *g, char *mapid)
 	sub->subdividx = 1;
 	return sub;
 }
+
+static void gar_calculate_zoom_levels(struct gimg *g)
+{
+	int nbits[25];
+	int j,i, fb = 0, lb = 0;
+	struct gar_subfile *sub;
+	struct gar_maplevel *ml;
+
+	for (i = 0; i < 25; i++)
+		nbits[i] = 0;
+	list_for_entry(sub, &g->lsubfiles, l) {
+		for (i = 0; i < sub->nlevels; i++) {
+			ml = sub->maplevels[i];
+			if (ml->ml.inherited)
+				continue;
+			nbits[ml->ml.bits] = 1;
+		}
+	}
+	i = 0;
+	for (j = 0; j < 25; j++) {
+		if (nbits[j]) {
+			i++;
+			if (!fb)
+				fb = j;
+			lb = j;
+		}
+	}
+	log(1, "Have %d levels base bits=%d bits=%d\n", i, fb, lb - fb + 1);
+	g->basebits = fb;
+	g->zoomlevels = lb - fb + 1;
+}
+
 static int gar_select_basemaps(struct gimg *g)
 {
 	struct gar_subfile *sub;
@@ -578,6 +610,7 @@ int gar_load_subfiles(struct gimg *g)
 	}
 	g->mapsets = mapsets;
 	gar_select_basemaps(g);
+	gar_calculate_zoom_levels(g);
 
 	return 0;
 }
@@ -598,6 +631,8 @@ static struct gmap *gar_alloc_gmap(struct gimg *g)
 	gm->draworder = calloc(1, sizeof(*gm->draworder));
 	gar_init_draworder(gm->draworder, 4);
 	gar_set_default_poly_order(gm->draworder);
+	gm->zoomlevels = g->zoomlevels;
+	gm->basebits = g->basebits;
 	return gm;
 }
 
@@ -660,4 +695,3 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 	}
 	return NULL;
 }
-

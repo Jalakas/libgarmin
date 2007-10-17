@@ -45,6 +45,8 @@ struct gmap {
 	struct gar_objdraworder *draworder;
 	int subfiles;
 	struct gar_subfile **subs;
+	int zoomlevels;
+	int basebits;
 };
 
 struct gobject {

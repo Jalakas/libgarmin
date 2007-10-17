@@ -65,6 +65,8 @@ struct gimg {
 	ssize_t blocksize;
 	list_t lfatfiles;
 	list_t lsubfiles;
+	int basebits;
+	int zoomlevels;
 	int mapsets;
 	struct hdr_img_t hdr;
 };

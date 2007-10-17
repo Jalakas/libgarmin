@@ -198,6 +198,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 		if (gss) {
 			list_for_entry(gs, gss->l.p, l) {
 				log(15, "Loading subdiv: %d\n", gs->n);
+
 				p = gar_get_subdiv_objs(gs, &i, gsub, level, 0);
 				if (p) {
 					objs += i;
@@ -285,53 +286,14 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	struct gar_subdiv *gsd;
 	struct gar_subfile *gsub;
 	int objs = 0;
-	int lvl = level;
 	int bits,i,j;
 	int nsub = 0;
-	int lvlmax = 0;
-	int nbits[25];
-	int fb = 0;
 
 	gsub = gm->subs[0];
 	if (!gsub)
 		return -1;
-	for (nsub = 0; nsub < 25; nsub++)
-		nbits[nsub] = 0;
-	for (nsub = 0; nsub < gm->subfiles ; nsub++) {
-		for (i = 0; i < gm->subs[nsub]->nlevels; i++) {
-			ml = gm->subs[nsub]->maplevels[i];
-			if (ml->ml.inherited)
-				continue;
-			nbits[ml->ml.bits] = 1;
-		}
-	}
-	i = 0;
-	for (nsub = 0; nsub < 25; nsub++) {
-		if (nbits[nsub]) {
-			i++;
-			if (!fb)
-				fb = nsub;
-		}
-	}
-	log(1, "Have %d levels base bits=%d\n", i, fb);
-	lvl = fb + (i/18.0) * lvl - 1;
-	log(1, "Level %d requested, scaling to %d levels=%d\n",
-			level, i, lvl);
-#if 0
-	if (1 || lvl >= gsub->nlevels) {
-		lvl = (gsub->nlevels/18.0) * lvl;
-		if (lvl == gsub->nlevels)
-			lvl = gsub->nlevels -1;
-		log(1, "Level %d requested, scaling to %d levels=%d\n",
-			level, gsub->nlevels, lvl);
-	}
-#endif
-//	if (gsub->maplevels[lvl]->ml.inherited)
-//		lvl++;
-//	ml = gsub->maplevels[lvl];
-//	bits = ml->ml.bits;
-	bits = lvl;
-	log(7, "Level in=%d => Level = %d bits = %d\n", level, lvl, bits);
+	bits = gm->basebits + level;
+	log(7, "Level =%d  bits = %d\n", level, bits);
 	if (rect) {
 		log(15, "Rect: lulong=%f lulat=%f rllong=%f rllat=%f\n",
 			rect->lulong, rect->lulat, rect->rllong, rect->rllat);
