@@ -221,19 +221,19 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 	gsub->icenterlng = SIGN3B(cx);
 	cy = (*(u_int32_t*)sub->center_lat) & 0x00FFFFFF;
 	gsub->icenterlat = SIGN3B(cy);
-	width	= (u_int32_t)(sub->width) << gsub->shift;
-	height	= (u_int32_t)(sub->height) << gsub->shift;
+	width	= sub->width << gsub->shift;
+	height	= sub->height << gsub->shift;
 
-	gsub->north = cy + height + 1;
-	gsub->south = cy - height;
-	gsub->east  = cx + width + 1;
-	gsub->west  = cx - width;
-	log(11, "Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
+	gsub->north = gsub->icenterlat + height + 1;
+	gsub->south = gsub->icenterlat - height;
+	gsub->east  = gsub->icenterlng + width + 1;
+	gsub->west  = gsub->icenterlng - width;
+	log(15, "Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
 		RAD_TO_DEG(RAD(gsub->north)),
 		RAD_TO_DEG(RAD(gsub->east)),
 		RAD_TO_DEG(RAD(gsub->south)),
 		RAD_TO_DEG(RAD(gsub->west)),
-		cx,cy);
+		gsub->icenterlng, gsub->icenterlat);
 }
 
 static struct gar_subdiv *gar_subdiv_alloc(struct gar_subfile *subf)
@@ -615,24 +615,16 @@ int gar_load_subfiles(struct gimg *g)
 	return 0;
 }
 
-static struct gmap *gar_alloc_gmap(struct gimg *g)
+static struct gmap *gar_alloc_gmap(void)
 {
 	struct gmap *gm;
 	gm = calloc(1, sizeof(*gm));
 	if (!gm)
 		return gm;
-	gm->subs = calloc(g->mapsets, sizeof(struct gar_subfile *));
-	if (!gm->subs) {
-		free(gm);
-		return NULL;
-	}
-	gm->subfiles = g->mapsets;
 	/* Initialize default draw order for polygons */
 	gm->draworder = calloc(1, sizeof(*gm->draworder));
 	gar_init_draworder(gm->draworder, 4);
 	gar_set_default_poly_order(gm->draworder);
-	gm->zoomlevels = g->zoomlevels;
-	gm->basebits = g->basebits;
 	return gm;
 }
 
@@ -642,16 +634,13 @@ void gar_free_gmap(struct gmap *g)
 	free(g);
 }
 
-static struct gmap *gar_find_subs(struct gimg *g, struct gar_rect *rect)
+static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *rect)
 {
 	struct gar_subfile *sub;
 	struct gar_rect r;
-	struct gmap *files;
-	int idx = 0;
+	int nf = 0, idx = 0;
 
-	files = gar_alloc_gmap(g);
-	if (!files)
-		return NULL;
+	idx = files->lastsub;
 
 	list_for_entry(sub, &g->lsubfiles, l) {
 		r.lulat = sub->north; //DEG(sub->north);
@@ -660,19 +649,20 @@ static struct gmap *gar_find_subs(struct gimg *g, struct gar_rect *rect)
 		r.rllong = sub->east; //DEG(sub->east);
 //		gar_rect_log(8, "checking", &r);
 		if (!rect || gar_rects_intersectboth(rect, &r)) {
-			log(15, "Found subfile: %p\n", sub);
+			log(15, "Found subfile %d: %p[%s]\n", nf, sub, sub->mapid);
 			gar_rect_log(15, "subfile", &r);
 			files->subs[idx] = sub;
 			idx++;
+			nf++;
 			if (idx == files->subfiles)
 				break;
 			// for now assume we have only one matching
 			// if more than one - select best?
 		}
 	}
-	log(9, "Found %d subfiles\n", idx);
-	files->subfiles = idx;
-	return files;
+	log(9, "Found %d subfiles\n", nf);
+	files->lastsub = idx;
+	return nf;
 }
 
 // public api
@@ -680,18 +670,39 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 {
 	struct gimg *g;
 	struct gmap *files;
+	struct gar_subfile **rsub;
+	int fnd;
 
-	gar_rect_log(11, "looking for", rect);
+	files = gar_alloc_gmap();
+	if (!files)
+		return NULL;
+	if (rect)
+		gar_rect_log(15, "looking for", rect);
 	list_for_entry(g, &gar->limgs,l) {
-		files = gar_find_subs(g, rect);
-		if (files) {
+		rsub = realloc(files->subs, (files->subfiles + g->mapsets) * sizeof(struct gar_subfile *));
+		if (rsub) {
+			files->subs = rsub;
+			files->subfiles =+ g->mapsets;
+		} else {
+			break;
+		}
+		if (g->zoomlevels > files->zoomlevels) {
+			files->zoomlevels = g->zoomlevels;
+			files->basebits = g->basebits;
+		}
+
+		fnd = gar_find_subs(files, g, rect);
+		if (fnd) {
 			if (rect) {
 			log(15, "Found subfile for %f %f %f %f\n",
 				rect->lulat, rect->lulong,
 				rect->rllat, rect->rllong);
 			}
-			return files;
 		}
 	}
-	return NULL;
+	if (!files->lastsub) {
+		gar_free_gmap(files);
+		return NULL;
+	}
+	return files;
 }

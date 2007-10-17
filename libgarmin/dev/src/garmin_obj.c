@@ -126,7 +126,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 
 	log(15, "subdiv:%d cx=%d cy=%d north=%d west=%d south=%d east=%d\n",
 		gsd->n, gsd->icenterlng, gsd->icenterlat, gsd->north, gsd->west,
-		gsd->south, gsd->east); 
+		gsd->south, gsd->east);
 	list_for_entry(gpoly, &gsd->lpolygons, l) {
 		/* Do not return definition areas */
 		if (gpoly->type == 0x4b)
@@ -198,7 +198,6 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 		if (gss) {
 			list_for_entry(gs, gss->l.p, l) {
 				log(15, "Loading subdiv: %d\n", gs->n);
-
 				p = gar_get_subdiv_objs(gs, &i, gsub, level, 0);
 				if (p) {
 					objs += i;
@@ -293,12 +292,12 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	if (!gsub)
 		return -1;
 	bits = gm->basebits + level;
-	log(7, "Level =%d  bits = %d\n", level, bits);
+	log(7, "Level =%d  bits = %d subfiles:%d\n", level, bits, gm->lastsub);
 	if (rect) {
 		log(15, "Rect: lulong=%f lulat=%f rllong=%f rllat=%f\n",
 			rect->lulong, rect->lulat, rect->rllong, rect->rllat);
 	}
-	for (nsub = 0; nsub < gm->subfiles ; nsub++) {
+	for (nsub = 0; nsub < gm->lastsub ; nsub++) {
 		gsub = gm->subs[nsub];
 		for (i = 0; i < gsub->nlevels; i++) {
 			ml = gsub->maplevels[i];
@@ -321,8 +320,13 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 					first = p;
 				}
 			}
+			if (!first)
+				continue;
 			break;
 		}
+	}
+	if (!first) {
+		log(1, "Error no objects found\n");
 	}
 	if ((flags&GO_GET_SORTED) && gm->draworder)
 		*ret = gar_order_objects(first, gm->draworder, 1);
