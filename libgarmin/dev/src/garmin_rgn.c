@@ -471,9 +471,9 @@ static void gar_calculate_zoom_levels(struct gimg *g)
 			lb = j;
 		}
 	}
-	log(1, "Have %d levels base bits=%d bits=%d\n", i, fb, lb - fb + 1);
+	log(1, "Have %d levels base bits=%d bits=%d\n", i, fb, lb - fb);
 	g->basebits = fb;
-	g->zoomlevels = lb - fb + 1;
+	g->zoomlevels = lb - fb;
 }
 
 static int gar_select_basemaps(struct gimg *g)
