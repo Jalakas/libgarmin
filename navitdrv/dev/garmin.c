@@ -412,7 +412,11 @@ garmin_get_selection(struct map_rect_priv *map, struct map_selection *sel)
 		return -1;
 	} 
 	if (sel) {
-		level = (gm->zoomlevels/18.0) * level - 1;
+		if (level < 18 - gm->zoomlevels)
+			level = 0;
+		else
+			level = level - (18 - gm->zoomlevels);
+//		level = (gm->zoomlevels/18.0) * level - 1;
 		printf("Zoomlevels=%d level=%d\n", gm->zoomlevels, level);
 	}
 	map->gmap = gm;
