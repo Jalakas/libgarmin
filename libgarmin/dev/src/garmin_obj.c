@@ -287,18 +287,35 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	int objs = 0;
 	int bits,i,j;
 	int nsub = 0;
+	int havedetail = 0;
 
 	gsub = gm->subs[0];
 	if (!gsub)
 		return -1;
-	bits = gm->basebits + level;
+	bits = level;
 	log(7, "Level =%d  bits = %d subfiles:%d\n", level, bits, gm->lastsub);
+
 	if (rect) {
 		log(15, "Rect: lulong=%f lulat=%f rllong=%f rllat=%f\n",
 			rect->lulong, rect->lulat, rect->rllong, rect->rllat);
 	}
+
+	if (bits >= 18) {
+		for (nsub = 0; nsub < gm->lastsub ; nsub++)
+			if (!gm->subs[nsub]->basemap) {
+				havedetail = 1;
+				log(1, "Will use detailed map\n");
+				break;
+			}
+	}
+
 	for (nsub = 0; nsub < gm->lastsub ; nsub++) {
 		gsub = gm->subs[nsub];
+//		if (bits >= 18 && havedetail && gsub->basemap)
+//			continue;
+		if (bits < 18 && !gsub->basemap)
+			continue;
+		log(1, "Loading %s basemap:%u\n", gsub->mapid, gsub->basemap);
 		for (i = 0; i < gsub->nlevels; i++) {
 			ml = gsub->maplevels[i];
 			if (ml->ml.inherited)

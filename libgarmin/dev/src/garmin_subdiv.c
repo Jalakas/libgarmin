@@ -106,7 +106,7 @@ static void bits_per_coord (u_int8_t base, u_int8_t bfirst, int extra_bit,
 	*blat= _bits_per_coord(base>>4, sign_bit, extra_bit);
 }
 
-static int bs_get_long_lat_bla(struct bsp *bp, struct sign_info_t *si, int bpx, int bpy, struct gpoly *gp, int shift, int dl)
+static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int bpy, struct gpoly *gp, int shift, int dl)
 {
 	u_int32_t tmp;
 	u_int32_t reg;
@@ -196,17 +196,21 @@ static int bs_get_long_lat_bla(struct bsp *bp, struct sign_info_t *si, int bpx, 
 			}
 		}
 #endif
-		if (x == 0 && y == 0)
-			break;
-		gp->deltas[i].x = x << (shift);
-		gp->deltas[i].y = y << (shift);
-		log(dl, "x=%d, y=%d\n", gp->deltas[i].x, gp->deltas[i].y); 
-		total ++;
+		if (x == 0 && y == 0) {
+			log(15, "Point %d have zero deltas eb=%d\n", total, si->extrabit);
+//			break;
+		}
+		if (x || y) {
+			gp->deltas[i].x = x << (shift);
+			gp->deltas[i].y = y << (shift);
+			log(dl, "x=%d, y=%d\n", gp->deltas[i].x, gp->deltas[i].y); 
+			total ++;
+		}
 	}
 	return total;
 }
 
-static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int bpy, struct gpoly *gp, int shift, int dl)
+static int bs_get_long_lat_bla(struct bsp *bp, struct sign_info_t *si, int bpx, int bpy, struct gpoly *gp, int shift, int dl)
 {
 	u_int32_t tmp;
 	u_int32_t reg;
@@ -303,12 +307,16 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 			}
 		}
 #endif
-		if (x == 0 && y == 0)
-			break;
-		gp->deltas[i].x = x << (shift - si->extrabit);
-		gp->deltas[i].y = y << (shift - si->extrabit);
-		log(dl, "x=%d, y=%d\n", gp->deltas[i].x, gp->deltas[i].y); 
-		total ++;
+		if (x == 0 && y == 0) {
+			log(1, "Point %d have zero deltas\n", total);
+//			break;
+		}
+		if (x || y) {
+			gp->deltas[i].x = x << (shift - si->extrabit);
+			gp->deltas[i].y = y << (shift - si->extrabit);
+			log(dl, "x=%d, y=%d\n", gp->deltas[i].x, gp->deltas[i].y); 
+			total ++;
+		}
 	}
 	return total;
 }
@@ -390,6 +398,11 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 		free(gp);
 		return total_bytes;
 	}
+	if (!bs_len) {
+		log(1, "Empty poligon definition\n");
+		free(gp);
+		return total_bytes;
+	}
 	bs_info = *dp;
 	dp++;
 #ifdef DBGEXTRA
@@ -405,7 +418,8 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	bits_per_coord(bs_info, *dp, extra_bit, &bpx, &bpy, &si);
 	log(dl ,"%d/%d bits per long/lat  len=%d extra_bit=%d\n", 
 		bpx, bpy, bs_len, extra_bit);
-	cnt = 2 + ((bs_len*8)-si.sign_info_bits)/(bpx+bpy-2*si.extrabit);
+//	cnt = 2 + ((bs_len*8)-si.sign_info_bits)/(bpx+bpy-2*si.extrabit);
+	cnt = 2 + ((bs_len*8)-si.sign_info_bits)/(bpx+bpy+si.extrabit);
 	log(dl, "Total coordinates: %d\n", cnt);
 	gp->deltas = calloc(cnt, sizeof(struct gcoord));
 	if (!gp->deltas) {
@@ -414,7 +428,7 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 		return total_bytes;
 	}
 	gp->npoints = cnt;
-	if ((cnt == 2 && bs_len) || !bs_len) {
+	if ((cnt == 1 && bs_len) || !bs_len) {
 		log(1, "Error have %d points but  datalen is %d, bpx=%d, bpy=%d si.sign_info_bits=%d\n",cnt, bs_len, bpx, bpy,si.sign_info_bits);
 		log(1, "dp=%02X extra_bit=%d bs_info=%02X\n", *dp,extra_bit,bs_info);
 		{
@@ -432,9 +446,10 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 		gp->npoints = bs_get_long_lat(&bp, &si, bpx, bpy, gp, cshift,dl);
 	}
 	log(dl, "Total real coordinates: %d\n", gp->npoints);
-	if (gp->npoints < 2) {
-		log(15, "Ignoring polydefinition w/ %d points\n",
+	if (gp->npoints < 1) {
+		log(17, "Ignoring polydefinition w/ %d points\n",
 			gp->npoints);
+		log(17, "Have %d points datalen is %d, bpx=%d, bpy=%d si.sign_info_bits=%d extrabit=%d\n",cnt, bs_len, bpx, bpy,si.sign_info_bits, si.extrabit);
 		free(gp->deltas);
 		free(gp);
 		return total_bytes;

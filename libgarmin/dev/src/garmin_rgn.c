@@ -482,8 +482,28 @@ static int gar_select_basemaps(struct gimg *g)
 	int havebase = 0;
 	int id;
 	unsigned int minid = ~0;
+	char *ptr, *eptr;
 
 	log(1, "Selecting basemap ...\n");
+	list_for_entry(sub, &g->lsubfiles, l) {
+		if (*sub->mapid == 'I') {
+			ptr = sub->mapid+1;
+			id = strtol(ptr, &eptr, 16);
+			if (!(*ptr && *eptr == '\0')) {
+				sub->basemap = 1;
+				havebase = 1;
+				log(1, "%s selected as a basemap\n", sub->mapid);
+			}
+			continue;
+		}
+		if (*sub->mapid >= 'A' && *sub->mapid <= 'Z') {
+			sub->basemap = 1;
+			havebase = 1;
+			log(1, "%s selected as a basemap\n", sub->mapid);
+		}
+	}
+	if (havebase)
+		return 1;
 	list_for_entry(sub, &g->lsubfiles, l) {
 		if (*sub->mapid < '0' || *sub->mapid > '9') {
 			havebase = 1;
@@ -649,15 +669,13 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 		r.rllong = sub->east; //DEG(sub->east);
 //		gar_rect_log(8, "checking", &r);
 		if (!rect || gar_rects_intersectboth(rect, &r)) {
-			log(15, "Found subfile %d: %p[%s]\n", nf, sub, sub->mapid);
-			gar_rect_log(15, "subfile", &r);
+			log(1, "Found subfile %d: %p[%s]\n", nf, sub, sub->mapid);
+			gar_rect_log(1, "subfile", &r);
 			files->subs[idx] = sub;
 			idx++;
 			nf++;
 			if (idx == files->subfiles)
 				break;
-			// for now assume we have only one matching
-			// if more than one - select best?
 		}
 	}
 	log(9, "Found %d subfiles\n", nf);
@@ -677,7 +695,7 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 	if (!files)
 		return NULL;
 	if (rect)
-		gar_rect_log(15, "looking for", rect);
+		gar_rect_log(1, "looking for", rect);
 	list_for_entry(g, &gar->limgs,l) {
 		rsub = realloc(files->subs, (files->subfiles + g->mapsets) * sizeof(struct gar_subfile *));
 		if (rsub) {

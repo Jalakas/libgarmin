@@ -43,15 +43,16 @@ void gar_rect_log(int l, char *pref,struct gar_rect *r)
 int gar_rect_contains(struct gar_rect *r1, double lat, double lon)
 {
 	int ret = 0;
-	if (r1->lulat <= lat && lat <= r1->rllat)
-		ret = 3;
-	else if (r1->lulat >= lat && r1->rllat >= lat)
+//	if (r1->lulat <= lat && lat <= r1->rllat)
+//		ret = 3;
+//	else
+	if (r1->lulat >= lat && lat >= r1->rllat)
 		ret = 3;
 
 	if (r1->lulong <= lon && lon <= r1->rllong)
 		ret ++;
-	if (r1->lulong >= lon && r1->rllong >= lon)
-		ret ++;
+//	if (r1->lulong >= lon && r1->rllong >= lon)
+//		ret ++;
 
 #if 0
 	if (ret !=4 ) {
@@ -74,15 +75,15 @@ int gar_rect_contains(struct gar_rect *r1, double lat, double lon)
 	return ret ==  4;
 }
 
-int gar_rects_overlaps(struct gar_rect *r2, struct gar_rect *r1)
+int gar_rects_overlaps(struct gar_rect *r1, struct gar_rect *r2)
 {
 	if (r1->lulat >= r2->rllat)
 		return 0;
 	if (r1->rllat <= r2->lulat)
 		return 0;
-	if (r1->lulong <= r2->rllong)
+	if (r1->lulong >= r2->rllong)
 		return 0;
-	if (r1->rllong >= r2->lulong)
+	if (r1->rllong <= r2->lulong)
 		return 0;
 
 	return 1;
@@ -102,9 +103,23 @@ int gar_rects_intersect(struct gar_rect *r2, struct gar_rect *r1)
 	return 0;
 }
 
-int gar_rects_intersectboth(struct gar_rect *r2, struct gar_rect *r1)
+int gar_rects_intersectboth(struct gar_rect *r1, struct gar_rect *r2)
 {
-	return gar_rects_intersect(r2,r1) || gar_rects_intersect(r1,r2); 
+	return  !( r2->lulong > r1->rllong
+		|| r2->rllong < r1->lulong
+		|| r2->lulat < r1->rllat
+		|| r2->rllat > r1->lulat
+		);
+
+/*
+	if (r1->lulong < r2->rllong || r1->rllong > r2->lulong)
+		return 0;
+	if (r1->lulat < r2->rllat || r1->rllat > r2->lulat)
+		return 0;
+	return 1;
+*/
+//	return gar_rects_intersect(r2,r1) || gar_rects_intersect(r1,r2); 
+//	return gar_rects_overlaps(r2, r1) || gar_rects_overlaps(r1, r2);
 }
 
 #ifdef STANDALONE
