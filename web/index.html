@@ -20,7 +20,7 @@ cd navitsrcdir<br>
 cat patchname | patch -p1<br>
 If you got rejects you have to fix them.<br>
 Next go to<br>
-cd navitsrcdir/src/data<br>
+<b>cd navitsrcdir/src/data</b><br>
 And checkout navit's driver<br>
 <b>svn co http://libgarmin.svn.sourceforge.net/svnroot/libgarmin/navitdrv/dev garmin</b><br>
 Next reconfigure and build navit.<br>
@@ -30,7 +30,8 @@ Now add your first garmin map to navit.xml<br>
                 &lt;map type="garmin" enabled="yes" data="/path/to/gmapsupp.img"/&gt;
         &lt;/mapset&gt;
 </pre>
-
+Next install garmin types definitions:<br>
+<b>cp navitsrcdir/src/data/garmin/garmintypes.txt /path/to/</b><br>
 <hr>
 For more visit project Wiki:<a href="http://libgarmin.wiki.sourceforge.net/">libgarmin wiki</a><br>
 or email libgarmin at gmail dot com<br>
