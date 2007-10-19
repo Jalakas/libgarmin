@@ -476,6 +476,35 @@ static void gar_calculate_zoom_levels(struct gimg *g)
 	g->zoomlevels = lb - fb;
 }
 
+static int gar_subfile_have_bits(struct gar_subfile *sub, int bits)
+{
+	struct gar_maplevel *ml;
+	int i;
+
+	for (i = 0; i < sub->nlevels; i++) {
+		ml = sub->maplevels[i];
+		if (ml->ml.inherited)
+			continue;
+		if (ml->ml.bits < bits)
+			return 1;
+	}
+
+	return 0;
+}
+
+static int gar_check_basemap(struct gar_subfile *sub)
+{
+	if (gar_subfile_have_bits(sub, 18)) {
+		sub->basemap = 1;
+		log(1, "%s selected as a basemap\n", sub->mapid);
+		return 1;
+	} else {
+		log(1, "%s not used as basemap, no enough bits\n",
+			sub->mapid);
+	}
+	return 0;
+}
+
 static int gar_select_basemaps(struct gimg *g)
 {
 	struct gar_subfile *sub;
@@ -490,27 +519,23 @@ static int gar_select_basemaps(struct gimg *g)
 			ptr = sub->mapid+1;
 			id = strtol(ptr, &eptr, 16);
 			if (!(*ptr && *eptr == '\0')) {
-				sub->basemap = 1;
-				havebase = 1;
-				log(1, "%s selected as a basemap\n", sub->mapid);
+				havebase = gar_check_basemap(sub);
 			}
 			continue;
 		}
 		if (*sub->mapid >= 'A' && *sub->mapid <= 'Z') {
-			sub->basemap = 1;
-			havebase = 1;
-			log(1, "%s selected as a basemap\n", sub->mapid);
+			havebase = gar_check_basemap(sub);
 		}
 	}
 	if (havebase)
 		return 1;
+
 	list_for_entry(sub, &g->lsubfiles, l) {
 		if (*sub->mapid < '0' || *sub->mapid > '9') {
-			havebase = 1;
-			sub->basemap = 1;
-			log(1, "%s selected as a basemap\n", sub->mapid);
+			havebase = gar_check_basemap(sub);
 		}
 	}
+
 	if (havebase)
 		return 1;
 	list_for_entry(sub, &g->lsubfiles, l) {
@@ -521,9 +546,18 @@ static int gar_select_basemaps(struct gimg *g)
 	list_for_entry(sub, &g->lsubfiles, l) {
 		id = atoi(sub->mapid);
 		if (id == minid) {
-			sub->basemap = 1;
-			log(1, "%s selected as a basemap\n", sub->mapid);
-			break;
+			havebase = gar_check_basemap(sub);
+			if (havebase)
+				break;
+		}
+	}
+	if (!havebase) {
+		log(1, "Warning no basemap found guessing\n");
+		list_for_entry(sub, &g->lsubfiles, l) {
+			minid = atoi(sub->mapid);
+			havebase = gar_check_basemap(sub);
+			if (havebase)
+				break;
 		}
 	}
 	return minid;
