@@ -393,7 +393,7 @@ garmin_get_selection(struct map_rect_priv *map, struct map_selection *sel)
 		&& sel->order[layer_street]) {
 		// FIXME: use max zoom level
 		flags = GO_GET_ROUTABLE;
-		level = 18;
+		level = 16;
 	} else if (sel)
 		flags = GO_GET_SORTED;
 
@@ -412,10 +412,14 @@ garmin_get_selection(struct map_rect_priv *map, struct map_selection *sel)
 		return -1;
 	} 
 	if (sel) {
-		if (level < 18 - gm->zoomlevels)
-			level = 0;
-		else
-			level = level - (18 - gm->zoomlevels);
+		level += 6;
+		if (level < gm->basebits)
+			level = gm->basebits;
+//		if (level < 18 - gm->zoomlevels)
+//			level = 0;
+//		else
+//			level = level - (18 - gm->zoomlevels);
+//		level += gm->basebits;
 //		level = (gm->zoomlevels/18.0) * level - 1;
 		printf("Zoomlevels=%d level=%d\n", gm->zoomlevels, level);
 	}
