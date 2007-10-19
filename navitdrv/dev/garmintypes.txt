@@ -52,29 +52,29 @@ POINT
 0x2600-0x263F = highway_exit, Exit with Information
 0x2700-0x273F = highway_exit, Exit
 
-0x2800-0x283F = district_label_e01, Region Name
+0x2800-0x283F = district_label_1e0, Region Name
 
 0x2900 = poi_public_utilities, Services
 
-0x2A00 = poi_restaurant, Dining(Other)
-0x2A01 = poi_restaurant, Dining(American)
-0x2A02 = poi_restaurant, Dining(Asian)
-0x2A03 = poi_restaurant, Dining(Barbecue)
-0x2A04 = poi_restaurant, Dining(Chinese)
-0x2A05 = poi_restaurant, Dining(Deli/Bakery)
-0x2A06 = poi_restaurant, Dining(International)
+0x2A00 = poi_dining, Dining(Other)
+0x2A01 = poi_dining, Dining(American)
+0x2A02 = poi_dining, Dining(Asian)
+0x2A03 = poi_dining, Dining(Barbecue)
+0x2A04 = poi_dining, Dining(Chinese)
+0x2A05 = poi_dining, Dining(Deli/Bakery)
+0x2A06 = poi_dining, Dining(International)
 0x2A07 = poi_fastfood, Fast Food
-0x2A08 = poi_restaurant, Dining(Italian)
-0x2A09 = poi_restaurant, Dining(Mexican)
-0x2A0A = poi_restaurant, Dining(Pizza)
-0x2A0B = poi_restaurant, Dining(Sea Food)
-0x2A0C = poi_restaurant, Dining(Steak/Grill)
-0x2A0D = poi_restaurant, Dining(Bagel/Donut)
-0x2A0E = poi_restaurant, Dining(Cafe/Diner)
-0x2A0F = poi_restaurant, Dining(French)
-0x2A10 = poi_restaurant, Dining(German)
-0x2A11 = poi_restaurant, Dining(British Isles)
-0x2A12 = poi_restaurant, Dining(Special Foods)
+0x2A08 = poi_dining, Dining(Italian)
+0x2A09 = poi_dining, Dining(Mexican)
+0x2A0A = poi_dining, Dining(Pizza)
+0x2A0B = poi_dining, Dining(Sea Food)
+0x2A0C = poi_dining, Dining(Steak/Grill)
+0x2A0D = poi_dining, Dining(Bagel/Donut)
+0x2A0E = poi_dining, Dining(Cafe/Diner)
+0x2A0F = poi_dining, Dining(French)
+0x2A10 = poi_dining, Dining(German)
+0x2A11 = poi_dining, Dining(British Isles)
+0x2A12 = poi_dining, Dining(Special Foods)
 
 0x2B00 = poi_hotel, Hotel(Other)
 0x2B01 = poi_hotel, Hotel/Motel
@@ -82,6 +82,7 @@ POINT
 0x2B03 = poi_camp_rv, Camping/RV-Park
 0x2B04 = poi_resort, Resort
 
+0x2C00 = poi_attraction, Amusement Park
 0x2C01 = poi_attraction, Amusement Park
 0x2C02 = poi_museum_history, Museum/History
 0x2C03 = poi_library, Libraries
@@ -91,10 +92,11 @@ POINT
 0x2C07 = poi_zoo, Zoo
 0x2C08 = poi_stadium, Sportpark, Stadium,(point)
 0x2C09 = poi_fair, Fair, Conference(point)
-0x2C0A = poi_vine, Vine restaurant(point)
+0x2C0A = poi_wine, Wine restaurant(point)
 0x2C0B = poi_worship, Place of Worship
 0x2C0C = poi_hotspring, Hot Spring
 
+0x2D00 = poi_theater, Theater
 0x2D01 = poi_theater, Theater
 0x2D02 = poi_bar, Bar
 0x2D03 = poi_cinema, Cinema
@@ -153,7 +155,7 @@ POINT
 0x3005 = poi_concert, Concert hall(point)
 0x3006 = poi_border_station, Border Station(point)
 0x3007 = poi_goverment_building, Goverment Building
-0x3008 = poi_firebriade, FireFighters Station
+0x3008 = poi_firebrigade, FireFighters Station
 
 0x4000-0x403F = poi_golf, Golf
 0x4100-0x413F = poi_fish, Fish
@@ -398,7 +400,7 @@ POLYGONE
 0x47 = water_poly, River (200m-1km)
 0x48 = water_poly, River (40-200m)
 0x49 = water_poly, River (<40m)
-0x4a = area, Definition area
+0x4a = area, Definition Area
 0x4b = area, Background
 0x4c = water_poly, Intermittent River/Lake
 0x4d = water_poly, Glaciers
