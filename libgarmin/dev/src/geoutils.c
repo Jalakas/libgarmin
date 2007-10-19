@@ -77,16 +77,11 @@ int gar_rect_contains(struct gar_rect *r1, double lat, double lon)
 
 int gar_rects_overlaps(struct gar_rect *r1, struct gar_rect *r2)
 {
-	if (r1->lulat >= r2->rllat)
-		return 0;
-	if (r1->rllat <= r2->lulat)
-		return 0;
-	if (r1->lulong >= r2->rllong)
-		return 0;
-	if (r1->rllong <= r2->lulong)
-		return 0;
-
-	return 1;
+	return  !( r2->lulong > r1->rllong
+		|| r2->rllong < r1->lulong
+		|| r2->lulat < r1->rllat
+		|| r2->rllat > r1->lulat
+		);
 }
 
 int gar_rects_intersect(struct gar_rect *r2, struct gar_rect *r1)
@@ -105,21 +100,9 @@ int gar_rects_intersect(struct gar_rect *r2, struct gar_rect *r1)
 
 int gar_rects_intersectboth(struct gar_rect *r1, struct gar_rect *r2)
 {
-	return  !( r2->lulong > r1->rllong
-		|| r2->rllong < r1->lulong
-		|| r2->lulat < r1->rllat
-		|| r2->rllat > r1->lulat
-		);
 
-/*
-	if (r1->lulong < r2->rllong || r1->rllong > r2->lulong)
-		return 0;
-	if (r1->lulat < r2->rllat || r1->rllat > r2->lulat)
-		return 0;
-	return 1;
-*/
 //	return gar_rects_intersect(r2,r1) || gar_rects_intersect(r1,r2); 
-//	return gar_rects_overlaps(r2, r1) || gar_rects_overlaps(r1, r2);
+	return gar_rects_overlaps(r2, r1) || gar_rects_overlaps(r1, r2);
 }
 
 #ifdef STANDALONE

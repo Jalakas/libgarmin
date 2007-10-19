@@ -51,9 +51,10 @@ void gar_free_objects(struct gobject *g)
 static int gar_is_point_visible(struct gar_subfile *gsub, int level, struct gpoint *gp)
 {
 	int i;
-	int type = (gp->type << 8 ) || gp->subtype;
+	int type;
 	if (!gsub->fpoint)
-		return 1;	// no filter all is visible
+		return 0;	// no filter all is visible
+	type = (gp->type << 8 ) || gp->subtype;
 	for (i=0; i < gsub->nfpoint; i++) {
 		if (gsub->fpoint[i].type == type) {
 			if (gsub->fpoint[i].maxlevel >= level)
@@ -70,7 +71,7 @@ static int gar_is_line_visible(struct gar_subfile *gsub, int level, struct gpoly
 	int i;
 	int type = gp->type;
 	if (!gsub->fpolyline)
-		return 1;	// no filter all is visible
+		return 0;	// no filter all is visible
 	for (i=0; i < gsub->nfpolyline; i++) {
 		if (gsub->fpolyline[i].type == type) {
 			if (gsub->fpolyline[i].maxlevel >= level)
@@ -87,7 +88,7 @@ static int gar_is_pgone_visible(struct gar_subfile *gsub, int level, struct gpol
 	int i;
 	int type = gp->type;
 	if (!gsub->fpolygone)
-		return 1;	// no filter all is visible
+		return 0;	// no filter all is visible
 	for (i=0; i < gsub->nfpolygone; i++) {
 		if (gsub->fpolygone[i].type == type) {
 			if (gsub->fpolygone[i].maxlevel >= level)
@@ -129,7 +130,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 		gsd->south, gsd->east);
 	list_for_entry(gpoly, &gsd->lpolygons, l) {
 		/* Do not return definition areas */
-		if (gpoly->type == 0x4b)
+		if (!start || gpoly->type == 0x4b)
 			continue;
 		if (!start && !gar_is_pgone_visible(gsub, level, gpoly))
 			continue;
@@ -337,9 +338,11 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 					first = p;
 				}
 			}
-			if (!first)
-				continue;
 			break;
+//			if (!first)
+//				continue;
+//			if (gsub->basemap && havedetail && ml->ml.bits > 18)
+//				break;
 		}
 	}
 	if (!first) {
