@@ -473,7 +473,7 @@ int gar_init_srch(struct gar_subfile *sub)
 			off <<= lbl.addr_shift;
 			off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
 			gar_get_at(sub, off, buf, sizeof(buf));
-			log(1, "LBL: CNT[%d] off=%03X cnt:%d region:%d [%s]\n", idx, off, *(short *)cp,sub->cities[idx]->region_idx,buf);
+			log(15, "LBL: CNT[%d] off=%03X cnt:%d region:%d [%s]\n", idx, off, *(short *)cp,sub->cities[idx]->region_idx,buf);
 			sub->cities[idx]->label = strdup(buf);
 		}
 		idx++;
