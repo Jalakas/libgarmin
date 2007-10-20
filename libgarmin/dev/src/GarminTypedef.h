@@ -269,5 +269,17 @@ struct nod_bond {
 };
 
 
+#define TDB_HEADER	0x50
+#define TDB_TRADEMARK	0x52
+#define TDB_REGIONS	0x53
+#define TDB_COPYRIGHT	0x44
+#define TDB_BASEMAP	0x42
+#define TDB_DETAILMAP	0x4C
+
+struct tdb_block {
+	u_int8_t id;
+	u_int16_t size;
+} __attribute((packed));
+
 #endif //GARMINTYPEDEF_H
 

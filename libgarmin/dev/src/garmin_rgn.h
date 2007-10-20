@@ -1,9 +1,6 @@
 #include "list.h"
 #include "GarminTypedef.h"
 
-#define SIGN2B(x) (((x)>=0x8000)   ? (x)-0x10000 : (x))
-#define SIGN3B(x) (((x)>=0x800000) ? (x)-0x1000000 : (x))
-
 struct gimg;
 int gar_load_subfiles(struct gimg *g);
 
