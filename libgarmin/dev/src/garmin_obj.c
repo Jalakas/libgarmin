@@ -350,7 +350,12 @@ retry:
 		}
 	}
 	if (objs == 1) {
-		// special case
+		/*
+		 * special case
+		 * Levels w/ just one object are used to separate
+		 * from detailed maps, happens on bits==18,
+		 * or where the inheritance starts
+		 */
 		bits++;
 		gar_free_objects(first);
 		first = NULL;
