@@ -59,12 +59,12 @@ static int gar_is_point_visible(struct gar_subfile *gsub, int level, struct gpoi
 	for (i=0; i < gsub->nfpoint; i++) {
 		if (gsub->fpoint[i].type == type) {
 			if (gsub->fpoint[i].maxlevel >= level)
-				return 0;
-			else
 				return 1;
+			else
+				return 0;
 		}
 	}
-	return 0;
+	return 1;
 }
 
 static int gar_is_line_visible(struct gar_subfile *gsub, int level, struct gpoly *gp)
@@ -76,12 +76,12 @@ static int gar_is_line_visible(struct gar_subfile *gsub, int level, struct gpoly
 	for (i=0; i < gsub->nfpolyline; i++) {
 		if (gsub->fpolyline[i].type == type) {
 			if (gsub->fpolyline[i].maxlevel >= level)
-				return 0;
-			else
 				return 1;
+			else
+				return 0;
 		}
 	}
-	return 0;
+	return 1;
 }
 
 static int gar_is_pgone_visible(struct gar_subfile *gsub, int level, struct gpoly *gp)
@@ -93,12 +93,12 @@ static int gar_is_pgone_visible(struct gar_subfile *gsub, int level, struct gpol
 	for (i=0; i < gsub->nfpolygone; i++) {
 		if (gsub->fpolygone[i].type == type) {
 			if (gsub->fpolygone[i].maxlevel >= level)
-				return 0;
-			else
 				return 1;
+			else
+				return 0;
 		}
 	}
-	return 0;
+	return 1;
 }
 
 static struct gar_subdiv *gar_find_subdiv_by_idx(struct gar_subfile *gsub, 
@@ -185,7 +185,8 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 			o = first = p;
 		objs++;
 	}
-	if (gsd->next) {
+
+	if (0 && gsd->next) {
 		log(15, "Must load %d subdiv\n", gsd->next);
 		if (gsd->next == gsd->n) {
 			log(1, "%d points to itself\n", gsd->next);
@@ -303,6 +304,7 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 			rect->lulong, rect->lulat, rect->rllong, rect->rllat);
 	}
 retry:
+#if 0
 	if (bits > 17) {
 		for (nsub = 0; nsub < gm->lastsub ; nsub++)
 			if (!gm->subs[nsub]->basemap) {
@@ -313,24 +315,20 @@ retry:
 				havebase = 1;
 			}
 	}
-
+#endif
 	for (nsub = 0; nsub < gm->lastsub ; nsub++) {
 		gsub = gm->subs[nsub];
-//		if (bits >= 18 && havedetail && gsub->basemap)
-//			continue;
-		if (bits < 18 && !gsub->basemap && havebase)
-			continue;
 		log(1, "Loading %s basemap:%s\n", gsub->mapid, gsub->basemap ? "yes" : "no");
 		for (i = 0; i < gsub->nlevels; i++) {
 			ml = gsub->maplevels[i];
 			if (ml->ml.inherited)
 				continue;
-			if (ml->ml.bits < bits)
+			if (ml->ml.level > level)
 				continue;
 			list_for_entry(gsd, &ml->lsubdivs, l) {
 				if (rect && !gar_subdiv_visible(gsd, rect))
 					continue;
-				p = gar_get_subdiv_objs(gsd, &j, gsub, ml->ml.level, 1);
+				p = gar_get_subdiv_objs(gsd, &j, gsub, ml->ml.level, 0);
 				if (p) {
 					objs += j;
 					if (first) {
@@ -356,10 +354,12 @@ retry:
 		 * from detailed maps, happens on bits==18,
 		 * or where the inheritance starts
 		 */
-		bits++;
-		gar_free_objects(first);
-		first = NULL;
-		goto retry;
+		level--;
+		if (level > -1) {
+			gar_free_objects(first);
+			first = NULL;
+			goto retry;
+		}
 	}
 	
 	if (!first) {

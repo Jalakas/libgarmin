@@ -705,8 +705,8 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 		r.rllong = sub->east; //DEG(sub->east);
 //		gar_rect_log(8, "checking", &r);
 		if (!rect || gar_rects_intersectboth(rect, &r)) {
-			log(1, "Found subfile %d: %p[%s]\n", nf, sub, sub->mapid);
-			gar_rect_log(1, "subfile", &r);
+			log(15, "Found subfile %d: %p[%s]\n", nf, sub, sub->mapid);
+			gar_rect_log(15, "subfile", &r);
 			files->subs[idx] = sub;
 			idx++;
 			nf++;
@@ -714,7 +714,7 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 				break;
 		}
 	}
-	log(9, "Found %d subfiles\n", nf);
+	log(12, "Found %d subfiles\n", nf);
 	files->lastsub = idx;
 	return nf;
 }
