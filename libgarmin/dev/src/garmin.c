@@ -102,17 +102,17 @@ static int gar_load_img_hdr(struct gimg *g)
 			sizeof(struct hdr_img_t), rc);
 		return -1;
 	}
+	if (g->hdr.xorByte != 0) {
+		log(1, "Please, xor the file key:%02X, use garxor\n",
+					g->hdr.xorByte);
+		return -1;
+	}
 	if (strncmp(g->hdr.signature,"DSKIMG",6)) {
 		log(1, "Invalid signature: [%s]\n",g->hdr.signature);
 		return -1;
 	}
 	if (strncmp(g->hdr.identifier,"GARMIN",6)) {
 		log(1, "Invalid identifier: [%s]\n",g->hdr.identifier);
-		return -1;
-	}
-	if (g->hdr.xorByte != 0) {
-		log(1, "Please, xor the file key:%02X\n",
-					g->hdr.xorByte);
 		return -1;
 	}
 	log(10, "File: [%s]\n", g->file);
