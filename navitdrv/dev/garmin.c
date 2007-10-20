@@ -104,6 +104,7 @@ static struct gscale mapscales[] = {
 	,{"10 m", 0.15, 24}
 };
 
+
 static int 
 garmin_object_label(struct gobject *o, struct attr *attr)
 {
@@ -118,6 +119,22 @@ garmin_object_label(struct gobject *o, struct attr *attr)
 	//	dlog(1, "Label[%d]:%s\n", o->type, mr->label);
 		attr->u.str = mr->label;
 		// FIXME: who frees this
+		return 1;
+	}
+	return 0;
+}
+
+static int 
+garmin_object_debug(struct gobject *o, struct attr *attr)
+{
+	struct map_rect_priv *mr = o->priv_data;
+	if (!mr) {
+		dlog(1, "Error object do not have priv_data!!\n");
+		return 0;
+	}
+	mr->label = gar_object_debug_str(o);
+	if (mr->label) {
+		attr->u.str = mr->label;
 		return 1;
 	}
 	return 0;
@@ -239,9 +256,19 @@ point_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 				mr->last_oattr = g;
 				mr->last_attr = 0;
 			}
-			if (mr->last_attr > 0)
-				return 0;
-			mr->last_attr++;
+			switch(mr->last_attr) {
+				case 0:
+					mr->last_attr++;
+					attr->type = attr_label;
+					return garmin_object_label(g, attr);
+				case 1:
+					mr->last_attr++;
+					attr->type = attr_debug;
+					return garmin_object_debug(g, attr);
+				default:
+					return 0;
+			}
+			break;
 	case attr_label:
 		attr->type = attr_label;
 		return garmin_object_label(g, attr);
