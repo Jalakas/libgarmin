@@ -244,7 +244,7 @@ poly_coord_get(void *priv_data, struct coord *c, int count)
 	return total;
 }
 
-// for _any we must return one by one must extend gobject - bad
+// for _any we must return one by one 
 static int 
 point_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 {
