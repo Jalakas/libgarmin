@@ -113,12 +113,12 @@ garmin_object_label(struct gobject *o, struct attr *attr)
 		dlog(1, "Error object do not have priv_data!!\n");
 		return 0;
 	}
+	if (mr->label)
+		free(mr->label);
 	mr->label = gar_get_object_lbl(o);
 #warning FIXME Process label and give only the visible part
 	if (mr->label) {
-	//	dlog(1, "Label[%d]:%s\n", o->type, mr->label);
 		attr->u.str = mr->label;
-		// FIXME: who frees this
 		return 1;
 	}
 	return 0;
@@ -132,6 +132,8 @@ garmin_object_debug(struct gobject *o, struct attr *attr)
 		dlog(1, "Error object do not have priv_data!!\n");
 		return 0;
 	}
+	if (mr->label)
+		free(mr->label);
 	mr->label = gar_object_debug_str(o);
 	if (mr->label) {
 		attr->u.str = mr->label;
@@ -400,6 +402,55 @@ gmap_rect_get_item(struct map_rect_priv *mr)
 }
 
 #define max(a,b) ((a) > (b) ? (a) : (b))
+struct nl2gl_t {
+	int g;
+	int bits;
+	char *descr;
+};
+
+struct nl2gl_t nl2gl_1[] = { 
+	{ /* 0 */  .g = 12, .descr = "0-120m", },
+	{ /* 1 */  .g = 11, .descr = "0-120m", },
+	{ /* 2 */  .g = 10, .descr = "0-120m", },
+	{ /* 3 */  .g = 9, .descr = "0-120m", },
+	{ /* 4 */  .g = 8, .descr = "0-120m", },
+	{ /* 5 */  .g = 7, .descr = "0-120m", },
+	{ /* 6 */  .g = 6, .descr = "0-120m", },
+	{ /* 7 */  .g = 5, .descr = "0-120m", },
+	{ /* 8 */  .g = 4, .descr = "0-120m", },
+	{ /* 9 */  .g = 4, .descr = "0-120m", },
+	{ /* 10 */ .g = 3, .descr = "0-120m", },
+	{ /* 11 */ .g = 3, .descr = "0-120m", },
+	{ /* 12 */ .g = 2, .descr = "0-120m", },
+	{ /* 13 */ .g = 2, .descr = "0-120m", },
+	{ /* 14 */ .g = 2, .descr = "0-120m", },
+	{ /* 15 */ .g = 1, .descr = "0-120m", },
+	{ /* 16 */ .g = 1, .descr = "0-120m", },
+	{ /* 17 */ .g = 1, .descr = "0-120m", },
+	{ /* 18 */ .g = 0, .descr = "0-120m", },
+};
+
+struct nl2gl_t nl2gl[] = { 
+	{ /* 0 */  .g = 9, .descr = "0-120m", },
+	{ /* 1 */  .g = 9, .descr = "0-120m", },
+	{ /* 2 */  .g = 8, .descr = "0-120m", },
+	{ /* 3 */  .g = 8, .descr = "0-120m", },
+	{ /* 4 */  .g = 7, .descr = "0-120m", },
+	{ /* 5 */  .g = 7, .descr = "0-120m", },
+	{ /* 6 */  .g = 6, .descr = "0-120m", },
+	{ /* 7 */  .g = 6, .descr = "0-120m", },
+	{ /* 8 */  .g = 5, .descr = "0-120m", },
+	{ /* 9 */  .g = 5, .descr = "0-120m", },
+	{ /* 10 */ .g = 4, .descr = "0-120m", },
+	{ /* 11 */ .g = 4, .descr = "0-120m", },
+	{ /* 12 */ .g = 3, .descr = "0-120m", },
+	{ /* 13 */ .g = 3, .descr = "0-120m", },
+	{ /* 14 */ .g = 2, .descr = "0-120m", },
+	{ /* 15 */ .g = 2, .descr = "0-120m", },
+	{ /* 16 */ .g = 1, .descr = "0-120m", },
+	{ /* 17 */ .g = 1, .descr = "0-120m", },
+	{ /* 18 */ .g = 0, .descr = "0-120m", },
+};
 
 static int 
 get_level(struct map_selection *sel)
@@ -435,6 +486,7 @@ garmin_get_selection(struct map_rect_priv *map, struct map_selection *sel)
 		r.rllat = sel->rect.rl.y;
 		r.rllong = sel->rect.rl.x;
 		level = get_level(sel);
+		level = nl2gl[level].g;
 		printf("Looking level=%d for %f %f %f %f\n",
 			level, r.lulat, r.lulong, r.rllat, r.rllong);
 	}
@@ -443,18 +495,6 @@ garmin_get_selection(struct map_rect_priv *map, struct map_selection *sel)
 		dlog(1, "Can not find map data\n");
 		return -1;
 	} 
-	if (sel) {
-		level += 6;
-		if (level < gm->basebits)
-			level = gm->basebits;
-//		if (level < 18 - gm->zoomlevels)
-//			level = 0;
-//		else
-//			level = level - (18 - gm->zoomlevels);
-//		level += gm->basebits;
-//		level = (gm->zoomlevels/18.0) * level - 1;
-		printf("Zoomlevels=%d level=%d\n", gm->zoomlevels, level);
-	}
 	map->gmap = gm;
 	glast = &map->objs;
 	while (*glast) {
@@ -504,7 +544,7 @@ gmap_rect_new(struct map_priv *map, struct map_selection *sel)
 static void
 gmap_rect_destroy(struct map_rect_priv *mr)
 {
-	dlog(1,"destroy maprect\n");
+	dlog(11,"destroy maprect\n");
 	if (mr->gmap)
 		gar_free_gmap(mr->gmap);
 	if (mr->objs)

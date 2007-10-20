@@ -42,7 +42,7 @@ static int add_def(struct gar2nav_conv *conv, int type, unsigned short minid,
 {
 	enum item_type it;
 	struct gar2navit *g2n;
-	dlog(10, "type=%d routable=%u min=%04X max=%04X ntype=%s descr=%s\n",
+	dlog(11, "type=%d routable=%u min=%04X max=%04X ntype=%s descr=%s\n",
 		type, routable, minid, maxid, ntype, descr);
 	it = item_from_name(ntype);
 	if (it==type_none) {
