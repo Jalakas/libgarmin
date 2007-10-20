@@ -250,6 +250,7 @@ point_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 {
 	struct gobject *g = priv_data;
 	struct map_rect_priv *mr = g->priv_data;
+	int rc;
 	switch (attr_type) {
 	case attr_any:
 			if (g != mr->last_oattr) {
@@ -260,11 +261,15 @@ point_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 				case 0:
 					mr->last_attr++;
 					attr->type = attr_label;
-					return garmin_object_label(g, attr);
+					rc = garmin_object_label(g, attr);
+					if (rc)
+						return rc;
 				case 1:
 					mr->last_attr++;
 					attr->type = attr_debug;
-					return garmin_object_debug(g, attr);
+					rc = garmin_object_debug(g, attr);
+					if (rc)
+						return rc;
 				default:
 					return 0;
 			}
