@@ -18,6 +18,7 @@
 */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "list.h"
 #include "libgarmin.h"
@@ -53,7 +54,7 @@ static int gar_is_point_visible(struct gar_subfile *gsub, int level, struct gpoi
 	int i;
 	int type;
 	if (!gsub->fpoint)
-		return 0;	// no filter all is visible
+		return 1;	// no filter all is visible
 	type = (gp->type << 8 ) || gp->subtype;
 	for (i=0; i < gsub->nfpoint; i++) {
 		if (gsub->fpoint[i].type == type) {
@@ -71,7 +72,7 @@ static int gar_is_line_visible(struct gar_subfile *gsub, int level, struct gpoly
 	int i;
 	int type = gp->type;
 	if (!gsub->fpolyline)
-		return 0;	// no filter all is visible
+		return 1;	// no filter all is visible
 	for (i=0; i < gsub->nfpolyline; i++) {
 		if (gsub->fpolyline[i].type == type) {
 			if (gsub->fpolyline[i].maxlevel >= level)
@@ -88,7 +89,7 @@ static int gar_is_pgone_visible(struct gar_subfile *gsub, int level, struct gpol
 	int i;
 	int type = gp->type;
 	if (!gsub->fpolygone)
-		return 0;	// no filter all is visible
+		return 1;	// no filter all is visible
 	for (i=0; i < gsub->nfpolygone; i++) {
 		if (gsub->fpolygone[i].type == type) {
 			if (gsub->fpolygone[i].maxlevel >= level)
@@ -289,6 +290,7 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	int bits,i,j;
 	int nsub = 0;
 	int havedetail = 0;
+	int havebase = 0;
 
 	gsub = gm->subs[0];
 	if (!gsub)
@@ -301,12 +303,14 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 			rect->lulong, rect->lulat, rect->rllong, rect->rllat);
 	}
 retry:
-	if (bits >= 18) {
+	if (bits > 17) {
 		for (nsub = 0; nsub < gm->lastsub ; nsub++)
 			if (!gm->subs[nsub]->basemap) {
 				havedetail = 1;
 				log(1, "Will use detailed map\n");
 				break;
+			} else {
+				havebase = 1;
 			}
 	}
 
@@ -314,7 +318,7 @@ retry:
 		gsub = gm->subs[nsub];
 //		if (bits >= 18 && havedetail && gsub->basemap)
 //			continue;
-		if (bits < 18 && !gsub->basemap)
+		if (bits < 18 && !gsub->basemap && havebase)
 			continue;
 		log(1, "Loading %s basemap:%s\n", gsub->mapid, gsub->basemap ? "yes" : "no");
 		for (i = 0; i < gsub->nlevels; i++) {
@@ -514,3 +518,33 @@ int gar_object_subtype(struct gobject *o)
 	return ret;
 }
 
+char *gar_object_debug_str(struct gobject *o)
+{
+	struct gpoint *gp;
+	struct gpoly *gl;
+	struct gar_subdiv *sd = NULL;
+	char buf[1024];
+	u_int32_t idx = 0;
+
+	switch (o->type) {
+	case GO_POINT:
+	case GO_POI:
+		gp = o->gptr;
+		idx = gp->n;
+		sd = gp->subdiv;
+		break;
+	case GO_POLYLINE:
+	case GO_POLYGON:
+		gl = o->gptr;
+		idx = gl->n;
+		sd = gl->subdiv;
+		break;
+	}
+	if (sd) {
+		snprintf(buf, sizeof(buf), "SF:%s SD:%d level=%d type=%d idx=%d",
+			sd->subfile->mapid, sd->n, sd->level, o->type, idx);
+		return strdup(buf);
+	}
+
+	return NULL;
+}

@@ -551,6 +551,7 @@ static int gar_select_basemaps(struct gimg *g)
 				break;
 		}
 	}
+#if 0
 	if (!havebase) {
 		log(1, "Warning no basemap found guessing\n");
 		list_for_entry(sub, &g->lsubfiles, l) {
@@ -560,6 +561,7 @@ static int gar_select_basemaps(struct gimg *g)
 				break;
 		}
 	}
+#endif
 	return minid;
 }
 

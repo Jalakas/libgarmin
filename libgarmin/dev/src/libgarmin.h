@@ -93,6 +93,8 @@ int gar_get_object_deltas(struct gobject *o);
 char *gar_get_object_lbl(struct gobject *o);
 int gar_get_object_intlbl(struct gobject *o);
 int gar_object_get_draw_order(struct gobject *o);
+char *gar_object_debug_str(struct gobject *o);
+
 int gar_fat_file2fd(struct gimg *g, char *name, int fd);
 
 #define GARDEG(x) ((x) < 0x800000 ? (double)(x) * 360.0 / 16777216.0 : -(double)((x) - 0x100000) * 360.0 / 16777216.0)

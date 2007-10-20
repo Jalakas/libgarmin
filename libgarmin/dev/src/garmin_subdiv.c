@@ -522,6 +522,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 	u_int32_t opnt = 0, oidx = 0, opline = 0, opgon = 0;
 	struct gimg *g = sub->gimg;
 	struct gpoint *gp;
+	u_int32_t pgi = 1, pli = 1, pi = 1, poii = 1;
 
 	// FIXME: Index for an empty subdiv?
 	if (gsub->rgn_start == gsub->rgn_end)
@@ -612,6 +613,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 			gp->c.y <<= gsub->shift;
 			gp->c.x += gsub->icenterlng;
 			gp->c.y += gsub->icenterlat;
+			gp->n = pi++;
 			j = 1;
 			if (gp->c.x < gsub->west || gp->c.x > gsub->east) {
 				log(15, "Point out of bonds: %d, west=%d, east=%d\n",
@@ -643,6 +645,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 			gp->c.y <<= gsub->shift;
 			gp->c.x += gsub->icenterlng;
 			gp->c.y += gsub->icenterlat;
+			gp->n = poii++;
 			j = 1;
 			if (gp->c.x < gsub->west || gp->c.x > gsub->east) {
 				log(15, "Point out of bonds: %d, west=%d, east=%d\n",
@@ -676,6 +679,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 		while (d < e) {
 			rc = gar_parse_poly(d, e, &poly, 1, &ok, gsub->shift);
 			if (ok) {
+				poly->n = pli++;
 				poly->c.x += gsub->icenterlng;
 				poly->c.y += gsub->icenterlat;
 				poly->subdiv = gsub;
@@ -698,6 +702,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 		while (d < e) {
 			rc = gar_parse_poly(d, e, &poly, 0, &ok,gsub->shift);
 			if (ok) {
+				poly->n = pgi++;
 				poly->c.x += gsub->icenterlng;
 				poly->c.y += gsub->icenterlat;
 				poly->subdiv = gsub;
