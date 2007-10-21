@@ -129,63 +129,66 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 	log(15, "subdiv:%d cx=%d cy=%d north=%d west=%d south=%d east=%d\n",
 		gsd->n, gsd->icenterlng, gsd->icenterlat, gsd->north, gsd->west,
 		gsd->south, gsd->east);
-	list_for_entry(gpoly, &gsd->lpolygons, l) {
-		/* Do not return definition areas */
-		if (gpoly->type == 0x4a)
-			continue;
-		if (!start && !gar_is_pgone_visible(gsub, level, gpoly))
-			continue;
-		p = gar_alloc_object(GO_POLYGON, gpoly);
-		if (!p)
-			goto out_err;
-		if (first) {
-			o->next = p;
-			o = p; 
-		} else
-			o = first = p;
-		objs++;
-	}
-	list_for_entry(gpoly, &gsd->lpolylines, l) {
-		if (!start && !gar_is_line_visible(gsub, level, gpoly))
-			continue;
-		p = gar_alloc_object(GO_POLYLINE, gpoly);
-		if (!p)
-			goto out_err;
-		if (first) {
-			o->next = p;
-			o = p; 
-		} else
-			o = first = p;
-		objs++;
+	if (start) {
+		list_for_entry(gpoly, &gsd->lpolygons, l) {
+			/* Do not return definition areas and backgrounds */
+			if (gpoly->type == 0x4a || gpoly->type == 0x4b)
+				continue;
+			if (!gar_is_pgone_visible(gsub, level, gpoly))
+				continue;
+			p = gar_alloc_object(GO_POLYGON, gpoly);
+			if (!p)
+				goto out_err;
+			if (first) {
+				o->next = p;
+				o = p; 
+			} else
+				o = first = p;
+			objs++;
+		}
+		list_for_entry(gpoly, &gsd->lpolylines, l) {
+			if (!gar_is_line_visible(gsub, level, gpoly))
+				continue;
+			p = gar_alloc_object(GO_POLYLINE, gpoly);
+			if (!p)
+				goto out_err;
+			if (first) {
+				o->next = p;
+				o = p; 
+			} else
+				o = first = p;
+			objs++;
+		}
+
+		list_for_entry(gp, &gsd->lpoints, l) {
+			if (!gar_is_point_visible(gsub, level, gp))
+				continue;
+			p = gar_alloc_object(GO_POINT, gp);
+			if (!p)
+				goto out_err;
+			if (first) {
+				o->next = p;
+				o = p; 
+			} else
+				o = first = p;
+			objs++;
+		}
+		list_for_entry(gp, &gsd->lpois, l) {
+			if (!gar_is_point_visible(gsub, level, gp))
+				continue;
+			p = gar_alloc_object(GO_POI, gp);
+			if (!p)
+				goto out_err;
+			if (first) {
+				o->next = p;
+				o = p; 
+			} else
+				o = first = p;
+			objs++;
+		}
 	}
 
-	list_for_entry(gp, &gsd->lpoints, l) {
-		if (!start && !gar_is_point_visible(gsub, level, gp))
-			continue;
-		p = gar_alloc_object(GO_POINT, gp);
-		if (!p)
-			goto out_err;
-		if (first) {
-			o->next = p;
-			o = p; 
-		} else
-			o = first = p;
-		objs++;
-	}
-	list_for_entry(gp, &gsd->lpois, l) {
-		if (!start && !gar_is_point_visible(gsub, level, gp))
-			continue;
-		p = gar_alloc_object(GO_POI, gp);
-		if (!p)
-			goto out_err;
-		if (first) {
-			o->next = p;
-			o = p; 
-		} else
-			o = first = p;
-		objs++;
-	}
-
+	// Fixme we can go down to get more POIs
 	if (0 && gsd->next) {
 		log(15, "Must load %d subdiv\n", gsd->next);
 		if (gsd->next == gsd->n) {
@@ -331,11 +334,11 @@ retry:
 			list_for_entry(gsd, &ml->lsubdivs, l) {
 				if (rect && !gar_subdiv_visible(gsd, rect))
 					continue;
-				p = gar_get_subdiv_objs(gsd, &j, gsub, ml->ml.level, 0);
+				p = gar_get_subdiv_objs(gsd, &j, gsub, ml->ml.level, 1);
 				if (p) {
-					log(1, "%s subdiv:%d gave %d objects\n",
+					log(15, "%s subdiv:%d gave %d objects\n",
 						gsub->mapid, gsd->n, j);
-					gar_debug_objects(p);
+					//gar_debug_objects(p);
 					objs += j;
 					if (first) {
 						o = p;
@@ -537,12 +540,14 @@ char *gar_object_debug_str(struct gobject *o)
 	char buf[1024];
 	u_int32_t idx = 0;
 	int type=0;
+	struct gcoord c;
 
 	switch (o->type) {
 	case GO_POINT:
 	case GO_POI:
 		gp = o->gptr;
 		type = gp->type;
+		c = gp->c;
 		idx = gp->n;
 		sd = gp->subdiv;
 		break;
@@ -550,6 +555,7 @@ char *gar_object_debug_str(struct gobject *o)
 	case GO_POLYGON:
 		gl = o->gptr;
 		type = gl->type;
+		c = gl->c;
 		idx = gl->n;
 		sd = gl->subdiv;
 		break;
@@ -557,8 +563,8 @@ char *gar_object_debug_str(struct gobject *o)
 		return NULL;
 	}
 	if (sd) {
-		snprintf(buf, sizeof(buf), "SF:%s SD:%d level=%d ot=%d idx=%d type=0x%02X",
-			sd->subfile->mapid, sd->n, sd->level, o->type, idx, type);
+		snprintf(buf, sizeof(buf), "SF:%s SD:%d l=%d ot=%d idx=%d gt=0x%02X lng=%f lat=%f",
+			sd->subfile->mapid, sd->n, sd->level, o->type, idx, type, GARDEG(c.x), GARDEG(c.y));
 		return strdup(buf);
 	}
 
