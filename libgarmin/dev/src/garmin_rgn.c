@@ -228,7 +228,7 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 	gsub->south = gsub->icenterlat - height;
 	gsub->east  = gsub->icenterlng + width + 1;
 	gsub->west  = gsub->icenterlng - width;
-	log(15, "Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
+	log(1, "Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
 		RAD_TO_DEG(RAD(gsub->north)),
 		RAD_TO_DEG(RAD(gsub->east)),
 		RAD_TO_DEG(RAD(gsub->south)),
@@ -665,7 +665,7 @@ int gar_load_subfiles(struct gimg *g)
 		mapsets++;
 	}
 	g->mapsets = mapsets;
-	gar_select_basemaps(g);
+//	gar_select_basemaps(g);
 	gar_calculate_zoom_levels(g);
 
 	return 0;

@@ -279,6 +279,7 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr)
 	}
 	return NULL;
 }
+static void gar_debug_objects(struct gobject *o);
 
 int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect, 
 			struct gobject **ret, int flags)
@@ -325,11 +326,16 @@ retry:
 				continue;
 			if (ml->ml.level > level)
 				continue;
+			log(1, "Loading level:%d bits:%d\n",
+				ml->ml.level, ml->ml.bits);
 			list_for_entry(gsd, &ml->lsubdivs, l) {
 				if (rect && !gar_subdiv_visible(gsd, rect))
 					continue;
 				p = gar_get_subdiv_objs(gsd, &j, gsub, ml->ml.level, 0);
 				if (p) {
+					log(1, "%s subdiv:%d gave %d objects\n",
+						gsub->mapid, gsd->n, j);
+					gar_debug_objects(p);
 					objs += j;
 					if (first) {
 						o = p;
@@ -530,26 +536,44 @@ char *gar_object_debug_str(struct gobject *o)
 	struct gar_subdiv *sd = NULL;
 	char buf[1024];
 	u_int32_t idx = 0;
+	int type=0;
 
 	switch (o->type) {
 	case GO_POINT:
 	case GO_POI:
 		gp = o->gptr;
+		type = gp->type;
 		idx = gp->n;
 		sd = gp->subdiv;
 		break;
 	case GO_POLYLINE:
 	case GO_POLYGON:
 		gl = o->gptr;
+		type = gl->type;
 		idx = gl->n;
 		sd = gl->subdiv;
 		break;
+	default:
+		return NULL;
 	}
 	if (sd) {
-		snprintf(buf, sizeof(buf), "SF:%s SD:%d level=%d type=%d idx=%d",
-			sd->subfile->mapid, sd->n, sd->level, o->type, idx);
+		snprintf(buf, sizeof(buf), "SF:%s SD:%d level=%d ot=%d idx=%d type=0x%02X",
+			sd->subfile->mapid, sd->n, sd->level, o->type, idx, type);
 		return strdup(buf);
 	}
 
 	return NULL;
+}
+
+static void gar_debug_objects(struct gobject *o)
+{
+	char *cp;
+	while(o) {
+		cp = gar_object_debug_str(o);
+		if (cp) {
+			log(1, "%s\n", cp);
+			free(cp);
+		}
+		o = o->next;
+	}
 }
