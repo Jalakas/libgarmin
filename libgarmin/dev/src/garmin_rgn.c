@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "libgarmin.h"
 #include "libgarmin_priv.h"
 #include "garmin_rgn.h"
@@ -217,24 +218,26 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 	gsub->haspolylines = !!(sub->elements & 0x40);
 	gsub->haspolygons = !!(sub->elements & 0x80);
 
-	cx = (*(u_int32_t*)sub->center_lng) & 0x00FFFFFF;
+	cx = *(int *)sub->center_lng & 0x00FFFFFF;
 	gsub->icenterlng = SIGN3B(cx);
-	cy = (*(u_int32_t*)sub->center_lat) & 0x00FFFFFF;
+	cy = *(int *)sub->center_lat & 0x00FFFFFF;
 	gsub->icenterlat = SIGN3B(cy);
-	width	= sub->width << gsub->shift;
-	height	= sub->height << gsub->shift;
+	width	= sub->width & 0x7fff;
+	height	= sub->height;
+	width  <<= gsub->shift;
+	height <<= gsub->shift;
 
-	gsub->north = gsub->icenterlat + height + 1;
+	gsub->north = gsub->icenterlat + height;
 	gsub->south = gsub->icenterlat - height;
-	gsub->east  = gsub->icenterlng + width + 1;
+	gsub->east  = gsub->icenterlng + width;
 	gsub->west  = gsub->icenterlng - width;
 	if (gsub->south > gsub->north || gsub->west > gsub->east)
-	log(1, "Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
-		RAD_TO_DEG(RAD(gsub->north)),
-		RAD_TO_DEG(RAD(gsub->east)),
-		RAD_TO_DEG(RAD(gsub->south)),
-		RAD_TO_DEG(RAD(gsub->west)),
-		gsub->icenterlng, gsub->icenterlat);
+		log(1, "Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
+			GARDEG(gsub->north),
+			GARDEG(gsub->east),
+			GARDEG(gsub->south),
+			GARDEG(gsub->west),
+			gsub->icenterlng, gsub->icenterlat);
 }
 
 static struct gar_subdiv *gar_subdiv_alloc(struct gar_subfile *subf)
@@ -422,7 +425,7 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 			return -1;
 		}
 		log(10, "ML[%d] level=%d inherited=%d bits:%d nsubdiv=%d\n",
-			i, ml->ml.level, ml->ml.inherited, ml->ml.bits, ml->ml.nsubdiv);
+			i, ml->ml.level, ml->ml.inherited, ml->ml.bits, ml->ml.nsubdiv); 
 		sub->maplevels[i] = ml;
 		totalsubdivs += ml->ml.nsubdiv;
 	}
@@ -620,14 +623,53 @@ int gar_load_subfiles(struct gimg *g)
 		log(10, "TRE header: type:[%s] len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
 			tre.hsub.type, tre.hsub.length, tre.tre1_offset, tre.tre1_size,
 			tre.tre2_offset, tre.tre2_size);
+		log(10, "3B-3E[%02X][%02X][%02X][%02X]\n",
+			tre.byte0x0000003B_0x0000003E[0],
+			tre.byte0x0000003B_0x0000003E[1],
+			tre.byte0x0000003B_0x0000003E[2],
+			tre.byte0x0000003B_0x0000003E[3]);
+		log(10, "40-49[%02X][%02X][%02X][%02X]"
+			     "[%02X][%02X][%02X][%02X]"
+			     "[%02X][%02X]\n",
+			tre.byte0x00000040_0x00000049[0],
+			tre.byte0x00000040_0x00000049[1],
+			tre.byte0x00000040_0x00000049[2],
+			tre.byte0x00000040_0x00000049[3],
+			tre.byte0x00000040_0x00000049[4],
+			tre.byte0x00000040_0x00000049[5],
+			tre.byte0x00000040_0x00000049[6],
+			tre.byte0x00000040_0x00000049[7],
+			tre.byte0x00000040_0x00000049[8],
+			tre.byte0x00000040_0x00000049[9]);
+		log(10, "54-57[%02X][%02X][%02X][%02X]\n",
+			tre.byte0x00000054_0x00000057[0],
+			tre.byte0x00000054_0x00000057[1],
+			tre.byte0x00000054_0x00000057[2],
+			tre.byte0x00000054_0x00000057[3]);
+		log(10, "62-65[%02X][%02X][%02X][%02X]\n",
+			tre.byte0x00000062_0x00000065[0],
+			tre.byte0x00000062_0x00000065[1],
+			tre.byte0x00000062_0x00000065[2],
+			tre.byte0x00000062_0x00000065[3]);
+		log(10, "70-73[%02X][%02X][%02X][%02X]\n",
+			tre.byte0x00000070_0x00000073[0],
+			tre.byte0x00000070_0x00000073[1],
+			tre.byte0x00000070_0x00000073[2],
+			tre.byte0x00000070_0x00000073[3]);
+		
 		if (tre.hsub.flag & 0x80){
 			log(1, "File contains locked / encypted data. Garmin does not\n"
 				"want you to use this file with any other software than\n"
 				"the one supplied by Garmin.");
 			return -1;
 		}
-
-		sub->transparent = tre.POI_flags & 0x0002;
+		
+		log(10, "POI_flags=%04X\n",tre.POI_flags);
+		if (tre.POI_flags & (1<<1))
+			log(10, "Show street before street number\n");
+		if (tre.POI_flags & (1<<2))
+			log(10, "Show Zip before city\n");
+		sub->transparent = tre.POI_flags & 0x0001;
 		i32 = (*(u_int32_t*)tre.northbound) & 0x00FFFFFF;
 		sub->north = SIGN3B(i32);
 		i32 = (*(u_int32_t*)tre.eastbound) & 0x00FFFFFF;
@@ -637,10 +679,10 @@ int gar_load_subfiles(struct gimg *g)
 		i32 = (*(u_int32_t*)tre.westbound) & 0x00FFFFFF;
 		sub->west = SIGN3B(i32);
 		log(1, "Boundaries - North: %fC, East: %fC, South: %fC, West: %fC\n",
-			RAD_TO_DEG(RAD(sub->north)),
-			RAD_TO_DEG(RAD(sub->east)),
-			RAD_TO_DEG(RAD(sub->south)),
-			RAD_TO_DEG(RAD(sub->west)));
+			GARDEG(sub->north),
+			GARDEG(sub->east),
+			GARDEG(sub->south),
+			GARDEG(sub->west));
 #warning calculate area  area= (pi/180)R^2 |sin(lat1)-sin(lat2)| |lon1-lon2|
 		log(1, "Transparent: %s, Area: %d m\n", sub->transparent ? "Yes" : "No",
 			sub->area);
@@ -695,18 +737,22 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 {
 	struct gar_subfile *sub;
 	struct gar_rect r;
+	char buf[256];
 	int nf = 0, idx = 0;
 
 	idx = files->lastsub;
 
 	list_for_entry(sub, &g->lsubfiles, l) {
-		r.lulat = sub->north; //DEG(sub->north);
-		r.lulong = sub->west; //DEG(sub->west);
-		r.rllat = sub->south; //DEG(sub->south);
-		r.rllong = sub->east; //DEG(sub->east);
-//		gar_rect_log(8, "checking", &r);
+		if (rect) {
+			r.lulat = sub->north; //DEG(sub->north);
+			r.lulong = sub->west; //DEG(sub->west);
+			r.rllat = sub->south; //DEG(sub->south);
+			r.rllong = sub->east; //DEG(sub->east);
+			sprintf(buf, "Checking %s", sub->mapid);
+			gar_rect_log(1, buf, &r);
+		}
 		if (!rect || gar_rects_intersectboth(rect, &r)) {
-			log(15, "Found subfile %d: %p[%s]\n", nf, sub, sub->mapid);
+			log(1, "Found subfile %d: [%s]\n", nf, sub->mapid);
 			gar_rect_log(15, "subfile", &r);
 			files->subs[idx] = sub;
 			idx++;

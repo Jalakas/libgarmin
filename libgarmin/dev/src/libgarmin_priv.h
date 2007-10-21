@@ -8,8 +8,8 @@ extern log_fn glogfn;
 #define glog(g, l, x ...)	g->logfn(__FILE__, __LINE__, l, ## x)
 #define log(l, x ...)	glogfn(__FILE__, __LINE__, l, ## x)
 
-#define SIGN2B(x) (((x)>=0x8000)   ? (x)-0x10000 : (x))
-#define SIGN3B(x) (((x)>=0x800000) ? (x)-0x1000000 : (x))
+#define SIGN2B(x) (((x) < 0x8000)   ?  (x) : ((x)-0x10000))
+#define SIGN3B(x) (((x) < 0x800000) ?  (x) : ((x)-0x1000000))
 
 /**
  * container_of - cast a member of a structure out to the containing structure

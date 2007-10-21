@@ -123,7 +123,9 @@ struct hdr_tre_t
 struct tre_map_level_t
 {
 	u_int8_t  level       :4;
-	u_int8_t  bit4_6      :3;
+	u_int8_t  bit4        :1;
+	u_int8_t  bit5        :1;
+	u_int8_t  bit6        :1;
 	u_int8_t  inherited   :1;
 	u_int8_t  bits;
 	u_int16_t nsubdiv;

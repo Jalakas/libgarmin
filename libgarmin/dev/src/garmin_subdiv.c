@@ -205,7 +205,7 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 		if (x || y) {
 			gp->deltas[i].x = x << (shift);
 			gp->deltas[i].y = y << (shift);
-			log(dl, "x=%d, y=%d\n", gp->deltas[i].x, gp->deltas[i].y); 
+			//log(dl, "x=%d, y=%d\n", gp->deltas[i].x, gp->deltas[i].y); 
 			total ++;
 		}
 	}
@@ -356,7 +356,7 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	} else {
 		gp->type &= 0x7F;
 	}
-	if (0 && gp->type == 0x32)
+	if (0 &&(gp->type == 0x21 || gp->type == 0x20 || gp->type == 0x22))
 		dl = 1;
 	log(dl, "poly:%p\n", gp);
 	dp++;
@@ -376,14 +376,15 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	dp+=2;
 	gp->c.y = *(u_int16_t *)dp;
 	dp+=2;
-	log(dl, "shift=%d lat=%f, long=%f\n",
-		cshift,
-		RAD_TO_DEG(RAD((gp->c.y<<(cshift)))),
-		RAD_TO_DEG(RAD((gp->c.x<<(cshift)))));
 	gp->c.y = SIGN2B(gp->c.y);
 	gp->c.x = SIGN2B(gp->c.x);
 	gp->c.y<<=cshift;
 	gp->c.x<<=cshift;
+	log(dl, "shift=%d lat=%f, long=%f\n",
+		cshift,
+		GARDEG(gp->c.y),
+		GARDEG(gp->c.x));
+
 	if (two_byte) {
 		bs_len = *(u_int16_t*)dp;
 		dp+=2;

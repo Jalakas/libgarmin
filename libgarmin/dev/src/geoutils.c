@@ -37,7 +37,8 @@ void gar_rect_log(int l, char *pref,struct gar_rect *r)
 		return;
 	}
 	sprintf(buf,"%s%slulat=%f, lulong=%f, rllat=%f, rllong=%f\n",
-		pref, pref ? ":" : "", r->lulat, r->lulong, r->rllat, r->rllong);
+		pref, pref ? ":" : "", GARDEG(r->lulat), 
+		GARDEG(r->lulong), GARDEG(r->rllat), GARDEG(r->rllong));
 	log(l, buf);
 }
 int gar_rect_contains(struct gar_rect *r1, double lat, double lon)
