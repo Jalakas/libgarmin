@@ -118,7 +118,10 @@ garmin_object_label(struct gobject *o, struct attr *attr)
 	mr->label = gar_get_object_lbl(o);
 #warning FIXME Process label and give only the visible part
 	if (mr->label) {
-		attr->u.str = mr->label;
+		char *cp = mr->label;
+		if (*mr->label == '@' || *mr->label == '^')
+			cp++;
+		attr->u.str = cp;
 		return 1;
 	}
 	return 0;
