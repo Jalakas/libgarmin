@@ -842,7 +842,7 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 			r.rllat = sub->south; //DEG(sub->south);
 			r.rllong = sub->east; //DEG(sub->east);
 			sprintf(buf, "Checking %s", sub->mapid);
-			gar_rect_log(1, buf, &r);
+			gar_rect_log(12, buf, &r);
 		}
 		if (!rect || gar_rects_intersectboth(rect, &r)) {
 			log(1, "Found subfile %d: [%s]\n", nf, sub->mapid);
