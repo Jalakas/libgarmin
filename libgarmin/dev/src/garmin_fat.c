@@ -112,7 +112,7 @@ static int gar_add_fe(struct gimg *g, struct FATblock_t *fent)
 	memcpy(fe->filename, fent->name, 8);
 	cp = strchr(fe->filename, ' ');
 	if (!cp)
-		cp = fe->filename + 7;
+		cp = fe->filename + 8;
 	*cp++ = '.';
 	memcpy(cp, fent->type, 3);
 	cp += 3;

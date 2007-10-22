@@ -1,6 +1,6 @@
 struct fat_entry {
 	list_t l;
-	char filename[12];
+	char filename[13];
 	off_t size;
 	off_t offset;
 };
