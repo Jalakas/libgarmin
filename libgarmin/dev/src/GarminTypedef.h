@@ -61,9 +61,14 @@ struct hdr_subfile_part_t
 {
 	u_int16_t length;             ///< 0x00000000 .. 0x00000001
 	char    type[10];           ///< 0x00000002 .. 0x0000000B
-	u_int8_t  byte0x0000000C;
+	u_int8_t  byte0x0000000C;	// = 0x01
 	u_int8_t  flag;               ///< 0x0000000D
-	u_int8_t  byte0x0000000E_0x00000014[7];
+	u_int16_t year;
+	u_int8_t month;
+	u_int8_t day;
+	u_int8_t hour;
+	u_int8_t min;
+	u_int8_t sec;
 } __attribute((packed));
 
 struct hdr_rgn_t

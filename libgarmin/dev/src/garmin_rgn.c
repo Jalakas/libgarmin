@@ -47,7 +47,7 @@ static int gar_load_points_overview(struct gar_subfile *sub, struct hdr_tre_t *t
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre6_offset;
 	if (lseek(g->fd, off, SEEK_SET) != off) {
-		log(1, "Error can not seek to %ld\n", off);
+		log(1, "Error can not seek to %zd\n", off);
 		return -1;
 	}
 	rc = tre->tre6_size/tre->tre6_rec_size;
@@ -96,7 +96,7 @@ static int gar_load_polygons_overview(struct gar_subfile *sub, struct hdr_tre_t 
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre5_offset;
 	if (lseek(g->fd, off, SEEK_SET) != off) {
-		log(1, "Error can not seek to %ld\n", off);
+		log(1, "Error can not seek to %zd\n", off);
 		return -1;
 	}
 	rc = tre->tre5_size/tre->tre5_rec_size;
@@ -145,7 +145,7 @@ static int gar_load_polylines_overview(struct gar_subfile *sub, struct hdr_tre_t
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre4_offset;
 	if (lseek(g->fd, off, SEEK_SET) != off) {
-		log(1, "Error can not seek to %ld\n", off);
+		log(1, "Error can not seek to %zd\n", off);
 		return -1;
 	}
 	rc = tre->tre4_size/tre->tre4_rec_size;
@@ -261,7 +261,7 @@ static ssize_t gar_get_rgnoff(struct gar_subfile *sub, ssize_t *l)
 	int rc;
 	struct gimg *g = sub->gimg;
 	if (lseek(g->fd, rgnoff, SEEK_SET) != rgnoff) {
-		log(1, "Error can not seek to %ld\n", rgnoff);
+		log(1, "Error can not seek to %zd\n", rgnoff);
 		return -1;
 	}
 	rc = read(g->fd, &rgnhdr, sizeof(struct hdr_rgn_t));
@@ -370,7 +370,7 @@ static int gar_load_subdivs(struct gar_subfile *sub, struct hdr_tre_t *tre)
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre2_offset;
 	if (lseek(g->fd, off, SEEK_SET) != off) {
-		log(1, "Error can not seek to %ld\n", off);
+		log(1, "Error can not seek to %zd\n", off);
 		return -1;
 	}
 
@@ -402,7 +402,7 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre1_offset;
 	if (lseek(g->fd, off, SEEK_SET) != off) {
-		log(1, "Error can not seek to %ld\n", off);
+		log(1, "Error can not seek to %zd\n", off);
 		return -1;
 	}
 	nlevels = tre->tre1_size / s;
@@ -424,8 +424,9 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 			log(1, "Error reading map level %d\n", i);
 			return -1;
 		}
-		log(10, "ML[%d] level=%d inherited=%d bits:%d nsubdiv=%d\n",
-			i, ml->ml.level, ml->ml.inherited, ml->ml.bits, ml->ml.nsubdiv); 
+		log(10, "ML[%d] level=%d inherited=%d bits:%d nsubdiv=%d unkn=[%d %d %d]\n",
+			i, ml->ml.level, ml->ml.inherited, ml->ml.bits, ml->ml.nsubdiv,
+			ml->ml.bit4,ml->ml.bit5,ml->ml.bit6); 
 		sub->maplevels[i] = ml;
 		totalsubdivs += ml->ml.nsubdiv;
 	}
@@ -610,7 +611,7 @@ int gar_load_subfiles(struct gimg *g)
 			return -1;
 		}
 		if (lseek(g->fd, off, SEEK_SET) != off) {
-			log(1, "Error can not seek to %ld\n", off);
+			log(1, "Error can not seek to %zd\n", off);
 			free(sub);
 			return -1;
 		}
@@ -620,9 +621,14 @@ int gar_load_subfiles(struct gimg *g)
 			free(sub);
 			return -1;
 		}
+		gar_log_file_date(1, "TRE Created:", &tre.hsub);
 		log(10, "TRE header: type:[%s] len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
 			tre.hsub.type, tre.hsub.length, tre.tre1_offset, tre.tre1_size,
 			tre.tre2_offset, tre.tre2_size);
+		log(10, "TRE ver=[%02X] flag=[%02X]\n",
+			tre.hsub.byte0x0000000C,
+			tre.hsub.flag);
+
 		log(10, "3B-3E[%02X][%02X][%02X][%02X]\n",
 			tre.byte0x0000003B_0x0000003E[0],
 			tre.byte0x0000003B_0x0000003E[1],
@@ -684,7 +690,7 @@ int gar_load_subfiles(struct gimg *g)
 			GARDEG(sub->south),
 			GARDEG(sub->west));
 #warning calculate area  area= (pi/180)R^2 |sin(lat1)-sin(lat2)| |lon1-lon2|
-		log(1, "Transparent: %s, Area: %d m\n", sub->transparent ? "Yes" : "No",
+		log(1, "Transparent: %s, Area: %.2f m\n", sub->transparent ? "Yes" : "No",
 			sub->area);
 
 		if (sub->east == sub->west){

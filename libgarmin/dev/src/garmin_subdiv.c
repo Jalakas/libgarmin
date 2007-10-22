@@ -539,9 +539,9 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 		return -1;
 	}
 
-	log(15, "Subdiv size: %ld\n", rsize);
+	log(15, "Subdiv size: %zd\n", rsize);
 	if (lseek(g->fd, gsub->rgn_start, SEEK_SET) != gsub->rgn_start) {
-		log(1, "Error can not seek to %ld\n", gsub->rgn_start);
+		log(1, "Error can not seek to %d\n", gsub->rgn_start);
 		return -1;
 	}
 	data = calloc(rsize, sizeof(u_int8_t));
@@ -598,7 +598,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 			opgon = 0;
 		}
 	}
-	log(15, "Have: %ld objects: pnts: %s, idxpnts: %s, polyline:%s, poly:%s\n", 
+	log(15, "Have: %d objects: pnts: %s, idxpnts: %s, polyline:%s, poly:%s\n", 
 		objcnt,
 		gsub->haspoints? "yes" : "no",
 		gsub->hasidxpoints? "yes" : "no",

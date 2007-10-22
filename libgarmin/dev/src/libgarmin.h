@@ -66,7 +66,8 @@ struct gar_rect	{
 
 struct gimg;
 
-typedef void (*log_fn)(char *file, int line, int level, char *fmt, ...);
+typedef void (*log_fn)(char *file, int line, int level, char *fmt, ...)
+	__attribute__ ((format(printf,4,5)));
 struct gar *gar_init(char *tbd, log_fn l);
 void gar_free(struct gar *g);
 int gar_load_tbd(char *tdb);

@@ -100,3 +100,5 @@ struct gpoly {
 	int npoints;
 	struct gcoord *deltas;
 };
+
+void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h);

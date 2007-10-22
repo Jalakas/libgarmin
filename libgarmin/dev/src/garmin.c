@@ -33,6 +33,13 @@
 
 log_fn glogfn;
 
+void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h)
+{
+	log(l, "%s: %04d-%02d-%02d %02d:%02d:%02d\n",
+		pref, h->year, h->month, h->day,
+		h->hour, h->min, h->sec);
+}
+
 static struct gimg *gimg_alloc(struct gar *gar, char *file)
 {
 	struct gimg *g;

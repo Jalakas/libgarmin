@@ -184,7 +184,7 @@ static u_int32_t gar_lbl_offset(struct gar_subfile *sub ,u_int32_t offlbl, int t
 				int rc;
 				off = sub->lbl->offset + sub->lbl->lbl6off +  offlbl; // << sub->lbl->addrshiftpoi);
 				if (lseek(gimg->fd, off, SEEK_SET) != off) {
-					log(1, "LBL: Error can not seek to %ld\n", off);
+					log(1, "LBL: Error can not seek to %zd\n", off);
 					return 0xFFFFFFFF;
 				}
 				rc = read(gimg->fd, b, 3);
@@ -224,7 +224,7 @@ int gar_get_lbl(struct gar_subfile *sub, off_t offset, int type, u_int8_t *buf, 
 		return 0;
 
 	if (lseek(gimg->fd, off, SEEK_SET) != off) {
-		log(1, "LBL: Error can not seek to %ld\n", off);
+		log(1, "LBL: Error can not seek to %zd\n", off);
 		return -1;
 	}
 
@@ -254,6 +254,7 @@ int gar_init_lbl(struct gar_subfile *sub)
 		log(1, "LBL: Can not read header\n");
 		return -1;
 	}
+	gar_log_file_date(1, "LBL Created:", &lbl.hsub);
 	l = gar_alloc_lbl();
 	if (!l) {
 		log(1, "LBL: Out of memory\n");
@@ -314,7 +315,7 @@ static int gar_get_at(struct gar_subfile *sub, off_t offset, char *buf, int bufl
 		return -1;
 
 	if (lseek(gimg->fd, off, SEEK_SET) != off) {
-		log(1, "LBL: Error can not seek to %ld\n", off);
+		log(1, "LBL: Error can not seek to %zd\n", off);
 		return -1;
 	}
 
@@ -383,7 +384,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		off <<= lbl.addr_shift;
 		off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
 		gar_get_at(sub, off, buf, sizeof(buf));
-		log(15, "LBL: CNT[%d] off=%03X [%s]\n", idx, off, buf);
+		log(15, "LBL: CNT[%d] off=%03lX [%s]\n", idx, off, buf);
 		sub->countries[idx] = strdup(buf);
 		idx++;
 		cp += 3;
@@ -419,7 +420,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		off <<= lbl.addr_shift;
 		off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
 		gar_get_at(sub, off, buf, sizeof(buf));
-		log(15, "LBL: CNT[%d] off=%03X cnt:%d [%s]\n", idx, off, *(short *)cp,buf);
+		log(15, "LBL: CNT[%d] off=%03lX cnt:%d [%s]\n", idx, off, *(short *)cp,buf);
 		sub->regions[idx] = calloc(1, sizeof(struct region_def));
 		if (!sub->regions[idx])
 			break;
@@ -473,7 +474,7 @@ int gar_init_srch(struct gar_subfile *sub)
 			off <<= lbl.addr_shift;
 			off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
 			gar_get_at(sub, off, buf, sizeof(buf));
-			log(15, "LBL: CNT[%d] off=%03X cnt:%d region:%d [%s]\n", idx, off, *(short *)cp,sub->cities[idx]->region_idx,buf);
+			log(15, "LBL: CNT[%d] off=%03lX cnt:%d region:%d [%s]\n", idx, off, *(short *)cp,sub->cities[idx]->region_idx,buf);
 			sub->cities[idx]->label = strdup(buf);
 		}
 		idx++;
@@ -521,7 +522,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		off <<= lbl.addr_shift;
 		off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
 		gar_get_at(sub, off, buf, sizeof(buf));
-		log(15, "LBL: ZIP[%d] off=%03X [%s]\n", idx, off, buf);
+		log(15, "LBL: ZIP[%d] off=%03lX [%s]\n", idx, off, buf);
 		sub->zips[idx]->code = strdup(buf);
 		idx++;
 		cp += lbl.lbl8_rec_size;

@@ -119,7 +119,7 @@ static int gar_add_fe(struct gimg *g, struct FATblock_t *fent)
 	*cp = '\0';
 	fe->size = fent->size;
 	fe->offset = fent->blocks[0] * g->blocksize;
-	log(11, "File: [%s] size:[%ld] offset:[%ld/%08X]\n", fe->filename,
+	log(11, "File: [%s] size:[%ld] offset:[%ld/%08lX]\n", fe->filename,
 		fe->size, fe->offset,fe->offset);
 	fe1 = gar_fat_get_fe_by_name(g, fe->filename);
 	if (fe1) {
@@ -166,7 +166,7 @@ int gar_load_fat(struct gimg *g)
 	}
 	log(1, "FAT Directory\n");
 	list_for_entry(fe, &g->lfatfiles, l) {
-		log(1,"%s %d\n",fe->filename,fe->size);
+		log(1,"%s %ld\n",fe->filename,fe->size);
 	}
 
 	return count * s;
