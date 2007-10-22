@@ -450,6 +450,79 @@ static struct gar_subfile *gar_alloc_subfile(struct gimg *g, char *mapid)
 	return sub;
 }
 
+static void gar_free_region_def(struct region_def *rd)
+{
+	if (rd->name)
+		free(rd->name);
+	free(rd);
+}
+
+static void gar_free_city_def(struct city_def *cd)
+{
+	if (cd->label)
+		free(cd->label);
+	free(cd);
+}
+
+static void gar_free_zip_def(struct zip_def *zd)
+{
+	if (zd->code)
+		free(zd->code);
+	free(zd);
+}
+
+static void gar_free_subfile(struct gar_subfile *f)
+{
+	int i;
+	if (f->mapid)
+		free(f->mapid);
+	if (f->maplevels) {
+		for (i = 0; i < f->nlevels; i++) {
+			free(f->maplevels[i]);
+		}
+		free(f->maplevels);
+	}
+	if (f->fpoint)
+		free(f->fpoint);
+	if (f->fpolyline)
+		free(f->fpolyline);
+	if (f->fpolygone)
+		free(f->fpolygone);
+
+	if (f->countries) {
+		for (i = 0; i < f->ccount; i++) {
+			if (f->countries[i])
+				free(f->countries[i]);
+		}
+	}
+
+	if (f->regions) {
+		for (i = 0; i < f->rcount; i++) {
+			if (f->regions[i])
+				gar_free_region_def(f->regions[i]);
+		}
+		free(f->regions);
+	}
+
+	if (f->cities) {
+		for (i = 0; i < f->cicount; i++) {
+			if (f->cities[i])
+				gar_free_city_def(f->cities[i]);
+		}
+		free(f->cities);
+	}
+
+	if (f->zips) {
+		for (i = 0; i < f->czips; i++) {
+			if (f->zips[i])
+				gar_free_zip_def(f->zips[i]);
+		}
+		free(f->zips);
+	}
+
+	free(f);
+}
+
 static void gar_calculate_zoom_levels(struct gimg *g)
 {
 	int nbits[25];
@@ -607,23 +680,24 @@ int gar_load_subfiles(struct gimg *g)
 		off = gar_subfile_offset(sub, "TRE");
 		if (!off) {
 			log(1, "Error can not find TRE file!\n");
-			free(sub);
-			return -1;
+			goto out_err;
 		}
 		if (lseek(g->fd, off, SEEK_SET) != off) {
 			log(1, "Error can not seek to %zd\n", off);
-			free(sub);
-			return -1;
+			goto out_err;
 		}
 		rc = read(g->fd, &tre, sizeof(struct hdr_tre_t));
 		if (rc != sizeof(struct hdr_tre_t)) {
 			log(1, "Error can not read TRE header!\n");
-			free(sub);
-			return -1;
+			goto out_err;
+		}
+		if (strcmp("GARMIN TRE", tre.hsub.type)) {
+			log(1, "Invalid file type:[%s]\n", tre.hsub.type);
+			goto out_err;
 		}
 		gar_log_file_date(1, "TRE Created:", &tre.hsub);
-		log(10, "TRE header: type:[%s] len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
-			tre.hsub.type, tre.hsub.length, tre.tre1_offset, tre.tre1_size,
+		log(10, "TRE header: len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
+			tre.hsub.length, tre.tre1_offset, tre.tre1_size,
 			tre.tre2_offset, tre.tre2_size);
 		log(10, "TRE ver=[%02X] flag=[%02X]\n",
 			tre.hsub.byte0x0000000C,
@@ -667,7 +741,7 @@ int gar_load_subfiles(struct gimg *g)
 			log(1, "File contains locked / encypted data. Garmin does not\n"
 				"want you to use this file with any other software than\n"
 				"the one supplied by Garmin.");
-			return -1;
+			goto out_err;
 		}
 		
 		log(10, "POI_flags=%04X\n",tre.POI_flags);
@@ -701,7 +775,7 @@ int gar_load_subfiles(struct gimg *g)
 
 		if (gar_load_maplevels(sub, &tre)<0) {
 			log(1, "Error loading map levels!\n");
-			return -1;
+			goto out_err;
 		}
 		gar_load_polylines_overview(sub, &tre);
 		gar_load_polygons_overview(sub, &tre);
@@ -718,6 +792,9 @@ int gar_load_subfiles(struct gimg *g)
 	gar_calculate_zoom_levels(g);
 
 	return 0;
+out_err:
+	gar_free_subfile(sub);
+	return -1;
 }
 
 static struct gmap *gar_alloc_gmap(void)
