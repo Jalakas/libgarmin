@@ -53,6 +53,11 @@ int gar_init_net(struct gar_subfile *sub)
 		return -1;
 	}
 
+	if (strncmp("GARMIN NET", net.hsub.type,10)) {
+		log(1, "NET: Invalid header type: [%s]\n", net.hsub.type);
+		return -1;
+	}
+
 	ni = calloc(1, sizeof(*ni));
 	if (!ni)
 		return -1;

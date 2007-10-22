@@ -254,6 +254,10 @@ int gar_init_lbl(struct gar_subfile *sub)
 		log(1, "LBL: Can not read header\n");
 		return -1;
 	}
+	if (strncmp("GARMIN LBL", lbl.hsub.type, 10)) {
+		log(1, "LBL: Invalid header type:[%s]\n", lbl.hsub.type);
+		return -1;
+	}
 	gar_log_file_date(1, "LBL Created:", &lbl.hsub);
 	l = gar_alloc_lbl();
 	if (!l) {

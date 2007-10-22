@@ -262,10 +262,15 @@ static ssize_t gar_get_rgnoff(struct gar_subfile *sub, ssize_t *l)
 	struct gimg *g = sub->gimg;
 	if (lseek(g->fd, rgnoff, SEEK_SET) != rgnoff) {
 		log(1, "Error can not seek to %zd\n", rgnoff);
-		return -1;
+		return 0;
 	}
 	rc = read(g->fd, &rgnhdr, sizeof(struct hdr_rgn_t));
 	if (rc == sizeof(struct hdr_rgn_t)) {
+		if (strncmp("GARMIN RGN", rgnhdr.hsub.type, 10)) {
+			log(1, "RGN: Invalid header type: [%s]\n",
+				rgnhdr.hsub.type);
+			return 0;
+		}
 		*l = rgnhdr.length;
 		return rgnoff+rgnhdr.offset;
 	}
@@ -691,7 +696,7 @@ int gar_load_subfiles(struct gimg *g)
 			log(1, "Error can not read TRE header!\n");
 			goto out_err;
 		}
-		if (strcmp("GARMIN TRE", tre.hsub.type)) {
+		if (strncmp("GARMIN TRE", tre.hsub.type, 10)) {
 			log(1, "Invalid file type:[%s]\n", tre.hsub.type);
 			goto out_err;
 		}
