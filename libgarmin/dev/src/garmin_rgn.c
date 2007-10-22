@@ -656,15 +656,16 @@ int gar_load_subfiles(struct gimg *g)
 	struct hdr_tre_t tre;
 	struct gar_subfile *sub;
 	int32_t i32;
-#define MAXSUBFILES	40
-	char *imgs[MAXSUBFILES];
+	char **imgs;
 	int nimgs;
 	char *cp;
 	char buf[20];
 	int mapsets=0;
 
-	nimgs = gar_file_get_subfiles(g, imgs, MAXSUBFILES);
+	imgs = gar_file_get_subfiles(g, &nimgs);
 	log(1, "Have %d mapsets\n", nimgs);
+	if (!imgs)
+		return -1;
 	for (rc = 0; rc < nimgs; rc++) {
 		strcpy(buf, imgs[rc]);
 		cp = strchr(buf, '.');
@@ -797,8 +798,11 @@ int gar_load_subfiles(struct gimg *g)
 	gar_select_basemaps(g);
 	gar_calculate_zoom_levels(g);
 
+	free(imgs);
 	return 0;
 out_err:
+	if (imgs)
+		free(imgs);
 	gar_free_subfile(sub);
 	return -1;
 }
