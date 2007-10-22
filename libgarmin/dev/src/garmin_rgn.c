@@ -700,20 +700,20 @@ int gar_load_subfiles(struct gimg *g)
 			log(1, "Invalid file type:[%s]\n", tre.hsub.type);
 			goto out_err;
 		}
-		gar_log_file_date(1, "TRE Created:", &tre.hsub);
+		gar_log_file_date(1, "TRE Created", &tre.hsub);
 		log(10, "TRE header: len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
 			tre.hsub.length, tre.tre1_offset, tre.tre1_size,
 			tre.tre2_offset, tre.tre2_size);
-		log(10, "TRE ver=[%02X] flag=[%02X]\n",
+		log(19, "TRE ver=[%02X] flag=[%02X]\n",
 			tre.hsub.byte0x0000000C,
 			tre.hsub.flag);
 
-		log(10, "3B-3E[%02X][%02X][%02X][%02X]\n",
+		log(19, "3B-3E[%02X][%02X][%02X][%02X]\n",
 			tre.byte0x0000003B_0x0000003E[0],
 			tre.byte0x0000003B_0x0000003E[1],
 			tre.byte0x0000003B_0x0000003E[2],
 			tre.byte0x0000003B_0x0000003E[3]);
-		log(10, "40-49[%02X][%02X][%02X][%02X]"
+		log(19, "40-49[%02X][%02X][%02X][%02X]"
 			     "[%02X][%02X][%02X][%02X]"
 			     "[%02X][%02X]\n",
 			tre.byte0x00000040_0x00000049[0],
@@ -726,17 +726,17 @@ int gar_load_subfiles(struct gimg *g)
 			tre.byte0x00000040_0x00000049[7],
 			tre.byte0x00000040_0x00000049[8],
 			tre.byte0x00000040_0x00000049[9]);
-		log(10, "54-57[%02X][%02X][%02X][%02X]\n",
+		log(19, "54-57[%02X][%02X][%02X][%02X]\n",
 			tre.byte0x00000054_0x00000057[0],
 			tre.byte0x00000054_0x00000057[1],
 			tre.byte0x00000054_0x00000057[2],
 			tre.byte0x00000054_0x00000057[3]);
-		log(10, "62-65[%02X][%02X][%02X][%02X]\n",
+		log(19, "62-65[%02X][%02X][%02X][%02X]\n",
 			tre.byte0x00000062_0x00000065[0],
 			tre.byte0x00000062_0x00000065[1],
 			tre.byte0x00000062_0x00000065[2],
 			tre.byte0x00000062_0x00000065[3]);
-		log(10, "70-73[%02X][%02X][%02X][%02X]\n",
+		log(19, "70-73[%02X][%02X][%02X][%02X]\n",
 			tre.byte0x00000070_0x00000073[0],
 			tre.byte0x00000070_0x00000073[1],
 			tre.byte0x00000070_0x00000073[2],

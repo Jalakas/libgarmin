@@ -156,10 +156,6 @@ struct gimg *gar_img_load(struct gar *gar, char *file, int data)
 	rc = gar_load_fat(g);
 	if (rc == 0)
 		return NULL;
-	if (!g->dataoffset) {
-		g->dataoffset = rc + sizeof(sizeof(struct hdr_img_t));
-		log(10, "Dataoffset corrected to: %u\n", g->dataoffset);
-	}
 	if (data) {
 		gar_load_subfiles(g);
 		log(1, "Loaded %d mapsets\n", g->mapsets);

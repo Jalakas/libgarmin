@@ -102,10 +102,6 @@ static int gar_add_fe(struct gimg *g, struct FATblock_t *fent)
 		return 0;
 	}
 
-	if (fent->name[0] == '.') {
-		log(10,"Skipping root directory\n");
-		return 0;
-	}
 	fe = calloc(1, sizeof(*fe));
 	if (!fe)
 		return -1;
@@ -143,30 +139,58 @@ int gar_load_fat(struct gimg *g)
 	struct FATblock_t fent;
 	ssize_t s = sizeof(struct FATblock_t);
 	int count = 0;
-	int rc;
+	int rc, rsz = 0;
 	struct fat_entry *fe;
+	int userootdir = 0;
+	int fatend = g->dataoffset;
 
-	
-	/* Read dummy FAT entries first */
+	if (!fatend) {
+		log(10, "FAT Will use size from rootdir\n");
+		userootdir = 1;
+	} else {
+		fatend -= sizeof(struct hdr_img_t);
+		log(10, "FAT size %d\n", fatend);
+	}
+	/* Read reserved FAT entries first */
 	while ((rc = read(g->fd, &fent, s)) == s) {
 		if (fent.flag != 0x00)
 			break;
+		rsz+=rc;
 		count ++;
 	}
+	log(11, "FAT Reserved entries %d\n", count);
+	count = 0;
 	do {
-		if(fent.flag != 0x01)
+		rsz+=rc;
+		if(fent.flag != 0x01 && !fatend)
 			break;
+		if(fent.flag != 0x01 && fatend) {
+			if (fatend && rsz>=fatend)
+				break;
+			continue;
+		}
+		if (userootdir && !fatend) {
+			if (fent.name[0] == ' ' && fent.type[0] == ' ')
+				fatend = fent.size - s;
+		}
 		gar_add_fe(g, &fent);
 		count ++;
+		if (fatend && rsz>=fatend)
+			break;
 	} while ((rc = read(g->fd, &fent, s)) == s);
-	
+
 	if (!count) {
 		log(1, "Failed to read FAT\n");
 		return 0;
 	}
-	log(1, "FAT Directory\n");
+	log(1, "FAT Directory %d entries %d bytes\n", count, rsz);
 	list_for_entry(fe, &g->lfatfiles, l) {
 		log(1,"%s %ld\n",fe->filename,fe->size);
+	}
+
+	if (userootdir) {
+		g->dataoffset = fatend + sizeof(struct hdr_img_t);
+		log(1, "FAT DataOffset corrected to %d\n", g->dataoffset);
 	}
 
 	return count * s;
