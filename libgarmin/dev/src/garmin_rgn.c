@@ -187,7 +187,7 @@ static int gar_load_ml_subdata(struct gar_subfile *sub, struct gar_maplevel *ml)
 			return -1;
 		c++;
 	}
-	log(9,"Loaded %d maplevels data\n", c);
+	log(9,"Loaded %d subdivs\n", c);
 	return 0;
 }
 
@@ -201,7 +201,7 @@ static int gar_load_subdivs_data(struct gar_subfile *sub)
 		}
 		c++;
 	}
-	log(9,"Loaded %d subdivs data\n", c);
+	log(19,"Loaded %d maplevels\n", c);
 	return 0;
 }
 
@@ -213,8 +213,9 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 	gsub->terminate = sub->terminate;
 	gsub->rgn_start    = (*(u_int32_t*)(sub->rgn_offset)) & 0x00FFFFFF;
 	log(15, "rgn_start: %04X terminate=%d\n", gsub->rgn_start, gsub->terminate);
-	gsub->haspoints  = !!(sub->elements & 0x10);
-	gsub->hasidxpoints = !!(sub->elements & 0x20);
+	/* In the imgformat points and POIs are swapped*/
+	gsub->hasidxpoints = !!(sub->elements & 0x10);
+	gsub->haspoints  = !!(sub->elements & 0x20);
 	gsub->haspolylines = !!(sub->elements & 0x40);
 	gsub->haspolygons = !!(sub->elements & 0x80);
 

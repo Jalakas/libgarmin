@@ -349,6 +349,7 @@ retry:
 					first = p;
 				}
 			}
+			log(10, "Objects:%d\n", objs);
 			break;
 //			if (!first)
 //				continue;
