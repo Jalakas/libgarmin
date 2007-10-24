@@ -58,7 +58,6 @@ struct gar_lbl_t {
 	u_int32_t addrshiftpoi;
 };
 
-// MMAP file 
 struct gimg {
 	list_t l;
 	struct gar *gar;
@@ -70,6 +69,8 @@ struct gimg {
 	list_t lsubfiles;
 	int basebits;
 	int zoomlevels;
+	int minlevel;
+	int maxlevel;
 	int mapsets;
 	struct hdr_img_t hdr;
 };

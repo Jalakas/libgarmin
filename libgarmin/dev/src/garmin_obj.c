@@ -283,6 +283,10 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr)
 	return NULL;
 }
 static void gar_debug_objects(struct gobject *o);
+/*
+ XXX Make gar_get_objects_zoom and gar_get_objects_level
+ XXX to work with zoom(bits) and with levels
+ */
 
 int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect, 
 			struct gobject **ret, int flags)
@@ -294,11 +298,8 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	int objs = 0;
 	int bits,i,j, lvlobjs;
 	int nsub = 0;
-	int havedetail = 0;
-	int havebase = 0;
 	int basebits = 6;
 	int baselevel = 0;
-	int goodbase = 0;
 
 	gsub = gm->subs[0];
 	if (!gsub)
@@ -310,44 +311,11 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 		log(15, "Rect: lulong=%f lulat=%f rllong=%f rllat=%f\n",
 			rect->lulong, rect->lulat, rect->rllong, rect->rllat);
 	}
-retry:
-	for (nsub = 0; nsub < gm->lastsub ; nsub++) {
-		if (gm->subs[nsub]->basemap) {
-			gsub = gm->subs[nsub];
-			for (i = 0; i < gsub->nlevels; i++) {
-				ml = gsub->maplevels[i];
-				if (ml->ml.inherited) {
-					if (ml->ml.bits > bits)
-						bits = ml->ml.bits;
-					continue;
-				}
-				if (ml->ml.bits >= bits) {
-					basebits = ml->ml.bits;
-					baselevel = ml->ml.level;
-					goodbase = 1;
-					break;
-				}
-			}
-		}
-	}
-	if (!goodbase) {
-		bits++;
-		goto retry;
-	}
+	basebits = gm->basebits;
+	baselevel = gm->minlevel;
+
 	log(1, "Basemap bits:%d level = %d\n", basebits, baselevel);
 
-#if 0
-	if (bits > 17) {
-		for (nsub = 0; nsub < gm->lastsub ; nsub++)
-			if (!gm->subs[nsub]->basemap) {
-				havedetail = 1;
-				log(1, "Will use detailed map\n");
-				break;
-			} else {
-				havebase = 1;
-			}
-	}
-#endif
 	for (nsub = 0; nsub < gm->lastsub ; nsub++) {
 		gsub = gm->subs[nsub];
 		log(1, "Loading %s basemap:%s\n", gsub->mapid, gsub->basemap ? "yes" : "no");
@@ -406,27 +374,8 @@ nextlvl:
 			}
 
 			break;
-//			if (!first)
-//				continue;
-//			if (gsub->basemap && havedetail && ml->ml.bits > 18)
-//				break;
 		}
 	}
-	if (0 && objs == 1) {
-		/*
-		 * special case
-		 * Levels w/ just one object are used to separate
-		 * from detailed maps, happens on bits==18,
-		 * or where the inheritance starts
-		 */
-		level--;
-		if (level > -1) {
-			gar_free_objects(first);
-			first = NULL;
-			goto retry;
-		}
-	}
-	
 	if (!first) {
 		log(1, "Error no objects found\n");
 	}

@@ -48,6 +48,8 @@ struct gmap {
 	struct gar_subfile **subs;
 	int zoomlevels;
 	int basebits;
+	int minlevel;
+	int maxlevel;
 };
 
 struct gobject {

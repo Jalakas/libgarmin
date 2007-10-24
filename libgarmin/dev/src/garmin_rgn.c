@@ -560,6 +560,23 @@ static void gar_calculate_zoom_levels(struct gimg *g)
 	log(1, "Have %d levels base bits=%d bits=%d\n", i, fb, lb - fb);
 	g->basebits = fb;
 	g->zoomlevels = lb - fb;
+	g->minlevel = 100;
+	g->maxlevel = 0;
+
+	list_for_entry(sub, &g->lsubfiles, l) {
+		if (sub->basemap) {
+			for (i = 0; i < sub->nlevels; i++) {
+				ml = sub->maplevels[i];
+				if (ml->ml.inherited)
+					continue;
+				if (g->minlevel > ml->ml.level)
+					g->minlevel = ml->ml.level;
+				if (g->maxlevel < ml->ml.level)
+					g->maxlevel = ml->ml.level;
+			}
+		}
+	}
+	log(1, "Minlevel=%d Maxlevel=%d\n", g->minlevel, g->maxlevel);
 }
 
 static int gar_subfile_have_bits(struct gar_subfile *sub, int bits)
@@ -878,7 +895,13 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 		return NULL;
 	if (rect)
 		gar_rect_log(1, "looking for", rect);
+
 	list_for_entry(g, &gar->limgs,l) {
+		// FIXME for more than one image
+		files->zoomlevels = g->zoomlevels;
+		files->basebits = g->basebits;
+		files->minlevel = g->minlevel;
+		files->maxlevel = g->maxlevel;
 		rsub = realloc(files->subs, (files->subfiles + g->mapsets) * sizeof(struct gar_subfile *));
 		if (rsub) {
 			files->subs = rsub;
@@ -886,11 +909,6 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 		} else {
 			break;
 		}
-		if (g->zoomlevels > files->zoomlevels) {
-			files->zoomlevels = g->zoomlevels;
-			files->basebits = g->basebits;
-		}
-
 		fnd = gar_find_subs(files, g, rect);
 		if (fnd) {
 			if (rect) {
