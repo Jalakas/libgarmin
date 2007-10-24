@@ -590,7 +590,11 @@ static int gar_check_basemap(struct gar_subfile *sub)
 	}
 	return 0;
 }
-
+/*
+ * Is it OKAY to have more than one basemap? 
+ * may be if they do not overlap 
+ * it's not required to have X bits to be a basemap
+ */
 static int gar_select_basemaps(struct gimg *g)
 {
 	struct gar_subfile *sub;
