@@ -471,15 +471,15 @@ garmin_get_selection(struct map_rect_priv *map, struct map_selection *sel)
 	struct gmap *gm;
 	struct gobject **glast = NULL;
 	int rc;
+	int sl, el;
 	int level = 0; // 18;	/* max level for maps, overview maps can have bigger
 			   /* levels we do not deal w/ them
 			*/
 	int flags = 0;
 	if (sel && sel->order[layer_town] == 0 && sel->order[layer_poly] == 0
 		&& sel->order[layer_street]) {
-		// FIXME: use max zoom level
+		// Get all roads 
 		flags = GO_GET_ROUTABLE;
-		level = 16;
 	} else if (sel)
 		flags = GO_GET_SORTED;
 
@@ -489,7 +489,7 @@ garmin_get_selection(struct map_rect_priv *map, struct map_selection *sel)
 		r.rllat = sel->rect.rl.y;
 		r.rllong = sel->rect.rl.x;
 		level = get_level(sel);
-		level = nl2gl[level].g;
+//		level = nl2gl[level].g;
 		printf("Looking level=%d for %f %f %f %f\n",
 			level, r.lulat, r.lulong, r.rllat, r.rllong);
 	}
@@ -497,7 +497,27 @@ garmin_get_selection(struct map_rect_priv *map, struct map_selection *sel)
 	if (!gm) {
 		dlog(1, "Can not find map data\n");
 		return -1;
-	} 
+	}
+#if 0
+	sl = (18-(gm->maxlevel - gm->minlevel))/2;
+	el = sl + (gm->maxlevel - gm->minlevel);
+	if (level < sl)
+		level = sl;
+	if (level > el)
+		level = el;
+	level = level - sl;
+	level = (gm->maxlevel - gm->minlevel) - level;
+	dlog(1, "sl=%d el=%d level=%d\n", sl, el, level);
+#endif
+	sl = (18-gm->zoomlevels)/2;
+	el = sl + gm->zoomlevels;
+	if (level < sl)
+		level = sl;
+	if (level > el)
+		level = el;
+	level = level - sl;
+	level = gm->basebits + level;
+	dlog(1, "sl=%d el=%d level=%d\n", sl, el, level);
 	map->gmap = gm;
 	glast = &map->objs;
 	while (*glast) {
@@ -527,7 +547,7 @@ gmap_rect_new(struct map_priv *map, struct map_selection *sel)
 		return mr;
 	mr->mpriv = map;
 	if (!sel) {
-		return mr; //garmin_get_selection(mr, NULL);
+		return mr;
 	} else {
 		while (ms) {
 			dlog(1, "order town:%d street=%d poly=%d\n",
