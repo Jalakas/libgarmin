@@ -214,8 +214,8 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 	gsub->rgn_start    = (*(u_int32_t*)(sub->rgn_offset)) & 0x00FFFFFF;
 	log(15, "rgn_start: %04X terminate=%d\n", gsub->rgn_start, gsub->terminate);
 	/* In the imgformat points and POIs are swapped*/
-	gsub->hasidxpoints = !!(sub->elements & 0x10);
-	gsub->haspoints  = !!(sub->elements & 0x20);
+	gsub->haspoints  = !!(sub->elements & 0x10);
+	gsub->hasidxpoints = !!(sub->elements & 0x20);
 	gsub->haspolylines = !!(sub->elements & 0x40);
 	gsub->haspolygons = !!(sub->elements & 0x80);
 
@@ -232,7 +232,7 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 	gsub->south = gsub->icenterlat - height;
 	gsub->east  = gsub->icenterlng + width;
 	gsub->west  = gsub->icenterlng - width;
-	if (gsub->south > gsub->north || gsub->west > gsub->east)
+//	if (gsub->south > gsub->north || gsub->west > gsub->east)
 		log(1, "Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
 			GARDEG(gsub->north),
 			GARDEG(gsub->east),
@@ -307,7 +307,8 @@ static int gar_load_ml_subdivs(struct gar_subfile *subf, struct gar_maplevel *ml
 			gsub->n = subf->subdividx++;	// index in all subdivs
 			gsub->next = subn.next;
 			gsub->level = ml->ml.level;
-			gsub->shift = 24 - ml->ml.bits;
+			if (ml->ml.bits < 24)
+				gsub->shift = 24 - ml->ml.bits;
 			gar_parse_subdiv(gsub, &subn.tresub);
 			log(15, "idx: %d start: %04X next_rgn: %04X(%d)\n",
 			gsub->n, gsub->rgn_start,gsub->next,gsub->next);
@@ -344,7 +345,8 @@ static int gar_load_ml_subdivs(struct gar_subfile *subf, struct gar_maplevel *ml
 			gsub->n = subf->subdividx++;	// index in the level not in all
 			gsub->next = 0;
 			gsub->level = ml->ml.level;
-			gsub->shift = 24 - ml->ml.bits;
+			if (ml->ml.bits < 24)
+				gsub->shift = 24 - ml->ml.bits;
 			gar_parse_subdiv(gsub, &subl);
 			gsub->rgn_start   += rgnoff;
 			gsub->rgn_end = 0;
@@ -578,7 +580,7 @@ static int gar_subfile_have_bits(struct gar_subfile *sub, int bits)
 
 static int gar_check_basemap(struct gar_subfile *sub)
 {
-	if (gar_subfile_have_bits(sub, 18)) {
+	if (1 || gar_subfile_have_bits(sub, 18)) {
 		sub->basemap = 1;
 		log(1, "%s selected as a basemap\n", sub->mapid);
 		return 1;

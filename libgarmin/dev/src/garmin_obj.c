@@ -292,10 +292,13 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	struct gar_subdiv *gsd;
 	struct gar_subfile *gsub;
 	int objs = 0;
-	int bits,i,j;
+	int bits,i,j, lvlobjs;
 	int nsub = 0;
 	int havedetail = 0;
 	int havebase = 0;
+	int basebits = 6;
+	int baselevel = 0;
+	int goodbase = 0;
 
 	gsub = gm->subs[0];
 	if (!gsub)
@@ -308,6 +311,31 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 			rect->lulong, rect->lulat, rect->rllong, rect->rllat);
 	}
 retry:
+	for (nsub = 0; nsub < gm->lastsub ; nsub++) {
+		if (gm->subs[nsub]->basemap) {
+			gsub = gm->subs[nsub];
+			for (i = 0; i < gsub->nlevels; i++) {
+				ml = gsub->maplevels[i];
+				if (ml->ml.inherited) {
+					if (ml->ml.bits > bits)
+						bits = ml->ml.bits;
+					continue;
+				}
+				if (ml->ml.bits >= bits) {
+					basebits = ml->ml.bits;
+					baselevel = ml->ml.level;
+					goodbase = 1;
+					break;
+				}
+			}
+		}
+	}
+	if (!goodbase) {
+		bits++;
+		goto retry;
+	}
+	log(1, "Basemap bits:%d level = %d\n", basebits, baselevel);
+
 #if 0
 	if (bits > 17) {
 		for (nsub = 0; nsub < gm->lastsub ; nsub++)
@@ -324,13 +352,30 @@ retry:
 		gsub = gm->subs[nsub];
 		log(1, "Loading %s basemap:%s\n", gsub->mapid, gsub->basemap ? "yes" : "no");
 		for (i = 0; i < gsub->nlevels; i++) {
+nextlvl:
 			ml = gsub->maplevels[i];
-			if (ml->ml.inherited)
+			if (ml->ml.inherited) {
 				continue;
-			if (ml->ml.level > level)
+				if (gsub->basemap) {
+					// if it's a basemap give what we have
+					continue;
+				} else {
+					if (bits <= ml->ml.bits)
+					// if it's detail and we are not reached
+					// inheritance level skip it
+						break;
+					else
+						continue;
+				}
+			}
+//			if (ml->ml.level < baselevel)
+//					continue;
+			if (ml->ml.bits < bits) {
 				continue;
+			}
 			log(1, "Loading level:%d bits:%d\n",
 				ml->ml.level, ml->ml.bits);
+			lvlobjs = 0;
 			list_for_entry(gsd, &ml->lsubdivs, l) {
 				if (rect && !gar_subdiv_visible(gsd, rect))
 					continue;
@@ -340,6 +385,7 @@ retry:
 						gsub->mapid, gsd->n, j);
 					//gar_debug_objects(p);
 					objs += j;
+					lvlobjs += j;
 					if (first) {
 						o = p;
 						while (o->next)
@@ -349,7 +395,16 @@ retry:
 					first = p;
 				}
 			}
-			log(10, "Objects:%d\n", objs);
+			log(10, "Total objects:%d level: %d\n", objs, lvlobjs);
+			if (0 && lvlobjs < 2) {
+				// do this only if submap is transparent
+				if (i+1 < gsub->nlevels) {
+					i++;
+					// FIXME: Free parasit objects
+					goto nextlvl;
+				}
+			}
+
 			break;
 //			if (!first)
 //				continue;
@@ -357,7 +412,7 @@ retry:
 //				break;
 		}
 	}
-	if (objs == 1) {
+	if (0 && objs == 1) {
 		/*
 		 * special case
 		 * Levels w/ just one object are used to separate
@@ -518,7 +573,6 @@ int gar_object_subtype(struct gobject *o)
 	u_int8_t ret = 0;
 	switch (o->type) {
 	case GO_POINT:
-		break;
 	case GO_POI:
 		poi = o->gptr;
 		if (poi->has_subtype)

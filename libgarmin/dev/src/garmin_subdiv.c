@@ -492,7 +492,7 @@ static int gar_parse_point(u_int8_t *dp, struct gpoint **ret, int forcest)
 	if (gp->has_subtype) {
 		gp->subtype = *dp;
 		if (!forcest && gp->has_subtype)
-			log(1, "Point w/ subtype:%02X?!?!\n",gp->subtype);
+			log(1, "Point w/ type:%02X subtype:%02X?!?!\n",gp->type,gp->subtype);
 
 		*ret = gp;
 		return 9;
@@ -569,10 +569,10 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 	}
 #endif
 	// FIXME: Rename the variables opnt<->oindx
-	if (gsub->hasidxpoints) {
+	if (gsub->haspoints) {
 		opnt = (objcnt - 1) * sizeof(u_int16_t);
 	}
-	if (gsub->haspoints) {
+	if (gsub->hasidxpoints) {
 		if (opnt)
 			oidx = *dp++;
 		else
@@ -610,7 +610,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 		gsub->haspolygons? "yes" : "no");
 	log(15, "@Points: %04X, IDXPNTs: %04X, PLINES: %04X, PGONS: %04X\n",
 		opnt, oidx, opline, opgon);
-	if (gsub->hasidxpoints) {
+	if (gsub->haspoints) {
 		d = data + opnt;
 		e = data + (oidx ? oidx : opline ? opline : opgon ? opgon : rsize);
 		i = 0;
@@ -624,13 +624,15 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 			gp->n = pi++;
 			j = 1;
 			if (gp->c.x < gsub->west || gp->c.x > gsub->east) {
-				log(10, "Point out of bonds: %f, west=%f, east=%f\n",
+				log(10, "Point[%d] out of bonds: %f, west=%f, east=%f\n",
+					gp->n,
 					GARDEG(gp->c.x), GARDEG(gsub->west),
 					GARDEG(gsub->east));
 				j = 0;
 			}
 			if (gp->c.y < gsub->south || gp->c.y > gsub->north) {
-				log(10, "Point out of bonds: %f, south=%f, north=%f\n",
+				log(10, "Point[%d] out of bonds: %f, south=%f, north=%f\n",
+					gp->n,
 					GARDEG(gp->c.y), GARDEG(gsub->south),
 					GARDEG(gsub->north));
 				j = 0;
@@ -645,12 +647,12 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 			d+=rc;
 		};
 	}
-	if (gsub->haspoints) {
+	if (gsub->hasidxpoints) {
 		d = data + oidx;
 		e = data + (opline ? opline : opgon ? opgon : rsize);
 		i = 0;
 		while (d < e) {
-			rc = gar_parse_point(d, &gp, 0);
+			rc = gar_parse_point(d, &gp, 1);
 			gp->c.x <<= gsub->shift;
 			gp->c.y <<= gsub->shift;
 			gp->c.x += gsub->icenterlng;
@@ -658,13 +660,15 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 			gp->n = poii++;
 			j = 1;
 			if (gp->c.x < gsub->west || gp->c.x > gsub->east) {
-				log(1, "Poi out of bonds: %f, west=%f, east=%f\n",
+				log(1, "Poi[%d] out of bonds: %f, west=%f, east=%f\n",
+				gp->n,
 					GARDEG(gp->c.x), GARDEG(gsub->west), 
 					GARDEG(gsub->east));
 				j = 0;
 			}
 			if (gp->c.y < gsub->south || gp->c.y > gsub->north) {
-				log(1, "Poi out of bonds: %f, south=%f, north=%f\n",
+				log(1, "Poi[%d] out of bonds: %f, south=%f, north=%f\n",
+					gp->n,
 					GARDEG(gp->c.y), GARDEG(gsub->south),
 					GARDEG(gsub->north));
 				j = 0;
