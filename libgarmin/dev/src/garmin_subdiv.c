@@ -129,12 +129,11 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 	for (i=0; i < gp->npoints; i++) {
 		scasex =0;
 		x = 0;
-		reg = bsp_get_bits(bp, bpx  + si->extrabit);
+		if (si->extrabit)
+			reg = bsp_get_bits(bp, 1);
+		reg = bsp_get_bits(bp, bpx);
 		if (reg==-1)
 			goto out;
-		if (si->extrabit)
-			reg >>=si->extrabit;
-//		reg &= ~(1<<
 		if (si->x_has_sign) {
 			tmp = 0;
 			while (1) {
@@ -421,6 +420,8 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	}
 	bs_info = *dp;
 	dp++;
+	if (extra_bit)
+		dl = 11;
 #ifdef DBGEXTRA
 	if (extra_bit) {
 			u_int8_t *t = dp;

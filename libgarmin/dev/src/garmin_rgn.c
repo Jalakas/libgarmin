@@ -41,7 +41,7 @@ static int gar_load_points_overview(struct gar_subfile *sub, struct hdr_tre_t *t
 	int rc,sz,i;
 
 	if (!tre->tre6_offset) {
-		log(1, "No polygon overview records\n");
+		log(11, "No polygon overview records\n");
 		return 0;
 	}
 	off = gar_subfile_offset(sub, "TRE");
@@ -51,7 +51,7 @@ static int gar_load_points_overview(struct gar_subfile *sub, struct hdr_tre_t *t
 		return -1;
 	}
 	rc = tre->tre6_size/tre->tre6_rec_size;
-	log(1, "Have %d point overview records recsize=%d\n", rc, tre->tre6_rec_size);
+	log(11, "Have %d point overview records recsize=%d\n", rc, tre->tre6_rec_size);
 	if (rc == 0)
 		return 1;
 	sub->fpoint = calloc(rc, sizeof(struct mlfilter));
@@ -90,7 +90,7 @@ static int gar_load_polygons_overview(struct gar_subfile *sub, struct hdr_tre_t 
 	int rc,sz,i;
 
 	if (!tre->tre5_offset) {
-		log(1, "No polygon overview records\n");
+		log(11, "No polygon overview records\n");
 		return 0;
 	}
 	off = gar_subfile_offset(sub, "TRE");
@@ -100,7 +100,7 @@ static int gar_load_polygons_overview(struct gar_subfile *sub, struct hdr_tre_t 
 		return -1;
 	}
 	rc = tre->tre5_size/tre->tre5_rec_size;
-	log(1, "Have %d polygon overview records recsize=%d\n", rc, tre->tre5_rec_size);
+	log(11, "Have %d polygon overview records recsize=%d\n", rc, tre->tre5_rec_size);
 	if (rc == 0)
 		return 1;
 	sub->fpolygone = calloc(rc, sizeof(struct mlfilter));
@@ -139,7 +139,7 @@ static int gar_load_polylines_overview(struct gar_subfile *sub, struct hdr_tre_t
 	int rc,sz,i;
 
 	if (!tre->tre4_offset) {
-		log(1, "No polylines overview records\n");
+		log(11, "No polylines overview records\n");
 		return 0;
 	}
 	off = gar_subfile_offset(sub, "TRE");
@@ -149,7 +149,7 @@ static int gar_load_polylines_overview(struct gar_subfile *sub, struct hdr_tre_t
 		return -1;
 	}
 	rc = tre->tre4_size/tre->tre4_rec_size;
-	log(1, "Have %d polylines overview records recsize=%d\n", rc, tre->tre4_rec_size);
+	log(11, "Have %d polylines overview records recsize=%d\n", rc, tre->tre4_rec_size);
 	if (rc == 0)
 		return 1;
 	sub->fpolyline = calloc(rc, sizeof(struct mlfilter));
@@ -187,7 +187,7 @@ static int gar_load_ml_subdata(struct gar_subfile *sub, struct gar_maplevel *ml)
 			return -1;
 		c++;
 	}
-	log(9,"Loaded %d subdivs\n", c);
+	log(11,"Loaded %d subdivs\n", c);
 	return 0;
 }
 
@@ -233,12 +233,18 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 	gsub->east  = gsub->icenterlng + width;
 	gsub->west  = gsub->icenterlng - width;
 	if (gsub->south > gsub->north || gsub->west > gsub->east)
-		log(1, "Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
+		log(1, "Invalid Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
 			GARDEG(gsub->north),
 			GARDEG(gsub->east),
 			GARDEG(gsub->south),
 			GARDEG(gsub->west),
 			gsub->icenterlng, gsub->icenterlat);
+	log(11, "Invalid Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
+		GARDEG(gsub->north),
+		GARDEG(gsub->east),
+		GARDEG(gsub->south),
+		GARDEG(gsub->west),
+		gsub->icenterlng, gsub->icenterlat);
 }
 
 static struct gar_subdiv *gar_subdiv_alloc(struct gar_subfile *subf)
@@ -291,7 +297,7 @@ static int gar_load_ml_subdivs(struct gar_subfile *subf, struct gar_maplevel *ml
 	struct gar_subdiv *gsub = NULL;
 
 	if (!last) {
-		log(10, "Reading level:%d reading:%d\n",
+		log(11, "Reading level:%d reading:%d\n",
 				ml->ml.level, ml->ml.nsubdiv);
 		for (i=0; i < ml->ml.nsubdiv; i++) {
 			if (read(g->fd, &subn, s) != s) {
@@ -329,7 +335,7 @@ static int gar_load_ml_subdivs(struct gar_subfile *subf, struct gar_maplevel *ml
 			gsub->rgn_end = 0;
 		}
 	} else {	// level 0 are shorter
-		log(10, "Reading level:%d reading:%d\n",
+		log(11, "Reading level:%d reading:%d\n",
 				ml->ml.level, ml->ml.nsubdiv);
 		for (i=0; i < ml->ml.nsubdiv; i++) {
 			if (read(g->fd, &subl, s1) != s1) {

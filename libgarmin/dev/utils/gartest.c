@@ -2,7 +2,7 @@
 #include <stdarg.h>
 #include "libgarmin.h"
 
-static int debug = 10;
+static int debug = 15;
 static void logfn(char *file, int line, int level, char *fmt, ...)
 {
 	va_list ap;

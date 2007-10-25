@@ -191,6 +191,7 @@ static struct gobject *gar_do_order(struct gobject *objs, struct gar_objdraworde
  Objects list to sort, draw order, where to place the sorted objects
  head = 1, at head, = 0 at tail
  unknown objects are ordered in front, prio=0
+ as per pseudo docs they should not be drawn
  Polygons are sorted in front
  TODO:
  Order Polylines after polygons
