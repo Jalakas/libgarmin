@@ -368,8 +368,8 @@ static int gar_load_subdivs(struct gar_subfile *sub, struct hdr_tre_t *tre)
 	int i;
 	ssize_t off;
 	struct gar_subdiv *gsub_prev = NULL;
-	ssize_t rgnlen = 0;
-	ssize_t rgnoff = gar_get_rgnoff(sub, &rgnlen);
+	ssize_t rgnlen = sub->rgnlen;
+	ssize_t rgnoff = sub->rgnoffset;
 	int last = 0;
 	struct gimg *g = sub->gimg;
 
@@ -803,6 +803,7 @@ int gar_load_subfiles(struct gimg *g)
 		}
 		gar_init_lbl(sub);
 		gar_init_net(sub);
+		sub->rgnoffset = gar_get_rgnoff(sub, &sub->rgnlen);
 
 		if (gar_load_maplevels(sub, &tre)<0) {
 			log(1, "Error loading map levels!\n");

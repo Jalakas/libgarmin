@@ -67,6 +67,8 @@ struct gar_subfile {
 	char *mapid;
 	struct gar_lbl_t *lbl;
 	struct gar_net_info *net;
+	ssize_t rgnoffset;
+	ssize_t rgnlen;
 	int transparent:1,
 	    basemap:1;
 	double north;

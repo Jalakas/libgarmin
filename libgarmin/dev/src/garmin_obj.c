@@ -304,8 +304,14 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	gsub = gm->subs[0];
 	if (!gsub)
 		return -1;
-	bits = level;
-	log(7, "Level =%d  bits = %d subfiles:%d\n", level, bits, gm->lastsub);
+	if (flags&GO_GET_ROUTABLE) {
+		bits = 24;
+		log(7, "Looking for roads at last level: %d bits\n",
+		gm->basebits+gm->zoomlevels);
+	} else {
+		bits = level;
+		log(7, "Level =%d  bits = %d subfiles:%d\n", level, bits, gm->lastsub);
+	}
 
 	if (rect) {
 		log(15, "Rect: lulong=%f lulat=%f rllong=%f rllat=%f\n",
@@ -542,10 +548,12 @@ char *gar_object_debug_str(struct gobject *o)
 	struct gpoly *gl;
 	struct gar_subdiv *sd = NULL;
 	char buf[1024];
+	char extra[100];
 	u_int32_t idx = 0;
 	int type=0;
 	struct gcoord c;
 
+	*extra = '\0';
 	switch (o->type) {
 	case GO_POINT:
 	case GO_POI:
@@ -562,13 +570,15 @@ char *gar_object_debug_str(struct gobject *o)
 		c = gl->c;
 		idx = gl->n;
 		sd = gl->subdiv;
+		sprintf(extra, " d:%u sc:%u eb:%u",
+			gl->dir, gl->scase, gl->extrabit);
 		break;
 	default:
 		return NULL;
 	}
 	if (sd) {
-		snprintf(buf, sizeof(buf), "SF:%s SD:%d l=%d ot=%d idx=%d gt=0x%02X lng=%f lat=%f",
-			sd->subfile->mapid, sd->n, sd->level, o->type, idx, type, GARDEG(c.x), GARDEG(c.y));
+		snprintf(buf, sizeof(buf), "SF:%s SD:%d l=%d ot=%d idx=%d gt=0x%02X lng=%f lat=%f%s",
+			sd->subfile->mapid, sd->n, sd->level, o->type, idx, type, GARDEG(c.x), GARDEG(c.y), extra);
 		return strdup(buf);
 	}
 

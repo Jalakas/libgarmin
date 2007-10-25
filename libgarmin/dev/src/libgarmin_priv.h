@@ -97,7 +97,9 @@ struct gpoly {
 	struct gcoord c;
 	unsigned dir:1,
 		netlbl:1,
-		line:1;
+		line:1,
+		extrabit:1,
+		scase:1;
 	int npoints;
 	struct gcoord *deltas;
 };

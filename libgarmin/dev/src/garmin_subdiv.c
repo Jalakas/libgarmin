@@ -115,10 +115,9 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 	u_int32_t xsign, xsign2;
 	u_int32_t ysign, ysign2;
 	int i,x,y;
-	int scasex, scasey;
+	int scasex, scasey, scase = 0;
 	int total = 0;
 
-//	bpx+=si->extrabit;
 	xmask = (xmask << (32-bpx)) >> (32-bpx);
 	ymask = (ymask << (32-bpy)) >> (32-bpy);
 	xsign  = (1 << (bpx - 1));
@@ -130,10 +129,11 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 	for (i=0; i < gp->npoints; i++) {
 		scasex =0;
 		x = 0;
-		reg = bsp_get_bits(bp, bpx /* + si->extrabit*/);
+		reg = bsp_get_bits(bp, bpx  + si->extrabit);
 		if (reg==-1)
 			break;
-//		reg >>=si->extrabit;
+		if (si->extrabit)
+			reg >>=si->extrabit;
 //		reg &= ~(1<<
 		if (si->x_has_sign) {
 			tmp = 0;
@@ -209,6 +209,8 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 			total ++;
 		}
 	}
+	gp->extrabit = si->extrabit;
+	gp->scase = scase;
 	return total;
 }
 
@@ -221,7 +223,7 @@ static int bs_get_long_lat_bla(struct bsp *bp, struct sign_info_t *si, int bpx, 
 	u_int32_t xsign, xsign2;
 	u_int32_t ysign, ysign2;
 	int i,x,y;
-	int scasex, scasey;
+	int scasex, scasey, scase = 0;
 	int total = 0;
 
 	xmask = (xmask << (32-bpx)) >> (32-bpx);
@@ -247,6 +249,7 @@ static int bs_get_long_lat_bla(struct bsp *bp, struct sign_info_t *si, int bpx, 
 				if(tmp != xsign)
 					break;
 				scasex++;
+				scase = 1;
 				x += tmp - 1;
 				reg = bsp_get_bits(bp, bpx - si->extrabit);
 				if (si->extrabit)
@@ -275,6 +278,7 @@ static int bs_get_long_lat_bla(struct bsp *bp, struct sign_info_t *si, int bpx, 
 				tmp = reg & ymask;
 				if(tmp != ysign)
 					break;
+				scase = 1;
 				scasey++;
 				y += tmp - 1;
 				reg = bsp_get_bits(bp, bpy - si->extrabit);
@@ -320,6 +324,8 @@ static int bs_get_long_lat_bla(struct bsp *bp, struct sign_info_t *si, int bpx, 
 			total ++;
 		}
 	}
+	gp->extrabit = si->extrabit;
+	gp->scase = scase;
 	return total;
 }
 
@@ -446,7 +452,6 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	}
 	if (bs_len) {
 		bsp_init(&bp, dp, bs_len);
-		bpx+=si.extrabit;
 		gp->npoints = bs_get_long_lat(&bp, &si, bpx, bpy, gp, cshift,dl);
 	}
 	log(dl, "Total real coordinates: %d\n", gp->npoints);
