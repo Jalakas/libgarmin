@@ -131,7 +131,7 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 		x = 0;
 		reg = bsp_get_bits(bp, bpx  + si->extrabit);
 		if (reg==-1)
-			break;
+			goto out;
 		if (si->extrabit)
 			reg >>=si->extrabit;
 //		reg &= ~(1<<
@@ -144,6 +144,8 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 				scasex++;
 				x += tmp - 1;
 				reg = bsp_get_bits(bp, bpx);
+				if (reg==-1)
+					goto out;
 			}
 			if (tmp < xsign)
 				x += tmp;
@@ -158,6 +160,8 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 				x = -x;
 		}
 		reg = bsp_get_bits(bp, bpy);
+		if (reg==-1)
+			goto out;
 		scasey = 0;
 		y = 0;
 		if (si->y_has_sign) {
@@ -169,6 +173,8 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 				scasey++;
 				y += tmp - 1;
 				reg = bsp_get_bits(bp, bpy);
+				if (reg==-1)
+					goto out;
 			}
 			if (tmp < ysign)
 				y += tmp;
@@ -209,6 +215,7 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 			total ++;
 		}
 	}
+out:
 	gp->extrabit = si->extrabit;
 	gp->scase = scase;
 	return total;
