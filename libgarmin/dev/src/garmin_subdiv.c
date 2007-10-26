@@ -327,6 +327,24 @@ out:
 	return total;
 }
 
+static void gar_copy_source(u_int8_t *dp, u_int8_t *ep, u_int8_t **dst, int *len)
+{
+	int l;
+	int i;
+	u_int8_t *s;
+	l = ep - dp;
+	s = malloc(l);
+	if (!s)
+		return;
+	*len = l;
+	i = 0;
+	while(dp!=ep) {
+		s[i] = *dp;
+		i++;
+		dp++;
+	}
+	*dst = s;
+}
 
 static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int line, int *ok, int cshift)
 {
@@ -351,6 +369,8 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	if (!gp)
 		return -1;
 	list_init(&gp->l);
+//	if (line)
+//		gar_copy_source(dp,ep, &gp->source, &gp->slen);
 	gp->type = *dp;
 	two_byte = gp->type & 0x80;
 
@@ -363,7 +383,6 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	}
 	if (0 &&(gp->type == 0x21 || gp->type == 0x20 || gp->type == 0x22))
 		dl = 1;
-	log(dl, "poly:%p\n", gp);
 	dp++;
 	lbloffset = *(u_int32_t *)dp;
 	lbloffset &= 0x00FFFFFF;
@@ -430,7 +449,7 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	log(dl ,"%d/%d bits per long/lat  len=%d extra_bit=%d\n", 
 		bpx, bpy, bs_len, extra_bit);
 //	cnt = 2 + ((bs_len*8)-si.sign_info_bits)/(bpx+bpy-2*si.extrabit);
-	cnt = 2 + ((bs_len*8)-si.sign_info_bits)/(bpx+bpy+si.extrabit);
+	cnt = 2 + ((bs_len*8)-si.sign_info_bits)/(bpx+bpy/*+si.extrabit*/);
 	log(dl, "Total coordinates: %d\n", cnt);
 	gp->deltas = calloc(cnt, sizeof(struct gcoord));
 	if (!gp->deltas) {

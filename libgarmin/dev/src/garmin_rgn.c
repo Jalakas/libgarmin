@@ -219,9 +219,9 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 	gsub->haspolylines = !!(sub->elements & 0x40);
 	gsub->haspolygons = !!(sub->elements & 0x80);
 
-	cx = *(int *)sub->center_lng & 0x00FFFFFF;
+	cx = *(unsigned int *)sub->center_lng & 0x00FFFFFF;
 	gsub->icenterlng = SIGN3B(cx);
-	cy = *(int *)sub->center_lat & 0x00FFFFFF;
+	cy = *(unsigned int *)sub->center_lat & 0x00FFFFFF;
 	gsub->icenterlat = SIGN3B(cy);
 	width	= sub->width & 0x7fff;
 	height	= sub->height;
@@ -239,7 +239,7 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 			GARDEG(gsub->south),
 			GARDEG(gsub->west),
 			gsub->icenterlng, gsub->icenterlat);
-	log(11, "Invalid Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
+	log(11, "Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
 		GARDEG(gsub->north),
 		GARDEG(gsub->east),
 		GARDEG(gsub->south),
@@ -364,8 +364,6 @@ static int gar_load_ml_subdivs(struct gar_subfile *subf, struct gar_maplevel *ml
 			*gsub_prev = gsub;
 		}
 	}
-//	if (gsub_prev)
-//		gsub_prev->rgn_end = /*rgnoff + */gar_file_size(g, "RGN");
 	return 0;
 }
 

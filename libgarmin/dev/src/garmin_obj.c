@@ -552,6 +552,8 @@ char *gar_object_debug_str(struct gobject *o)
 	u_int32_t idx = 0;
 	int type=0;
 	struct gcoord c;
+	unsigned char *src = NULL;
+	int slen = 0;
 
 	*extra = '\0';
 	switch (o->type) {
@@ -562,6 +564,8 @@ char *gar_object_debug_str(struct gobject *o)
 		c = gp->c;
 		idx = gp->n;
 		sd = gp->subdiv;
+		src = gp->source;
+		slen = gp->slen;
 		break;
 	case GO_POLYLINE:
 	case GO_POLYGON:
@@ -572,6 +576,8 @@ char *gar_object_debug_str(struct gobject *o)
 		sd = gl->subdiv;
 		sprintf(extra, " d:%u sc:%u eb:%u",
 			gl->dir, gl->scase, gl->extrabit);
+		src = gl->source;
+		slen = gl->slen;
 		break;
 	default:
 		return NULL;
@@ -581,7 +587,12 @@ char *gar_object_debug_str(struct gobject *o)
 			sd->subfile->mapid, sd->n, sd->level, o->type, idx, type, GARDEG(c.x), GARDEG(c.y), extra);
 		return strdup(buf);
 	}
-
+	if (src) {
+		int i;
+		for (i=0; i < slen; i++)
+			log(1, "%02X ", src[i]);
+		log(1, "\n");
+	}
 	return NULL;
 }
 
