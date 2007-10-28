@@ -114,7 +114,7 @@ static int gar_xor_dir(char *path)
 int main(int argc, char **argv)
 {
 	if (argc != 3) {
-		fprintf(stderr, "usage: %s infile outfile\n", argv[0]);
+		fprintf(stderr, "usage: %s infile outfile | -d directory\n", argv[0]);
 		return -1;
 	}
 	if (!strcmp(argv[1], "-d")) {
