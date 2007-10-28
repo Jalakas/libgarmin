@@ -30,6 +30,7 @@
 #include "garmin_fat.h"
 #include "garmin_rgn.h"
 #include "garmin_lbl.h"
+#include "garmin_tdb.h"
 
 log_fn glogfn;
 
@@ -75,14 +76,6 @@ struct gar *gar_init(char *tbd, log_fn l)
 
 	log(1, "libgarmin initializing ...\n");
 	list_init(&gar->limgs);
-	if (tbd) {
-		gar->filetdb = strdup(tbd);
-		if (!gar->filetdb) {
-			log(1,"Out of memory!\n");
-			free(gar);
-			return NULL;
-		}
-	}
 	return gar;
 }
 
@@ -91,15 +84,11 @@ void gar_free(struct gar *g)
 	log(1, "Implement me\n");
 }
 
-int gar_load_tbd(char *tdb)
-{
-	return -1;
-}
-
 static int gar_load_img_hdr(struct gimg *g)
 {
 	int rc;
-	rc = read(g->fd, &g->hdr, sizeof(struct hdr_img_t));
+	struct hdr_img_t hdr;
+	rc = read(g->fd, &hdr, sizeof(struct hdr_img_t));
 	if (rc < 0) {
 		log(7, "Read error: %d(%s)\n", errno, strerror(errno));
 		return -1;
@@ -109,57 +98,104 @@ static int gar_load_img_hdr(struct gimg *g)
 			sizeof(struct hdr_img_t), rc);
 		return -1;
 	}
-	if (g->hdr.xorByte != 0) {
+	if (hdr.xorByte != 0) {
 		log(1, "Please, xor the file key:%02X, use garxor\n",
-					g->hdr.xorByte);
+					hdr.xorByte);
 		return -1;
 	}
-	if (strncmp(g->hdr.signature,"DSKIMG",6)) {
-		log(1, "Invalid signature: [%s]\n",g->hdr.signature);
+	if (strncmp(hdr.signature,"DSKIMG",6)) {
+		log(1, "Invalid signature: [%s]\n", hdr.signature);
 		return -1;
 	}
-	if (strncmp(g->hdr.identifier,"GARMIN",6)) {
-		log(1, "Invalid identifier: [%s]\n",g->hdr.identifier);
+	if (strncmp(hdr.identifier,"GARMIN",6)) {
+		log(1, "Invalid identifier: [%s]\n", hdr.identifier);
 		return -1;
 	}
 	log(10, "File: [%s]\n", g->file);
-	log(10, "Desc1:[%s]\n", g->hdr.desc1);
-	log(10, "Desc2:[%s]\n", g->hdr.desc2);
-	g->blocksize = get_blocksize(&g->hdr);
+	log(10, "Desc1:[%s]\n", hdr.desc1);
+	log(10, "Desc2:[%s]\n", hdr.desc2);
+	g->blocksize = get_blocksize(&hdr);
 	log(10, "Blocksize: %u\n", g->blocksize);
-	g->dataoffset = g->hdr.dataoffset;
+	g->dataoffset = hdr.dataoffset;
 	log(10, "Dataoffset: %u[%08X]\n", g->dataoffset,g->dataoffset);
 	return 1;
 }
 
-struct gimg *gar_img_load(struct gar *gar, char *file, int data)
+int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data)
 {
 	struct gimg *g;
 	int rc;
 	g = gimg_alloc(gar, file);
 	if (!g) {
 		log(1,"Out of memory!\n");
-		return NULL;
+		return -1;
 	}
 
 	g->file = strdup(file);
 	g->fd = open(file, O_RDONLY);
 	if (g->fd < 0) {
 		log(1, "Can not open file: [%s]\n", g->file);
-		return NULL;
+		return -1;
 	}
 	if (gar_load_img_hdr(g) < 0) {
 		log(1, "Failed to load header from: [%s]\n", g->file);
-		return NULL;
+		return -1;
 	}
 
 	rc = gar_load_fat(g);
 	if (rc == 0)
-		return NULL;
+		return -1;
 	if (data) {
 		gar_load_subfiles(g);
 		log(1, "Loaded %d mapsets\n", g->mapsets);
 	}
 	list_append(&g->l, &gar->limgs);
-	return g;
+	return 1;
+}
+
+static int gar_is_gmapsupp(char *file)
+{
+	int rc, fd;
+	struct hdr_img_t hdr;
+	unsigned char *cp;
+	fd = open(file, O_RDONLY);
+	if (fd < 0)
+		return -1;
+	rc = read(fd, &hdr, sizeof(struct hdr_img_t));
+	close(fd);
+	if (rc < 0) {
+		log(7, "Read error: %d(%s)\n", errno, strerror(errno));
+		return -1;
+	}
+	if (rc != sizeof(struct hdr_img_t)) {
+		log(11, "Error reading header want %d got %d\n",
+			sizeof(struct hdr_img_t), rc);
+		return 0;
+	}
+	if (hdr.xorByte != 0) {
+		cp = (unsigned char *)&hdr;
+		for (rc = 0; rc < sizeof(struct hdr_img_t); rc++) {
+			*cp = *cp ^ hdr.xorByte;
+			cp++;
+		}
+	}
+	if (strncmp(hdr.signature,"DSKIMG",6)) {
+		return 0;
+	}
+	if (strncmp(hdr.identifier,"GARMIN",6)) {
+		return 0;
+	}
+
+	return 1;
+}
+
+int gar_img_load(struct gar *gar, char *file, int data)
+{
+	if (gar_is_gmapsupp(file) == 1) {
+		log(1, "Loading %s as disk image\n", file);
+		return gar_img_load_dskimg(gar, file, 0, data);
+	} else {
+		log(1, "Loading %s as TDB\n", file);
+		return gar_parse_tdb(gar, file, data);
+	}
 }

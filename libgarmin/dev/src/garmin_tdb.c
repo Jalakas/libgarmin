@@ -4,30 +4,53 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <string.h>
 #include "libgarmin.h"
 #include "libgarmin_priv.h"
 #include "GarminTypedef.h"
+#include "garmin_tdb.h"
 
 #define GAR4DEG(x) ((double)(x)* 360.0 / (1<<31))
 
-int gar_parse_tdb(char *file)
+/*
+ * XXX: Use TDB for lookups
+ */
+
+static int gar_tdb_load_img(struct gar *gar, char *file, int basemap, int data)
+{
+	char path[4096];
+	int rc;
+
+	if (!gar->tdbdir) {
+		log(1, "Trying to load [%s] but not TDB header seen yet\n", file);
+		return -1;
+	}
+	sprintf(path, "%s/%s.img", gar->tdbdir, file);
+	rc =  gar_img_load_dskimg(gar, path, 0, data);
+	if (rc < 0)
+		log(1, "Failed to load [%s]\n", path);
+	return rc;
+}
+
+int gar_parse_tdb(struct gar *gar, char *file, int data)
 {
 	int fd, rc;
 	u_int16_t s,t;
-	u_int8_t b;
-	char *buf, *cp;
+	char *buf, *cp, *tp;
 	unsigned char *uc;
 	struct tdb_block block;
 	int version = 0;
-	int sz,c;
+	int c;
+	int havebase = -1;
 	float north, south, east, west;
+	char imgname[128];
 	fd = open(file, O_RDONLY);
 	if (fd <0) {
 		return -1;
 	}
 	while (read(fd, &block, sizeof(struct tdb_block)) == 
 				sizeof(struct tdb_block)) {
-		printf("Block type: %02X size=%d\n", block.id, block.size);
+		log(11,"Block type: %02X size=%d\n", block.id, block.size);
 		buf = malloc(block.size);
 		if (!buf) {
 			break;
@@ -38,50 +61,66 @@ int gar_parse_tdb(char *file)
 		cp = buf;
 		switch (block.id) {
 			case TDB_HEADER:
-				printf("ProductID: %d\n", *(u_int16_t *)cp);
-				printf("Unknown: %d\n", *(u_int16_t *)(cp+2));
-				printf("TDB Version: %.2f\n", (*(u_int16_t *)(cp+4))/100.0);
+				log(10, "ProductID: %d\n", *(u_int16_t *)cp);
+				log(11, "Unknown: %d\n", *(u_int16_t *)(cp+2));
+				log(1, "TDB Version: %.2f\n", (*(u_int16_t *)(cp+4))/100.0);
 				version = (*(u_int16_t *)(cp+4))/100.0;
-				printf("Map Series Name: [%s]\n", cp+16);
+				log(1, "Map Series Name: [%s]\n", cp+16);
 				cp+=16+strlen(cp+16) + 1;
-				printf("Version: %.2f\n", (*(u_int16_t *)cp)/100.0);
-				printf("Map Family: [%s]\n", cp+2);
-				printf("Left bytes: %d\n", block.size - (cp - buf));
+				log(1, "Version: %.2f\n", (*(u_int16_t *)cp)/100.0);
+				log(1, "Map Family: [%s]\n", cp+2);
+				log(11, "Left bytes: %d\n", block.size - (cp - buf));
+				if (version != 3 && version != 4) {
+					log(1, "Unsupported TDB version\n");
+					close(fd);
+					return -1;
+				}
+				gar->tdbdir = strdup(file);
+				tp = strrchr(gar->tdbdir, '/');
+				if (tp)
+					*tp = '\0';
+				else
+					*gar->tdbdir = '\0';
+				gar->tdbloaded = 1;
 				break;
 			case TDB_COPYRIGHT:
-				printf("Map copyrights:\n");
+				log(1, "Map copyrights:\n");
 				while (cp < buf+block.size) {
-					printf("%s\n", cp+4);
+					log(1, "%s\n", cp+4);
 					cp+=4+strlen(cp+4) + 1;
 				}
-				printf("Left bytes: %d\n", block.size - (cp - buf));
+				log(11, "Left bytes: %d\n", block.size - (cp - buf));
 				break;
 			case TDB_TRADEMARK:
-				printf("Map TradeMarks:\n");
+				log(1, "Map TradeMarks:\n");
 				while (cp < buf+block.size) {
-					printf("[%02X][%02X][%02X]%s\n",
-						*cp, *(cp+1), *(cp+2), cp + 3);
-					cp+=3+ strlen(cp+3) + 1;
+					log(1, "[%02X]%s\n",
+						*cp, cp + 1);
+					cp+=1+ strlen(cp+1) + 1;
 				}
-				printf("Left bytes: %d\n", block.size - (cp - buf));
+				log(11, "Left bytes: %d\n", block.size - (cp - buf));
 				break;
 			case TDB_REGIONS:
-				printf("Map Regions:\n");
+				log(1, "Covered Regions:\n");
 				while (cp < buf+block.size) {
-					printf("[%02X][%02X]%s\n", *cp, *(cp+1),cp+2);
+					log(1, "[%02X][%02X]%s\n", *cp, *(cp+1),cp+2);
 					cp+=2+strlen(cp+2) + 1;
 				}
-				printf("Left bytes: %d\n", block.size - (cp - buf));
+				log(1, "Left bytes: %d\n", block.size - (cp - buf));
 				break;
 			case TDB_BASEMAP:
 				if (version == 3) {
-					printf("BaseMap number: %08u\n", *(u_int32_t *)cp);
-					printf("Parent map: %08u\n", *(u_int32_t *)cp+4);
+					log(1, "BaseMap number: %08u\n", *(u_int32_t *)cp);
+					log(11, "Parent map: %08u\n", *(u_int32_t *)cp+4);
 				} else if (version == 4) {
 					uc = cp;
-					printf("BaseMap number: [%02X][%02X][%02X][%02X]\n", *uc, *(uc+1), *(uc+2), *(uc+3));
-					printf("Parent map: [%02X][%02X][%02X][%02X]\n", *(uc+4), *(uc+5), *(uc+6), *(uc+7));
+					log(1, "BaseMap number: [%02X][%02X][%02X][%02X]\n", *uc, *(uc+1), *(uc+2), *(uc+3));
+					log(11, "Parent map: [%02X][%02X][%02X][%02X]\n", *(uc+4), *(uc+5), *(uc+6), *(uc+7));
+				} else {
+					log(1, "Unknown TDB version\n");
+					break;
 				}
+				havebase = 1;
 				if (version == 3) {
 					north = GAR4DEG(*(u_int32_t *)(cp+8));
 					east = GAR4DEG(*(u_int32_t *)(cp+0xc));
@@ -97,22 +136,35 @@ int gar_parse_tdb(char *file)
 					c = *(int32_t *)(cp+20) >> 8;
 					west = GARDEG(c);
 				} else {
-					printf("Unknown version:%d\n", version);
+					log(1, "Unknown TDB version:%d\n", version);
+					break;
 				}
-				printf("North: %f\n", north);
-				printf("West: %f\n", west);
-				printf("South: %f\n", south);
-				printf("East: %f\n", east);
+				log(9, "North: %f\n", north);
+				log(9, "West: %f\n", west);
+				log(9, "South: %f\n", south);
+				log(9, "East: %f\n", east);
 				cp+= 0x18;
 				if (cp < buf+block.size) {
-					printf("Descr:[%s]\n", cp);
+					log(9, "Descr:[%s]\n", cp);
 					cp += strlen(cp) + 1;
 				}
-				printf("Left bytes: %d\n", block.size - (cp - buf));
+				log(11, "Left bytes: %d\n", block.size - (cp - buf));
+				tp = strrchr(file, '/');
+				if (tp) {
+					sprintf(imgname, "%s", tp+1);
+				} else {
+					strncpy(imgname, file, sizeof(imgname)-1);
+					imgname[sizeof(imgname)-1] = '\0';
+				}
+				tp = strrchr(imgname, '.');
+				if (tp)
+					*tp = '\0';
+				gar_tdb_load_img(gar, imgname, 1, data);
 				break;
 			case TDB_DETAILMAP:
-				printf("DetailMap number: %08u\n", *(u_int32_t *)cp);
-				printf("Parent map: %08u\n", *(u_int32_t *)cp+4);
+				log(1, "DetailMap number: %08u\n", *(u_int32_t *)cp);
+				sprintf(imgname, "%08u", *(u_int32_t *)cp);
+				log(11, "Parent map: %08u\n", *(u_int32_t *)cp+4);
 				if (version == 3) {
 					north = GAR4DEG(*(u_int32_t *)(cp+8));
 					east = GAR4DEG(*(u_int32_t *)(cp+0xc));
@@ -132,41 +184,51 @@ int gar_parse_tdb(char *file)
 					c = SIGN3B(c);
 					west = GARDEG(c);
 				} else {
-					printf("Unknown version:%d\n", version);
+					log(1, "Unknown TDB version:%d\n", version);
+					break;
 				}
-				printf("North: %f\n", north);
-				printf("West: %f\n", west);
-				printf("South: %f\n", south);
-				printf("East: %f\n", east);
+				log(9, "North: %f\n", north);
+				log(9, "West: %f\n", west);
+				log(9, "South: %f\n", south);
+				log(9, "East: %f\n", east);
 				cp+= 0x18;
 				if (cp < buf+block.size) {
-					printf("Descr:[%s]\n", cp);
+					log(9, "Descr:[%s]\n", cp);
 					cp += strlen(cp) + 1;
 				}
 				t = *(u_int16_t*)cp;
-				printf("blocks: %04X\n", *(u_int16_t*)cp);
+				log(15, "blocks: %04X\n", *(u_int16_t*)cp);
 				cp+=2;
 				s = *(u_int16_t*)cp;
-				printf("data: %04X\n", *(u_int16_t*)cp);
+				log(15, "data: %04X\n", *(u_int16_t*)cp);
 				cp+=2;
 				while (s--) {
-					printf("size: %08u\n", *(u_int32_t*)cp);
+					log(15, "size: %08u\n", *(u_int32_t*)cp);
 					cp+=4;
 				}
 				if (0 && version == 4) {
-					printf("file:[%s]\n", cp);
+					log(15, "file:[%s]\n", cp);
 					cp += strlen(cp) + 1;
 				}
-				printf("term: %02X\n", *cp);
+				log(15, "term: %02X\n", *cp);
 				cp++;
-				printf("Left bytes: %d\n", block.size - (cp - buf));
+				log(11, "Left bytes: %d\n", block.size - (cp - buf));
+				gar_tdb_load_img(gar, imgname, 0, data);
 				break;
-				
+			case TDB_TAIL:
+				log(1, "TDB Tail block\n");
+				for (c=0; c < block.size; c++) {
+					log(11, "[%02X]\n", *(unsigned char *)cp);
+					cp++;
+				}
+				break;
 			default:
-				printf("Unknown block 0x%02X\n", block.id);
+				log(1, "Unknown TDB block ID:0x%02X\n", block.id);
 		}
 		free(buf);
 	}
+	close(fd);
+	return havebase;
 }
 
 #ifdef STANDALONE

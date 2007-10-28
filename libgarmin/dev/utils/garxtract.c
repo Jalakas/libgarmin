@@ -37,6 +37,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s garmin.img file\n", argv[0]);
 		return -1;
 	}
+#warning FIXME gar_img_load returns int find the image in the list
 	gar = get_gar();
 	g= gar_img_load(gar, argv[1], 0);
 	if (g) {

@@ -212,8 +212,10 @@ static void gar_copy_source(u_int8_t *dp, int l, u_int8_t **dst, int *len)
 {
 	int i;
 	u_int8_t *s;
-	if (l>512) {
+	if (l>2048) {
 		log(1, "dp=%p len=%d\n", dp, l);
+		log(1, "Aborting ...\n");
+		sync();
 		abort();
 		return;
 	}

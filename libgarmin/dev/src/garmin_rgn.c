@@ -775,7 +775,7 @@ int gar_load_subfiles(struct gimg *g)
 		if (tre.hsub.flag & 0x80){
 			log(1, "File contains locked / encypted data. Garmin does not\n"
 				"want you to use this file with any other software than\n"
-				"the one supplied by Garmin.");
+				"the one supplied by Garmin.\n");
 			goto out_err;
 		}
 		
@@ -874,12 +874,12 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 			gar_rect_log(12, buf, &r);
 		}
 		if (!rect || gar_rects_intersectboth(rect, &r)) {
-			log(1, "Found subfile %d: [%s]\n", nf, sub->mapid);
+			log(1, "Found subfile %d: [%s]\n", idx, sub->mapid);
 			gar_rect_log(15, "subfile", &r);
 			files->subs[idx] = sub;
 			idx++;
 			nf++;
-			if (idx == files->subfiles)
+			if (idx == files->subfiles )
 				break;
 		}
 	}
@@ -911,7 +911,7 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 		rsub = realloc(files->subs, (files->subfiles + g->mapsets) * sizeof(struct gar_subfile *));
 		if (rsub) {
 			files->subs = rsub;
-			files->subfiles =+ g->mapsets;
+			files->subfiles += g->mapsets;
 		} else {
 			break;
 		}

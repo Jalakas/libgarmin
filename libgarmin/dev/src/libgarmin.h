@@ -72,8 +72,7 @@ typedef void (*log_fn)(char *file, int line, int level, char *fmt, ...)
 	__attribute__ ((format(printf,4,5)));
 struct gar *gar_init(char *tbd, log_fn l);
 void gar_free(struct gar *g);
-int gar_load_tbd(char *tdb);
-struct gimg *gar_img_load(struct gar *gar, char *file, int data);
+int gar_img_load(struct gar *gar, char *file, int data);
 struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect);
 void gar_free_gmap(struct gmap *g);
 int gar_get_zoomlevels(struct gar_subfile *sub);

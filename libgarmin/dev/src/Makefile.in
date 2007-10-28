@@ -65,7 +65,8 @@ am_libgarmin_a_OBJECTS = garmin_fat.$(OBJEXT) bsp.$(OBJEXT) \
 	garmin_subdiv.$(OBJEXT) garmin_lbl.$(OBJEXT) \
 	garmin_typ.$(OBJEXT) list.$(OBJEXT) garmin_obj.$(OBJEXT) \
 	geoutils.$(OBJEXT) garmin.$(OBJEXT) garmin_rgn.$(OBJEXT) \
-	garmin_order.$(OBJEXT) garmin_net.$(OBJEXT)
+	garmin_order.$(OBJEXT) garmin_net.$(OBJEXT) \
+	garmin_tdb.$(OBJEXT)
 libgarmin_a_OBJECTS = $(am_libgarmin_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -172,7 +173,8 @@ libgarmin_a_SOURCES = GarminTypedef.h  garmin_fat.c  garmin_rgn.h \
 		garmin_obj.c  geoutils.c list.h \
 		garmin.c garmin_rgn.c  geoutils.h \
 		garmin_order.c garmin_order.h	\
-		garmin_net.c garmin_net.h
+		garmin_net.c garmin_net.h	\
+		garmin_tdb.c garmin_tdb.h
 
 include_HEADERS = libgarmin.h
 all: all-am
@@ -257,6 +259,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garmin_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garmin_rgn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garmin_subdiv.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garmin_tdb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/garmin_typ.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geoutils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
