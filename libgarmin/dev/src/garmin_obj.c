@@ -542,6 +542,15 @@ int gar_object_subtype(struct gobject *o)
 	return ret;
 }
 
+static void gar_log_source(u_int8_t *src, int len)
+{
+	char buf[len*3+1];
+	int i,sz = 0;
+	for (i=0; i < len; i++)
+		sz += sprintf(buf+sz, "%02X ", src[i]);
+	log(1, "SRC:[%s]\n", buf);
+}
+
 char *gar_object_debug_str(struct gobject *o)
 {
 	struct gpoint *gp;
@@ -574,24 +583,21 @@ char *gar_object_debug_str(struct gobject *o)
 		c = gl->c;
 		idx = gl->n;
 		sd = gl->subdiv;
-		sprintf(extra, " d:%u sc:%u eb:%u",
-			gl->dir, gl->scase, gl->extrabit);
+		sprintf(extra, " d:%u sc:%u eb:%u dt:%d",
+			gl->dir, gl->scase, gl->extrabit, gl->npoints);
 		src = gl->source;
 		slen = gl->slen;
 		break;
 	default:
 		return NULL;
 	}
+	if (src) {
+		gar_log_source(src, slen);
+	}
 	if (sd) {
 		snprintf(buf, sizeof(buf), "SF:%s SD:%d l=%d ot=%d idx=%d gt=0x%02X lng=%f lat=%f%s",
 			sd->subfile->mapid, sd->n, sd->level, o->type, idx, type, GARDEG(c.x), GARDEG(c.y), extra);
 		return strdup(buf);
-	}
-	if (src) {
-		int i;
-		for (i=0; i < slen; i++)
-			log(1, "%02X ", src[i]);
-		log(1, "\n");
 	}
 	return NULL;
 }

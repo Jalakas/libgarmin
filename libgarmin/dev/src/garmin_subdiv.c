@@ -19,6 +19,7 @@
 
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <malloc.h>
 #include <string.h>
 #include <sys/types.h>
@@ -116,79 +117,161 @@ static int count_bits(unsigned int a)
 	return bc;
 }
 
-#if 0
-static void print_bits(unsigned int a)
+static void print_bits_cnt(unsigned int a, int l)
 {
 	int i;
-	int sp = 0;
-	for (i = 31; i >= 0; i--) {
-		if (!sp) {
-			if (a & (1<<i))
-				sp = 1;
-		}
-		if (sp) {
-			log(25,"%d", !!(a & (1<<i)));
-		}
+	char buf[100];
+	int sz = 0;
+	for (i = l -1; i >= 0; i--) {
+			sz += sprintf(buf+sz, "%d", !!(a & (1<<i)));
 	}
-	log(25,"\n");
-}
-#endif
-
-static int bs_get_extra(int x, int eb)
-{
-	int b;
-	b = count_bits(x);
-//	printf("bits:%d x = %d\n", b, x);
-	if (!eb) {
-		if (b > 1) {
-			if ((b&1))
-				x -= 1;
-			else
-				x += 1;
-		} else if (0){
-			if (x < (1<<3))
-				x -= 1;
-		}
-	} else {
-		if ( b > 1) {
-			if ((b&1))
-				x += 1;
-			else
-				x -= 1;
-		}
-	}
-	b = count_bits(x);
-//	printf("x bits:%d x= %d\n", b,x);
-	return x;
+	log(12,"%s\n", buf);
 }
 
-static int bs_get_extra_y(int x, int eb)
+static int bs_get_long_lat_extra(struct bsp *bp, struct sign_info_t *si, int bpx, int bpy, struct gpoly *gp, int shift, int dl)
 {
-	int b;
-	b = count_bits(x);
-//	printf("bits:%d y = %d\n", b, x);
-	if (!eb) {
-		if (b > 1) {
-			if (!(b&1))
-				x -= 1;
-			else
-				x += 1;
-		} else if (0){
-			if (x < (1<<3))
-				x -= 1;
+	u_int32_t reg;
+	u_int32_t xmask = ~0;
+	u_int32_t ymask = ~0;
+	u_int32_t xsign, xsign2;
+	u_int32_t ysign, ysign2;
+	int scasex = 0, scasey = 0;
+	int x,y;
+	int total = 0;
+	int eb;
+	int bc;
+
+	xmask = (xmask << (32-bpx));
+	xmask >>= (32-bpx);
+	ymask = (ymask << (32-bpy));
+	ymask >>= (32-bpy);
+	xsign  = (1 << (bpx - 1));
+	ysign  = (1 << (bpy - 1));
+	xsign2  = xsign<<1;
+	ysign2  = ysign<<1;
+	log(12, "xsign=%d xmask=%d\n", xsign, xmask);
+	reg = bsp_get_bits(bp, si->sign_info_bits);
+	eb = 0;
+	while (42) {
+		x = bsp_get_bits(bp, bpx);
+		if (x == -1)
+			break;
+		// Extra bit as a flag, change state
+		if (x&1) 
+			eb = !eb;
+		log(12, "EBX:%d (%d)\n",eb, x&1);
+		x >>= 1;
+		log(12, "x=%d x=",x);print_bits_cnt(x,bpx-1);
+		if (si->x_has_sign) {
+			if (x == xsign>>1) {
+				int t;
+				x = 1 - x;
+				t = bsp_get_bits(bp, bpx - 1);
+				if (t >= xsign>>1) {
+					t -= xsign;
+				}
+				scasex++;
+				log(12, "xsc neg:%d t:%d\n", x, t);
+				if (t < 0)
+					x = x + t;
+				else
+					x = abs(x) + t;
+			} else if (x >= xsign>>1) {
+				x -= xsign;
+			}
+		} // else
+		{
+			bc = count_bits(x);
+			if (x%10) {
+				if (bc > 1 || x&7) {
+					if (eb) {
+						x+=1;
+					} else {
+						x-=1;
+					}
+				} else if (0) {
+					if (eb) {  
+						x -= 1;
+					} else {
+						x += 1;
+					}
+				} 
+			}
 		}
-	} else {
-		if ( b > 1) {
-			if ((b&1))
-				x += 1;
-			else
-				x -= 1;
+		log(12, "x=%d x=",x);print_bits_cnt(x,bpx-1);
+		y = bsp_get_bits(bp, bpy - 1);
+		if (y == -1)
+			break;
+		log(12, "y=%d y=",y);print_bits_cnt(y,bpy-1);
+		log(12, "ysign=%d ymask=%d y=", ysign>>1, ymask>>1);print_bits_cnt(y,bpy - 1);
+		if (si->y_has_sign) {
+			if (y == ysign>>1) {
+				int t;
+				y = 1 - y;
+				t = bsp_get_bits(bp, bpy -1);
+				if (t >= ysign>>1) {
+					t -= ysign;
+				}
+				scasey++;
+				log(12, "ysc neg:%d t:%d\n", y, t);
+				// The result have the sign of the extra
+				// So we can have larger positive
+				// and larger negative
+				// XXX for nested cases
+				if (t < 0)
+					y = y + t;
+				else
+					y = abs(y) + t;
+			} else if (y >= ysign>>1) {
+				y -= ysign;
+			}
+		} //else 
+		{
+			bc = count_bits(y);
+			if (y%10) {
+				if (bc > 1 || y&7) {
+					if (eb) {
+						y+=1;
+					} else {
+						y-=1;
+					}
+				} else if (1) {
+					if (eb) {  
+						y += 1;
+					} else {
+						y -= 1;
+					}
+				} 
+			}
+			log(12, "y=%d y=",y);print_bits_cnt(y,bpy-1);
 		}
-	}
-	b = count_bits(x);
-//	printf("y bits:%d y= %d\n", b,x);
-	return x;
+		log(12, "raw %d %d\n", y, x);
+		if (x == 0 && y == 0) {
+			log(15, "Point %d have zero deltas eb=%d skipped\n", total, si->extrabit);
+//			break;
+		}
+		if (x || y) {
+			if(si->nx)
+				x = -x;
+			if(si->ny)
+				y = -y;
+			log(dl, "raw y=%d, x=%d eb=%d\n", y, x, eb); 
+//			printf("Y=");
+//			print_bits_cnt(y, bpy);
+//			printf("X=");
+			print_bits_cnt(x, bpx);
+			gp->deltas[total].x = x << (shift);
+			gp->deltas[total].y = y << (shift);
+			if (shift)
+				log(dl, "shifted x=%d, y=%d\n", gp->deltas[total].x, gp->deltas[total].y); 
+			total ++;
+		}
+	} 
+	gp->extrabit = si->extrabit;
+	gp->scase = scasex+scasey;
+	return total;
 }
+
 
 static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int bpy, struct gpoly *gp, int shift, int dl)
 {
@@ -202,7 +285,6 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 	int scasex, scasey, scase = 0;
 	int total = 0;
 
-	bpy -= si->extrabit;
 	xmask = (xmask << (32-bpx)) >> (32-bpx);
 	ymask = (ymask << (32-bpy)) >> (32-bpy);
 	xsign  = (1 << (bpx - 1));
@@ -215,24 +297,11 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 	for (i=0; i < gp->npoints; i++) {
 		scasex =0;
 		x = 0;
-		if (si->extrabit)
-			reg = bsp_get_bits(bp, 1);
 		reg = bsp_get_bits(bp, bpx);
 		if (reg==-1)
 			goto out;
-		if (si->extrabit) {
-			if (reg&1) {
-				j = 1 - j;
-				//printf("EB:%d\n",j);
-			}
-		}
 		if (si->x_has_sign) {
 			tmp = 0;
-			if (si->extrabit && reg) {
-				reg>>=1;
-				reg = bs_get_extra(reg, j);
-			}
-
 			while (1) {
 				tmp = reg & xmask;
 				if(tmp != xsign)
@@ -244,18 +313,12 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 					goto out;
 			}
 			if (tmp < xsign)
-				x += tmp;
+				x = tmp + x;
 			else {
 				x = tmp - (xsign << 1 ) - x;
-			//	x = tmp - x - xsign;
-			//	x = - (tmp-x);
 			}
 		} else {
 			x = reg & xmask;
-			if (si->extrabit && x) {
-				x>>=1;
-				x = bs_get_extra(x, j);
-			}
 			if(si->nx)
 				x = -x;
 		}
@@ -266,9 +329,6 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 		y = 0;
 		if (si->y_has_sign) {
 			tmp = 0;
-			if (si->extrabit && reg) {
-				reg = bs_get_extra_y(reg, j);
-			}
 			while (1) {
 				tmp = reg & ymask;
 				if(tmp != ysign)
@@ -280,65 +340,51 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 					goto out;
 			}
 			if (tmp < ysign)
-				y += tmp;
+				y = tmp + y;
 			else {
 				y = tmp - (ysign << 1) - y;
 			}
 		} else {
 			y = reg & ymask;
-			if (si->extrabit && y) {
-				y = bs_get_extra_y(y, j);
-			}
 			if(si->ny)
 				y = -y;
 		}
-#if 0
-		if (scasex || scasey) {
-			log(dl, "deltas: %d sc=%d x=%d(%d), sc=%d y=%d(%d)\n", i, 
-			scasex, x, bpx-si->x_has_sign, scasey, y, bpy-si->y_has_sign);
-			if (scasex) {
-				if (abs(x) < (1<<(bpx-si->x_has_sign)))
-					log(dl, "ERROR: X %d is less than %d\n",
-						x,
-						(1<<(bpx-si->x_has_sign)));
-			}
-			if (scasey) {
-				if (abs(y) < (1<<(bpy-si->y_has_sign)))
-					log(dl, "ERROR: Y %d is less than %d\n",
-						y,
-						(1<<(bpy-si->y_has_sign)));
-			}
-		}
-#endif
 		if (x == 0 && y == 0) {
 			log(15, "Point %d have zero deltas eb=%d\n", total, si->extrabit);
 //			break;
 		}
 		if (x || y) {
-			gp->deltas[i].x = x << (shift);
-			gp->deltas[i].y = y << (shift);
+			gp->deltas[total].x = x << (shift);
+			gp->deltas[total].y = y << (shift);
 			//log(dl, "x=%d, y=%d\n", gp->deltas[i].x, gp->deltas[i].y); 
 			total ++;
 		}
 	}
 out:
+	// XX move to _extra
 	gp->extrabit = si->extrabit;
 	gp->scase = scase;
+	if (i == gp->npoints)
+		log(1, "Maximal points!!! bpx=%d bpy=%d eb=%d\n",
+			bpx, bpy, si->extrabit);
 	return total;
 }
 
-static void gar_copy_source(u_int8_t *dp, u_int8_t *ep, u_int8_t **dst, int *len)
+static void gar_copy_source(u_int8_t *dp, int l, u_int8_t **dst, int *len)
 {
-	int l;
 	int i;
 	u_int8_t *s;
-	l = ep - dp;
-	s = malloc(l);
+	if (l>512) {
+		log(1, "dp=%p len=%d\n", dp, l);
+		abort();
+		return;
+	}
+	s = malloc(l+1);
 	if (!s)
 		return;
 	*len = l;
 	i = 0;
-	while(dp!=ep) {
+	while(i<l) {
 		s[i] = *dp;
 		i++;
 		dp++;
@@ -369,8 +415,6 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	if (!gp)
 		return -1;
 	list_init(&gp->l);
-//	if (line)
-//		gar_copy_source(dp,ep, &gp->source, &gp->slen);
 	gp->type = *dp;
 	two_byte = gp->type & 0x80;
 
@@ -448,8 +492,7 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	bits_per_coord(bs_info, *dp, extra_bit, &bpx, &bpy, &si);
 	log(dl ,"%d/%d bits per long/lat  len=%d extra_bit=%d\n", 
 		bpx, bpy, bs_len, extra_bit);
-//	cnt = 2 + ((bs_len*8)-si.sign_info_bits)/(bpx+bpy-2*si.extrabit);
-	cnt = 2 + ((bs_len*8)-si.sign_info_bits)/(bpx+bpy/*+si.extrabit*/);
+	cnt = 10 + 2 + ((bs_len*8)-si.sign_info_bits)/(bpx+bpy/*+si.extrabit*/);
 	log(dl, "Total coordinates: %d\n", cnt);
 	gp->deltas = calloc(cnt, sizeof(struct gcoord));
 	if (!gp->deltas) {
@@ -473,7 +516,10 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	}
 	if (bs_len) {
 		bsp_init(&bp, dp, bs_len);
-		gp->npoints = bs_get_long_lat(&bp, &si, bpx, bpy, gp, cshift,dl);
+		if (!si.extrabit)
+			gp->npoints = bs_get_long_lat(&bp, &si, bpx, bpy, gp, cshift,dl);
+		else
+			gp->npoints = bs_get_long_lat_extra(&bp, &si, bpx, bpy, gp, cshift,dl);
 	}
 	log(dl, "Total real coordinates: %d\n", gp->npoints);
 	if (gp->npoints < 1) {
@@ -725,6 +771,8 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 				poly->c.x += gsub->icenterlng;
 				poly->c.y += gsub->icenterlat;
 				poly->subdiv = gsub;
+				gar_copy_source(d, rc, &poly->source, &poly->slen);
+
 				list_append(&poly->l, &gsub->lpolylines);
 //				dmp_lbl(sub, poly->lbloffset, L_LBL);
 			}
