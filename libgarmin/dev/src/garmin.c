@@ -157,6 +157,7 @@ static int gar_is_gmapsupp(char *file)
 {
 	int rc, fd;
 	struct hdr_img_t hdr;
+	unsigned char xor;
 	unsigned char *cp;
 	fd = open(file, O_RDONLY);
 	if (fd < 0)
@@ -173,9 +174,10 @@ static int gar_is_gmapsupp(char *file)
 		return 0;
 	}
 	if (hdr.xorByte != 0) {
+		xor = hdr.xorByte;
 		cp = (unsigned char *)&hdr;
 		for (rc = 0; rc < sizeof(struct hdr_img_t); rc++) {
-			*cp = *cp ^ hdr.xorByte;
+			*cp = *cp ^ xor;
 			cp++;
 		}
 	}

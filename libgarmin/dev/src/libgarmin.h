@@ -102,6 +102,7 @@ int gar_fat_file2fd(struct gimg *g, char *name, int fd);
 #define GARDEG(x) ((x) < 0x800000 ? (double)(x) * 360.0 / 16777216.0 : -(double)((x) - 0x100000) * 360.0 / 16777216.0)
 #define GARRAD(x) ((x) < 0x800000 ? (double)(x) * TWOPI / 16777216.0 : -(double)((x) - 0x100000) * TWOPI / 16777216.0)
 
+#define FEET2METER(x) ((x)/3.28084)
 #ifdef __cplusplus
 }
 #endif
