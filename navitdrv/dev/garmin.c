@@ -1,8 +1,33 @@
+/*
+	Copyright (C) 2007  Alexander Atanasov      <aatanasov@gmail.com>
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; version 2 of the License.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+	MA  02110-1301  USA
+    
+	Garmin and MapSource are registered trademarks or trademarks
+	of Garmin Ltd. or one of its subsidiaries.
+
+*/
+
 #include <glib.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "plugin.h"
 #include "data.h"
 #include "projection.h"
@@ -542,6 +567,8 @@ gmap_rect_new(struct map_priv *map, struct map_selection *sel)
 	struct map_selection *ms = sel;
 	struct map_rect_priv *mr;
 
+	if (!map)
+		return NULL;
 	mr = calloc(1, sizeof(*mr));
 	if (!mr)
 		return mr;
@@ -608,6 +635,7 @@ gmap_new(struct map_methods *meth, struct attr **attrs)
 	struct map_priv *m;
 	struct attr *data;
 	char buf[PATH_MAX];
+	struct stat st;
 
 	data=attr_search(attrs, NULL, attr_data);
 	if (! data)
@@ -632,20 +660,15 @@ gmap_new(struct map_methods *meth, struct attr **attrs)
 		g_free(m);
 		return NULL;
 	}
+	m->conv = NULL;
 	snprintf(buf, sizeof(buf), "%s.types", m->filename);
-	dlog(1, "Looking for types in %s\n", buf); 
-	m->conv = g2n_conv_load(buf);
+	if (!stat(buf, &st)) {
+		dlog(1, "Loading custom types from %s\n", buf);
+		m->conv = g2n_conv_load(buf);
+	}
 	if (!m->conv) {
-		char *cp;
-		strcpy(buf, m->filename);
-		cp = strrchr(buf ,'/');
-		if (cp) {
-			cp ++;
-			*cp = '\0';
-			strcat(buf, "garmintypes.txt");
-			dlog(1, "Looking for types in %s\n", buf);
-			m->conv = g2n_conv_load(buf);
-		}
+		dlog(1, "Using builtin types\n");
+		m->conv = g2n_default_conv();
 	}
 	if (!m->conv) {
 		dlog(1, "Failed to load map types\n");

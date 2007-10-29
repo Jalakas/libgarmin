@@ -1,4 +1,26 @@
 /*
+	Copyright (C) 2007  Alexander Atanasov      <aatanasov@gmail.com>
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; version 2 of the License.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+	MA  02110-1301  USA
+    
+	Garmin and MapSource are registered trademarks or trademarks
+	of Garmin Ltd. or one of its subsidiaries.
+
+*/
+
+/*
  Street's are routable by:
  ALL - by all
  W	pedestrian (1<<0)
@@ -198,7 +220,7 @@ enum item_type g2n_get_type(struct gar2nav_conv *c, int type, unsigned short id)
 
 	while (def) {
 		if ((!def->maxid && def->id == id) || 
-				(def->id <= id && def->maxid))
+			(def->id <= id && id <= def->maxid))
 			return def->ntype;
 		def = def->next;
 	}
@@ -227,7 +249,7 @@ int g2n_get_routable(struct gar2nav_conv *c, int type, unsigned short id)
 
 	while (def) {
 		if ((!def->maxid && def->id == id) || 
-				(def->id <= id && def->maxid))
+				(def->id <= id && id <= def->maxid))
 			return def->routable;
 		def = def->next;
 	}
@@ -250,7 +272,7 @@ char *g2n_get_descr(struct gar2nav_conv *c, int type, unsigned short id)
 	}
 	while (def) {
 		if ((!def->maxid && def->id == id) || 
-				(def->id <= id && def->maxid))
+				(def->id <= id && id <= def->maxid))
 			return def->descr;
 		def = def->next;
 	}
@@ -265,3 +287,5 @@ int main(int argc, char **argv)
 	return 0;
 }
 #endif
+
+#include "g2nbuiltin.h"
