@@ -134,7 +134,8 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data)
 	g->file = strdup(file);
 	g->fd = open(file, O_RDONLY);
 	if (g->fd < 0) {
-		log(1, "Can not open file: [%s]\n", g->file);
+		log(1, "Can not open file: [%s] errno=%d(%s)\n", 
+				g->file, errno, strerror(errno));
 		return -1;
 	}
 	if (gar_load_img_hdr(g) < 0) {
