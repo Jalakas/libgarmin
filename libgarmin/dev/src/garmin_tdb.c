@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include "libgarmin.h"
@@ -46,6 +47,8 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 	char imgname[128];
 	fd = open(file, O_RDONLY);
 	if (fd <0) {
+		log(1, "Can not open:[%s] errno=%d(%s)\n",
+				file, errno, strerror(errno));
 		return -1;
 	}
 	while (read(fd, &block, sizeof(struct tdb_block)) == 
