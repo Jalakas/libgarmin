@@ -120,7 +120,16 @@ int main(int argc, char **argv)
 	if (!strcmp(argv[1], "-d")) {
 		gar_xor_dir(argv[2]);
 	} else {
-		gar_xor_file(argv[1], argv[2]);
+		if (strcmp(argv[1], argv[2])) {
+			gar_xor_file(argv[1], argv[2]);
+		} else {
+			char buf[4096];
+			sprintf(buf, "%s.tmp", argv[1]);
+			if (gar_xor_file(argv[1], buf) > -1) {
+				unlink(argv[1]);
+				rename(buf, argv[1]);
+			}
+		}
 	}
 	return 0;
 }
