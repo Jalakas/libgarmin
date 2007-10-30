@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-
+#include "version.h"
 #include "libgarmin.h"
 #include "libgarmin_priv.h"
 #include "garmin_fat.h"
@@ -74,7 +74,7 @@ struct gar *gar_init(char *tbd, log_fn l)
 		glogfn = l;
 	}
 
-	log(1, "libgarmin initializing ...\n");
+	log(1, "%s initializing ...\n", LIBVERSION);
 	list_init(&gar->limgs);
 	return gar;
 }

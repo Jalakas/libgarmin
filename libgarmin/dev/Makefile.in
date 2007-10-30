@@ -14,6 +14,7 @@
 
 @SET_MAKE@
 
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -34,11 +35,11 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(srcdir)/libgarmin.pc.in $(top_srcdir)/Makefile.inc \
-	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
-	TODO depcomp install-sh missing
+DIST_COMMON = README $(am__configure_deps) $(noinst_HEADERS) \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/config.h.in $(srcdir)/libgarmin.pc.in \
+	$(top_srcdir)/Makefile.inc $(top_srcdir)/configure AUTHORS \
+	COPYING ChangeLog INSTALL NEWS TODO depcomp install-sh missing
 @DEBUG_TRUE@am__append_1 = -DDEBUG
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -68,6 +69,7 @@ am__installdirs = "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(pkgdocdir)"
 pkgconfigDATA_INSTALL = $(INSTALL_DATA)
 pkgdocDATA_INSTALL = $(INSTALL_DATA)
 DATA = $(pkgconfig_DATA) $(pkgdoc_DATA)
+HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = $(SUBDIRS)
@@ -171,7 +173,10 @@ pkgdoc_DATA = README COPYING TODO
 EXTRA_DIST = README COPYING TODO autosh.sh
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libgarmin.pc
-all: config.h
+noinst_HEADERS = version.h
+CLEANFILES = version.h
+BUILT_SOURCES = version.h
+all: $(BUILT_SOURCES) config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
@@ -526,14 +531,16 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
-check: check-recursive
-all-am: Makefile $(DATA) config.h
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-recursive
+all-am: Makefile $(DATA) $(HEADERS) config.h
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(pkgdocdir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
-install: install-recursive
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
 uninstall: uninstall-recursive
@@ -550,6 +557,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -557,6 +565,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-recursive
 
 clean-am: clean-generic clean-local mostlyclean-am
@@ -628,6 +637,21 @@ uninstall-info: uninstall-info-recursive
 
 clean-local:
 	rm -rf *~ *.bak core
+
+.PHONY : version.h
+
+version.h:
+	@echo "Generate version.h";					\
+	echo -n "#define LIBVERSION \"$(PACKAGE_STRING)" > version.h;	\
+	if test -d .svn; then 						\
+		echo -n "-r`svnversion -n`" >> version.h;		\
+	fi;								\
+	echo "\"" >> version.h
+
+#    echo -n 'const char* svn_version(void) { const char* SVN_Version = "' \
+#                                      > svn_version.c
+#    svnversion -n .                   >> svn_version.c
+#    echo '"; return SVN_Version; }'   >> svn_version.c
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
