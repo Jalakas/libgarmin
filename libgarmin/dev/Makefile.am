@@ -19,7 +19,10 @@ clean-local:
 ##
 ## on every build, record the working copy revision string
 ##
-version.h:
+.svnversion:
+	@svnversion > .svnversion
+
+version.h: .svnversion
 	@echo "Generate version.h";					\
 	echo -n "#define LIBVERSION \"$(PACKAGE_STRING)" > version.h;	\
 	if test -d .svn; then 						\
