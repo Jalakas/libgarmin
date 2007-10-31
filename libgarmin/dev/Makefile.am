@@ -16,8 +16,6 @@ BUILT_SOURCES=version.h
 clean-local:
 	rm -rf *~ *.bak core
 
-.PHONY : version.h
-
 ##
 ## on every build, record the working copy revision string
 ##
