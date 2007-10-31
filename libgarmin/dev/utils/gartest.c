@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 #include "libgarmin.h"
 
 static int debug = 15;
@@ -20,28 +22,51 @@ static struct gar * load(char *file)
 	g = gar_init(NULL, logfn);
 	if (!g)
 		return NULL;
-	gar_img_load(g, file, 1);
-	return g;
+	if (gar_img_load(g, file, 1) > 0)
+		return g;
+	else {
+		gar_free(g);
+		return NULL;
+	}
+}
+static int usage(char *pn)
+{
+	fprintf(stderr, "%s [-d level] garmin.img\n", pn);
+	return -1;
 }
 
 int main(int argc, char **argv)
 {
 	struct gar *gar;
 	struct gar_rect r;
+	char *file = argv[1];
 	if (argc < 2) {
-		fprintf(stderr, "%s garmin.img\n", argv[0]);
-		return -1;
+		return usage(argv[0]);
 	}
 /*
 garmin_rgn.c:63:1|Boundaries - 
 North: 43.716080C, East: 29.987290C, South: 43.688679C, West: 29.932551C pnt:0, idxpnt:0
 
 */
+	if (!strcmp(argv[1], "-d")) {
+		if (argc > 3) {
+			debug = atoi(argv[2]);
+			fprintf(stderr, "debug level set to %d\n", debug);
+			file = argv[3];
+		} else {
+			return usage(argv[0]);
+		}
+	}
+
 	r.lulat = 43.706080;
 	r.lulong = 29.942551;
 	r.rllat = 43.698679;
 	r.rllong = 29.977290;
-	gar = load(argv[1]);
+	gar = load(file);
+	if (!gar) {
+		fprintf(stderr, "Failed to load: [%s]\n", file);
+		return 0;
+	}
 	gar_find_subfiles(gar, &r);
 	r.lulat = 44.281147;
 	r.lulong = 22.274888;
