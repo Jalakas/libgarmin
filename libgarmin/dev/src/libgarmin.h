@@ -67,6 +67,7 @@ struct gar_rect	{
 };
 
 struct gimg;
+struct gar;
 
 typedef void (*log_fn)(char *file, int line, int level, char *fmt, ...)
 	__attribute__ ((format(printf,4,5)));
@@ -98,6 +99,8 @@ int gar_object_get_draw_order(struct gobject *o);
 char *gar_object_debug_str(struct gobject *o);
 
 int gar_fat_file2fd(struct gimg *g, char *name, int fd);
+/* Get ptr to a dskimg file */
+struct gimg *gar_get_dskimg(struct gar *gar, char *file);
 
 #define GARDEG(x) ((x) < 0x800000 ? (double)(x) * 360.0 / 16777216.0 : -(double)((x) - 0x100000) * 360.0 / 16777216.0)
 #define GARRAD(x) ((x) < 0x800000 ? (double)(x) * TWOPI / 16777216.0 : -(double)((x) - 0x100000) * TWOPI / 16777216.0)

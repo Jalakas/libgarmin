@@ -202,3 +202,19 @@ int gar_img_load(struct gar *gar, char *file, int data)
 		return gar_parse_tdb(gar, file, data);
 	}
 }
+
+struct gimg *gar_get_dskimg(struct gar *gar, char *file)
+{
+	struct gimg *g;
+
+	if (gar->tdbloaded && !file)
+		return NULL;
+
+	list_for_entry(g, &gar->limgs, l) {
+		if (!file)
+			return g;
+		if (!strcmp(file, g->file))
+			return g;
+	}
+	return NULL;
+}

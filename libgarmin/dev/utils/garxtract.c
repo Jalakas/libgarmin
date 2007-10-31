@@ -39,7 +39,11 @@ int main(int argc, char **argv)
 	}
 #warning FIXME gar_img_load returns int find the image in the list
 	gar = get_gar();
-	g= gar_img_load(gar, argv[1], 0);
+	if (gar_img_load(gar, argv[1], 0) < 0) {
+		fprintf(stderr, "Failed to load:[%s]\n", argv[1]);
+		return 0;
+	}
+	g = gar_get_dskimg(gar, NULL);
 	if (g) {
 		fd = open(argv[2], O_WRONLY|O_CREAT|O_TRUNC, 0660);
 		if (fd > -1) {
@@ -48,6 +52,8 @@ int main(int argc, char **argv)
 			}
 			close(fd);
 		}
+	} else {
+		fprintf(stderr, "Failed to find dskimg! Run %s on a .img file\n", argv[0]);
 	}
 	gar_free(gar);
 	return 0;
