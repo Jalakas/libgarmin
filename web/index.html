@@ -5,12 +5,26 @@
 The project files are available via svn only for now.<br>
 To get the source use:<br>
 <b>svn co http://libgarmin.svn.sourceforge.net/svnroot/libgarmin/libgarmin/dev libgarmin</b><br>
-build with<br>
+build with:<br>
+./autosh.sh<br>
 ./configure<br>
 make<br>
 make install<br>
 <hr>
 How to build Navit driver:<br>
+<b>Driver is merged into navit CVS so you do not have to patch it,
+just install the library and rebuild navit.</b></br>
+Then you can add maps to navit.xml<br>
+<pre>
+        &lt;mapset enabled="yes"&gt;
+                &lt;map type="garmin" enabled="yes" data="/path/to/gmapsupp.img"/&gt;
+        &lt;/mapset&gt;
+</pre>
+<br>
+Where /path/to/gmapsupp.img is a dskimg file or a .tdb file<br>
+<hr>
+<b>Obsolete instructions:</b><br>
+<hr>
 Get these Navit patches:<br>
 <a href="http://libgarmin.sf.net/navit-garmin-items.diff">Add Garmin types</a><br>
 <a href="http://libgarmin.sf.net/navit-configure.diff">Navit's configure script</a><br>
