@@ -2,3 +2,10 @@ Libgarmin
 =====
 
 Libgarmin is an open source (GPLv2) for Garmin image format maps.
+
+
+Installation:
+============
+If you are building a svn checkout. First run ./autosh.sh
+then ./configure
+
