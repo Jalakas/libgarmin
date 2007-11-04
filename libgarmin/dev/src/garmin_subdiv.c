@@ -609,8 +609,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 				poly->c.y += gsub->icenterlat;
 				poly->subdiv = gsub;
 				gar_copy_source(d, rc, &poly->source, &poly->slen);
-
-				list_append(&poly->l, &gsub->lpolylines);
+				ga_append(&gsub->polylines, poly);
 //				dmp_lbl(sub, poly->lbloffset, L_LBL);
 			}
 			d+=rc;

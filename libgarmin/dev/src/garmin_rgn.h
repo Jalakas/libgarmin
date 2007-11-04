@@ -25,7 +25,7 @@ struct gar_subdiv {
 	u_int32_t	shift;
 	struct garray points;
 	struct garray pois;
-	list_t lpolylines;
+	struct garray polylines;
 	list_t lpolygons;
 };
 

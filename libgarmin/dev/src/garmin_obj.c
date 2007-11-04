@@ -151,7 +151,9 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 				o = first = p;
 			objs++;
 		}
-		list_for_entry(gpoly, &gsd->lpolylines, l) {
+		cnt = ga_get_count(&gsd->polylines);
+		for (i=0; i < cnt; i++) {
+			gpoly = ga_get(&gsd->polylines, i);
 			if (!gar_is_line_visible(gsub, level, gpoly))
 				continue;
 			p = gar_alloc_object(GO_POLYLINE, gpoly);
@@ -280,7 +282,9 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr)
 							return gar_alloc_object(GO_POLYGON, gpoly);
 						}
 					}
-					list_for_entry(gpoly, &gsd->lpolylines, l) {
+					cnt = ga_get_count(&gsd->polylines);
+					for (k=0; k < cnt; k++) {
+						gpoly = ga_get(&gsd->polylines, k);
 						if (gpoly == ptr) {
 							return gar_alloc_object(GO_POLYLINE, gpoly);
 						}
