@@ -260,6 +260,59 @@ static int gar_subdiv_visible(struct gar_subdiv *sd, struct gar_rect *rect)
 	return gar_rects_intersectboth(&sr, rect);
 }
 
+struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
+					unsigned int objid)
+{
+	unsigned int sdidx;
+	unsigned int otype;
+	unsigned int oidx;
+	int i;
+	void *obj = NULL;
+	struct gar_maplevel *ml;
+	struct gar_subdiv *sd;
+	struct gimg *g;
+	struct gar_subfile *sub;
+	sdidx = objid >> 16;
+	otype = objid & 0xFF;
+	oidx = (objid >> 8) & 0xFF;
+	list_for_entry(g, &gar->limgs,l) {
+		list_for_entry(sub, &g->lsubfiles, l) {
+			if (sub->id == mapid) {
+				/* FIXME: This can be improved */
+				for(i=0; i < sub->nlevels; i++) {
+					ml = sub->maplevels[i];
+					sd = ga_get_abs(&ml->subdivs, sdidx);
+					if (sd) {
+						switch(otype) {
+						case GO_POINT:
+							obj = ga_get(&sd->points, oidx);
+							goto outok;
+						case GO_POI:
+							obj = ga_get(&sd->pois, oidx);
+							goto outok;
+						case GO_POLYLINE:
+							obj = ga_get(&sd->polylines, oidx);
+							goto outok;
+						case GO_POLYGON:
+							obj = ga_get(&sd->polylines, oidx);
+							goto outok;
+						default:
+							log(1, "Unknown object type: %d mapid:%X objid:%X\n",
+								otype, mapid,objid);
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+	return NULL;
+outok:
+	if (obj)
+		return gar_alloc_object(otype, obj);
+	return NULL;
+}
+
 // FIXME: This is very very slow
 struct gobject *gar_get_object(struct gar *gar, void *ptr)
 {
@@ -383,7 +436,6 @@ nextlvl:
 				ml->ml.level, ml->ml.bits);
 			lvlobjs = 0;
 			sdcount = ga_get_count(&ml->subdivs);
-			log(1, "Have %d subdivs\n", sdcount);
 			for (k = 0; k < sdcount; k++) {
 				gsd = ga_get(&ml->subdivs, k);
 				if (rect && !gar_subdiv_visible(gsd, rect))
@@ -609,14 +661,20 @@ int gar_object_index(struct gobject *o)
 		{
 			struct gpoint *pt;
 			pt = o->gptr;
-			return (pt->subdiv->n << 16) | pt->n;
+			if (pt->n > 255) {
+				log(1, "Error more than 255 points in a subdiv are not supported\n");
+			}
+			return (pt->subdiv->n << 16) | (pt->n << 8) | o->type;
 		}
 	case GO_POLYLINE:
 	case GO_POLYGON:
 		{
 			struct gpoly *p;
 			p = o->gptr;
-			return (p->subdiv->n << 16) | p->n;
+			if (p->n > 255) {
+				log(1, "Error more than 255 polygons/lines in a subdiv are not supported\n");
+			}
+			return (p->subdiv->n << 16) | (p->n << 8) | o->type;
 		}
 	default:
 		log(1, "Error unknown object type:%d\n", o->type);

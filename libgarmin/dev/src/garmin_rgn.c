@@ -193,6 +193,11 @@ static int gar_load_ml_subdata(struct gar_subfile *sub, struct gar_maplevel *ml)
 		ga_trim(&gsub->pois);
 		ga_trim(&gsub->polylines);
 		ga_trim(&gsub->polygons);
+		log(11, "Points: %d POIs: %d Lines:%d Polys:%d\n",
+			ga_get_count(&gsub->points),
+			ga_get_count(&gsub->pois),
+			ga_get_count(&gsub->polylines),
+			ga_get_count(&gsub->polygons));
 		p++;
 	}
 	log(11,"Loaded %d subdivs\n", p);
