@@ -316,7 +316,6 @@ static int gar_load_ml_subdivs(struct gar_subfile *subf, struct gar_maplevel *ml
 			}
 			gsub->n = subf->subdividx++;	// index in all subdivs
 			gsub->next = subn.next;
-			gsub->level = ml->ml.level;
 			if (ml->ml.bits < 24)
 				gsub->shift = 24 - ml->ml.bits;
 			gar_parse_subdiv(gsub, &subn.tresub);
@@ -354,7 +353,6 @@ static int gar_load_ml_subdivs(struct gar_subfile *subf, struct gar_maplevel *ml
 			}
 			gsub->n = subf->subdividx++;	// index in the level not in all
 			gsub->next = 0;
-			gsub->level = ml->ml.level;
 			if (ml->ml.bits < 24)
 				gsub->shift = 24 - ml->ml.bits;
 			gar_parse_subdiv(gsub, &subl);

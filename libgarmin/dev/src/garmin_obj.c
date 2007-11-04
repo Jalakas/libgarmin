@@ -617,7 +617,7 @@ char *gar_object_debug_str(struct gobject *o)
 	}
 	if (sd) {
 		snprintf(buf, sizeof(buf), "SF:%s SD:%d l=%d ot=%d idx=%d gt=0x%02X lng=%f lat=%f%s",
-			sd->subfile->mapid, sd->n, sd->level, o->type, idx, type, GARDEG(c.x), GARDEG(c.y), extra);
+			sd->subfile->mapid, sd->n, sd->shift, o->type, idx, type, GARDEG(c.x), GARDEG(c.y), extra);
 		return strdup(buf);
 	}
 	return NULL;

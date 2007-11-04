@@ -16,7 +16,7 @@ struct gar_subdiv {
 	unsigned haspoints :1,
 		hasidxpoints :1,
 		haspolylines :1,
-		haspolygons;
+		haspolygons : 1;
 	u_int32_t icenterlng;
 	u_int32_t icenterlat;
 	int north; // north boundary of area covered by this subsection
@@ -24,8 +24,6 @@ struct gar_subdiv {
 	int south; // south boundary of area covered by this subsection
 	int west;  // west boundary of area covered by this subsection
 	u_int32_t	shift;
-	u_int32_t	level;
-	void *strtable;	// TODO
 	list_t lpoints;
 	int pointidx;
 	list_t lpois;
