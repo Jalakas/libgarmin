@@ -479,6 +479,13 @@ static struct gar_subfile *gar_alloc_subfile(struct gimg *g, char *mapid)
 		free(sub);
 		return NULL;
 	}
+	if (*sub->mapid == 'I') {
+		char *ptr = sub->mapid+1;
+		char *eptr;
+		sub->id = strtol(ptr, &eptr, 16);
+	} else {
+		sub->id = atoi(sub->mapid);
+	}
 	list_init(&sub->l);
 	sub->subdividx = 1;
 	return sub;

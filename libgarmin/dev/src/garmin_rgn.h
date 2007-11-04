@@ -7,7 +7,7 @@ int gar_load_subfiles(struct gimg *g);
 
 struct gar_subdiv {
 	struct gar_subfile *subfile;
-	u_int32_t n;
+	u_int16_t n;
 	u_int16_t next;	// section of next level
 	unsigned terminate :1;
 	u_int32_t rgn_start;
@@ -61,6 +61,7 @@ struct gar_subfile {
 	list_t l;
 	struct gimg *gimg;
 	char *mapid;
+	unsigned int id;
 	struct gar_lbl_t *lbl;
 	struct gar_net_info *net;
 	ssize_t rgnoffset;

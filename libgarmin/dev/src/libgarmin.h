@@ -97,6 +97,10 @@ char *gar_get_object_lbl(struct gobject *o);
 int gar_get_object_intlbl(struct gobject *o);
 int gar_object_get_draw_order(struct gobject *o);
 char *gar_object_debug_str(struct gobject *o);
+/* Object index is (subdividx << 16) | idx */
+int gar_object_index(struct gobject *o);
+/* Object mapid is the id of the file containing the object */
+int gar_object_mapid(struct gobject *o);
 
 int gar_fat_file2fd(struct gimg *g, char *name, int fd);
 /* Get ptr to a dskimg file */

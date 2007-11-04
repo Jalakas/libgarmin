@@ -581,6 +581,49 @@ int gar_object_subtype(struct gobject *o)
 	return ret;
 }
 
+int gar_object_mapid(struct gobject *o)
+{
+	struct gar_subdiv *sd = NULL;
+	switch (o->type) {
+	case GO_POINT:
+	case GO_POI:
+		sd = ((struct gpoint *)o->gptr)->subdiv;
+		break;
+	case GO_POLYLINE:
+	case GO_POLYGON:
+		sd = ((struct gpoly *)o->gptr)->subdiv;
+		break;
+	default:
+		log(1, "Error unknown object type:%d\n", o->type);
+	}
+	if (sd)
+		return sd->subfile->id;
+	return 0;
+}
+
+int gar_object_index(struct gobject *o)
+{
+	switch (o->type) {
+	case GO_POINT:
+	case GO_POI:
+		{
+			struct gpoint *pt;
+			pt = o->gptr;
+			return (pt->subdiv->n << 16) | pt->n;
+		}
+	case GO_POLYLINE:
+	case GO_POLYGON:
+		{
+			struct gpoly *p;
+			p = o->gptr;
+			return (p->subdiv->n << 16) | p->n;
+		}
+	default:
+		log(1, "Error unknown object type:%d\n", o->type);
+	}
+	return 0;
+}
+
 static void gar_log_source(u_int8_t *src, int len)
 {
 	char buf[len*3+1];
