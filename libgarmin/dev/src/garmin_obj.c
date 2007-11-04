@@ -129,6 +129,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 	struct gpoly *gpoly;
 	struct gar_subfile *gsub = gsd->subfile;
 	int objs = 0;
+	int cnt, i;
 
 	log(15, "subdiv:%d cx=%d cy=%d north=%d west=%d south=%d east=%d\n",
 		gsd->n, gsd->icenterlng, gsd->icenterlat, gsd->north, gsd->west,
@@ -164,7 +165,9 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 			objs++;
 		}
 
-		list_for_entry(gp, &gsd->lpoints, l) {
+		cnt = ga_get_count(&gsd->points);
+		for (i=0; i < cnt; i++) {
+			gp = ga_get(&gsd->points, i);
 			if (!gar_is_point_visible(gsub, level, gp))
 				continue;
 			p = gar_alloc_object(GO_POINT, gp);
@@ -177,7 +180,9 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 				o = first = p;
 			objs++;
 		}
-		list_for_entry(gp, &gsd->lpois, l) {
+		cnt = ga_get_count(&gsd->pois);
+		for (i=0; i < cnt; i++) {
+			gp = ga_get(&gsd->pois, i);
 			if (!gar_is_point_visible(gsub, level, gp))
 				continue;
 			p = gar_alloc_object(GO_POI, gp);
@@ -261,6 +266,7 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr)
 	struct gpoint *gp;
 	struct gpoly *gpoly;
 	int c, i, j;
+	int cnt, k;
 
 	list_for_entry(g, &gar->limgs,l) {
 		list_for_entry(sub, &g->lsubfiles, l) {
@@ -279,12 +285,16 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr)
 							return gar_alloc_object(GO_POLYLINE, gpoly);
 						}
 					}
-					list_for_entry(gp, &gsd->lpoints, l) {
+					cnt = ga_get_count(&gsd->points);
+					for (k=0; k < cnt; k++) {
+						gp = ga_get(&gsd->points, k);
 						if (gp == ptr) {
 							return gar_alloc_object(GO_POINT, gp);
 						}
 					}
-					list_for_entry(gp, &gsd->lpois, l) {
+					cnt = ga_get_count(&gsd->pois);
+					for (k=0; k < cnt; k++) {
+						gp = ga_get(&gsd->pois, k);
 						if (gp == ptr) {
 							return gar_alloc_object(GO_POI, gp);
 						}

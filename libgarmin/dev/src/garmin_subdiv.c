@@ -548,7 +548,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 			}
 			if (/*gp->type != 0 && */j) {
 				gp->subdiv = gsub;
-				list_append(&gp->l, &gsub->lpois);
+				ga_append(&gsub->pois, gp);
 			//	dmp_lbl(sub, gp->lbloffset, L_LBL);
 			} else {
 				free(gp);
@@ -584,7 +584,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 			}
 			if (/*gp->type != 0 && */j) {
 				gp->subdiv = gsub;
-				list_append(&gp->l, &gsub->lpoints);
+				ga_append(&gsub->points, gp);
 			//	dmp_lbl(sub, gp->lbloffset, gp->is_poi ? L_POI : L_LBL);
 			} else
 				free(gp);

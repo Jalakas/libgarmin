@@ -23,9 +23,8 @@ struct gar_subdiv {
 	int south; // south boundary of area covered by this subsection
 	int west;  // west boundary of area covered by this subsection
 	u_int32_t	shift;
-	list_t lpoints;
-	int pointidx;
-	list_t lpois;
+	struct garray points;
+	struct garray pois;
 	list_t lpolylines;
 	list_t lpolygons;
 };

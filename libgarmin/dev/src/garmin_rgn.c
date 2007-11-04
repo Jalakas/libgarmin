@@ -255,11 +255,10 @@ static struct gar_subdiv *gar_subdiv_alloc(struct gar_subfile *subf)
 {
 	struct gar_subdiv *gsub = calloc(1, sizeof(*gsub));
 	if (gsub) {
-		list_init(&gsub->lpoints);
-		list_init(&gsub->lpois);
+		ga_init(&gsub->points, 1, 256);
+		ga_init(&gsub->pois, 1, 256);
 		list_init(&gsub->lpolylines);
 		list_init(&gsub->lpolygons);
-		gsub->pointidx = 1;
 		gsub->subfile = subf;
 	}
 	return gsub;
