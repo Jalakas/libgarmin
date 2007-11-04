@@ -12,7 +12,8 @@ libgarmin_a_SOURCES = GarminTypedef.h  garmin_fat.c  garmin_rgn.h \
 		garmin.c garmin_rgn.c  geoutils.h \
 		garmin_order.c garmin_order.h	\
 		garmin_net.c garmin_net.h	\
-		garmin_tdb.c garmin_tdb.h
+		garmin_tdb.c garmin_tdb.h	\
+		array.h array.c
 
 include_HEADERS = libgarmin.h
 

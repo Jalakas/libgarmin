@@ -27,6 +27,7 @@
 #include "garmin_lbl.h"
 #include "garmin_order.h"
 #include "geoutils.h"
+#include "array.h"
 
 static struct gobject *gar_alloc_object(int type, void *obj)
 {
@@ -105,26 +106,29 @@ static struct gar_subdiv *gar_find_subdiv_by_idx(struct gar_subfile *gsub,
 						int fromlevel, int idx)
 {
 	int i = fromlevel;
-	struct gar_subdiv *d;
+	struct gar_subdiv *sd;
+
 	for (; i < gsub->nlevels; i++) {
-		list_for_entry(d, &gsub->maplevels[i]->lsubdivs, l) {
-			if (d->n == idx) {
-				log(15, "Found in level %d\n", i);
-				return d;
-			}
+		sd = ga_get_abs(&gsub->maplevels[i]->subdivs, idx);
+		if (sd) {
+			if (idx != sd->n)
+				log(1, "Error subdiv found as idx:%d real is:%d\n",
+					idx, sd->n);
+			log(15, "Found in level %d\n", i);
+			return sd;
 		}
 	}
 
 	return NULL;
 }
 
-static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, struct gar_subfile *gsub, int level, int start)
+static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, int level, int start)
 {
 	struct gobject *first = NULL, *o = NULL, *p;
-	struct gar_subdiv *gss, *gs;
 	struct gpoint *gp;
 	struct gpoly *gpoly;
-	int objs = 0, i;
+	struct gar_subfile *gsub = gsd->subfile;
+	int objs = 0;
 
 	log(15, "subdiv:%d cx=%d cy=%d north=%d west=%d south=%d east=%d\n",
 		gsd->n, gsd->icenterlng, gsd->icenterlat, gsd->north, gsd->west,
@@ -189,7 +193,13 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 	}
 
 	// Fixme we can go down to get more POIs
+	// This code is dissabled
+#if 0
 	if (0 && gsd->next) {
+		struct gar_subdiv *gss;
+		struct gar_subdiv *gs;
+		int i;
+
 		log(15, "Must load %d subdiv\n", gsd->next);
 		if (gsd->next == gsd->n) {
 			log(1, "%d points to itself\n", gsd->next);
@@ -204,7 +214,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 		if (gss) {
 			list_for_entry(gs, gss->l.p, l) {
 				log(15, "Loading subdiv: %d\n", gs->n);
-				p = gar_get_subdiv_objs(gs, &i, gsub, level, 0);
+				p = gar_get_subdiv_objs(gs, &i, level, 0);
 				if (p) {
 					objs += i;
 					if (first) {
@@ -221,6 +231,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, s
 		}
 	}
 done:
+#endif
 	*count = objs;
 	return first;
 out_err:
@@ -249,13 +260,15 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr)
 	struct gar_maplevel *ml;
 	struct gpoint *gp;
 	struct gpoly *gpoly;
+	int c, i, j;
 
-	int i;
 	list_for_entry(g, &gar->limgs,l) {
 		list_for_entry(sub, &g->lsubfiles, l) {
 			for (i=0; i < sub->nlevels; i++) {
 				ml = sub->maplevels[i];
-				list_for_entry(gsd, &ml->lsubdivs, l) {
+				c = ga_get_count(&ml->subdivs);
+				for (j = 0; j < c; j++) {
+					gsd = ga_get(&ml->subdivs, j);
 					list_for_entry(gpoly, &gsd->lpolygons, l) {
 						if (gpoly == ptr) {
 							return gar_alloc_object(GO_POLYGON, gpoly);
@@ -296,10 +309,11 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	struct gar_subdiv *gsd;
 	struct gar_subfile *gsub;
 	int objs = 0;
-	int bits,i,j, lvlobjs;
+	int bits,i,j, lvlobjs,k;
 	int nsub = 0;
 	int basebits = 6;
 	int baselevel = 0;
+	int sdcount;
 
 	gsub = gm->subs[0];
 	if (!gsub)
@@ -350,10 +364,13 @@ nextlvl:
 			log(1, "Loading level:%d bits:%d\n",
 				ml->ml.level, ml->ml.bits);
 			lvlobjs = 0;
-			list_for_entry(gsd, &ml->lsubdivs, l) {
+			sdcount = ga_get_count(&ml->subdivs);
+			log(1, "Have %d subdivs\n", sdcount);
+			for (k = 0; k < sdcount; k++) {
+				gsd = ga_get(&ml->subdivs, k);
 				if (rect && !gar_subdiv_visible(gsd, rect))
 					continue;
-				p = gar_get_subdiv_objs(gsd, &j, gsub, ml->ml.level, 1);
+				p = gar_get_subdiv_objs(gsd, &j, ml->ml.level, 1);
 				if (p) {
 					log(15, "%s subdiv:%d gave %d objects\n",
 						gsub->mapid, gsd->n, j);
@@ -378,12 +395,16 @@ nextlvl:
 					goto nextlvl;
 				}
 			}
-
 			break;
 		}
 	}
 	if (!first) {
 		log(1, "Error no objects found\n");
+		/* 
+		 * FIXME: For the case where we have no detailed maps
+		 * for all areas, in that case show the last level from
+		 * the basemap
+		 */
 	}
 	if ((flags&GO_GET_SORTED) && gm->draworder)
 		*ret = gar_order_objects(first, gm->draworder, 1);

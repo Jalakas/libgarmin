@@ -17,19 +17,17 @@
     
 */
 #include <sys/types.h>
+#include "GarminTypedef.h"
 
 /* http://ati.land.cz/gps/typdecomp/ */
-struct hdr_typ_t {
-	u_int16_t	x1;	// 5b 00
-	u_int8_t	id[10];
-	u_int16_t	x2;	// 10 00
-	u_int16_t	year;
-	u_int8_t	month;	// 0-11
-	u_int8_t	day;	// 1-31
-	u_int8_t	hour;	// 0-24
-	u_int8_t	minute;	// 1-60
-	u_int16_t	x3;	// e4 04
-	u_int16_t	fid;	// offset 0x2f
-	u_int16_t	product_id;
+struct hdr_typ_t
+{
+	struct hdr_subfile_part_t hsub;
+	u_int32_t tre1_offset;
+	u_int32_t tre1_size;
+	u_int32_t tre2_offset;
+	u_int32_t tre2_size;
+	u_int32_t tre3_offset;
+	u_int32_t tre3_size;
 };
 

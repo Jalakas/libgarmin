@@ -31,6 +31,7 @@
 #include "garmin_subdiv.h"
 #include "garmin_order.h"
 #include "geoutils.h"
+#include "array.h"
 
 static int gar_load_points_overview(struct gar_subfile *sub, struct hdr_tre_t *tre)
 {
@@ -181,13 +182,16 @@ static int gar_load_polylines_overview(struct gar_subfile *sub, struct hdr_tre_t
 static int gar_load_ml_subdata(struct gar_subfile *sub, struct gar_maplevel *ml)
 {
 	struct gar_subdiv *gsub;
-	int c = 0;
-	list_for_entry(gsub, &ml->lsubdivs, l) {
+	unsigned int c,p = 0;
+	unsigned int i = ga_get_count(&ml->subdivs);
+
+	for (c = 0; c < i; c++) {
+		gsub = ga_get(&ml->subdivs, c);
 		if (gar_load_subdiv(sub, gsub)<0)
 			return -1;
-		c++;
+		p++;
 	}
-	log(11,"Loaded %d subdivs\n", c);
+	log(11,"Loaded %d subdivs\n", p);
 	return 0;
 }
 
@@ -330,7 +334,7 @@ static int gar_load_ml_subdivs(struct gar_subfile *subf, struct gar_maplevel *ml
 					log(10,"invalid start and end\n");
 				}
 			}
-			list_append(&gsub->l, &ml->lsubdivs);
+			ga_append(&ml->subdivs, gsub);
 			*gsub_prev = gsub;
 			gsub->rgn_end = 0;
 		}
@@ -360,7 +364,7 @@ static int gar_load_ml_subdivs(struct gar_subfile *subf, struct gar_maplevel *ml
 			if (*gsub_prev){
 				(*gsub_prev)->rgn_end = gsub->rgn_start;
 			}
-			list_append(&gsub->l, &ml->lsubdivs);
+			ga_append(&ml->subdivs, gsub);
 			*gsub_prev = gsub;
 		}
 	}
@@ -377,8 +381,6 @@ static int gar_load_subdivs(struct gar_subfile *sub, struct hdr_tre_t *tre)
 	int last = 0;
 	struct gimg *g = sub->gimg;
 
-	if (!rgnoff)
-		return -1;
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre2_offset;
 	if (lseek(g->fd, off, SEEK_SET) != off) {
@@ -392,6 +394,7 @@ static int gar_load_subdivs(struct gar_subfile *sub, struct hdr_tre_t *tre)
 		if (gar_load_ml_subdivs(sub, sub->maplevels[i], tre, &gsub_prev, rgnoff, last) < 0) {
 			// return -1;
 		}
+		ga_trim(&sub->maplevels[i]->subdivs);
 	}
 	if (gsub_prev) {
 		gsub_prev->rgn_end = rgnoff + rgnlen;
@@ -399,6 +402,16 @@ static int gar_load_subdivs(struct gar_subfile *sub, struct hdr_tre_t *tre)
 	}
 
 	return sub->nlevels;
+}
+
+static struct gar_maplevel *gar_alloc_maplevel(int base)
+{
+	struct gar_maplevel *ml;
+	ml = calloc(1, sizeof(*ml));
+	if (!ml)
+		return NULL;
+	ga_init(&ml->subdivs, base, 1024);
+	return ml;
 }
 
 static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
@@ -410,6 +423,7 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 	struct gimg *g = sub->gimg;
 	int i;
 	int totalsubdivs = 0;
+	int base = 1;
 
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre1_offset;
@@ -426,12 +440,11 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 	}
 	sub->nlevels = nlevels;
 	for (i = 0; i < nlevels; i++) { 
-		ml = calloc(1, sizeof(*ml));
+		ml = gar_alloc_maplevel(base);
 		if (!ml) {
 			log(1, "Error can not allocate map level!\n");
 			return -1;
 		}
-		list_init(&ml->lsubdivs);
 		if (read(g->fd, &ml->ml, s) != s) {
 			log(1, "Error reading map level %d\n", i);
 			return -1;
@@ -440,7 +453,15 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 			i, ml->ml.level, ml->ml.inherited, ml->ml.bits, ml->ml.nsubdiv,
 			ml->ml.bit4,ml->ml.bit5,ml->ml.bit6); 
 		sub->maplevels[i] = ml;
+		/* FIXME: The document states that
+		 * all subdivs are indexed from 1
+		 * BUT in the POI records:
+		 * 'this two byte integer implies that there can not be
+		 * more than 65535 subdivisions in a map level'
+		 * and it's not clear in which map level
+		 */
 		totalsubdivs += ml->ml.nsubdiv;
+		base += ml->ml.nsubdiv;
 	}
 	return totalsubdivs;
 }
@@ -808,6 +829,10 @@ int gar_load_subfiles(struct gimg *g)
 		gar_init_lbl(sub);
 		gar_init_net(sub);
 		sub->rgnoffset = gar_get_rgnoff(sub, &sub->rgnlen);
+		if (!sub->rgnoffset) {
+			log(1, "Can not find RGN file\n");
+			goto out_err;
+		}
 
 		if (gar_load_maplevels(sub, &tre)<0) {
 			log(1, "Error loading map levels!\n");

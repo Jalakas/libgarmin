@@ -1,11 +1,11 @@
 #include "list.h"
+#include "array.h"
 #include "GarminTypedef.h"
 
 struct gimg;
 int gar_load_subfiles(struct gimg *g);
 
 struct gar_subdiv {
-	list_t l;
 	struct gar_subfile *subfile;
 	u_int32_t n;
 	u_int16_t next;	// section of next level
@@ -35,7 +35,7 @@ struct gar_subdiv {
 
 struct gar_maplevel {
 	struct tre_map_level_t ml;
-	list_t lsubdivs;
+	struct garray subdivs;
 };
 
 struct mlfilter {
