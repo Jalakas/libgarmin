@@ -9,7 +9,6 @@ struct gar_subdiv {
 	struct gar_subfile *subfile;
 	u_int32_t n;
 	u_int16_t next;	// section of next level
-	struct gar_subdiv *nextptr;
 	unsigned terminate :1;
 	u_int32_t rgn_start;
 	u_int32_t rgn_end;
