@@ -76,7 +76,6 @@ struct gimg {
 };
 
 struct gpoint {
-//	list_t l;
 	struct gar_subdiv *subdiv;
 	u_int32_t n;
 	u_int8_t type;
@@ -91,7 +90,6 @@ struct gpoint {
 };
 
 struct gpoly {
-	list_t l;
 	struct gar_subdiv *subdiv;
 	u_int32_t n;
 	u_int8_t type;

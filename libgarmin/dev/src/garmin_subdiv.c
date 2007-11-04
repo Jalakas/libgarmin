@@ -254,7 +254,6 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	gp = calloc(1, sizeof(*gp));
 	if (!gp)
 		return -1;
-	list_init(&gp->l);
 	gp->type = *dp;
 	two_byte = gp->type & 0x80;
 
@@ -632,7 +631,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 				poly->c.x += gsub->icenterlng;
 				poly->c.y += gsub->icenterlat;
 				poly->subdiv = gsub;
-				list_append(&poly->l, &gsub->lpolygons);
+				ga_append(&gsub->polygons, poly);
 //				dmp_lbl(sub, poly->lbloffset, L_LBL);
 			}
 			d+=rc;

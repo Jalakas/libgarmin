@@ -26,7 +26,7 @@ struct gar_subdiv {
 	struct garray points;
 	struct garray pois;
 	struct garray polylines;
-	list_t lpolygons;
+	struct garray polygons;
 };
 
 struct gar_maplevel {

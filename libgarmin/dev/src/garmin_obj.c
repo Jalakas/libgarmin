@@ -135,7 +135,9 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 		gsd->n, gsd->icenterlng, gsd->icenterlat, gsd->north, gsd->west,
 		gsd->south, gsd->east);
 	if (start) {
-		list_for_entry(gpoly, &gsd->lpolygons, l) {
+		cnt = ga_get_count(&gsd->polygons);
+		for (i=0; i < cnt; i++) {
+			gpoly = ga_get(&gsd->polygons, i);
 			/* Do not return definition areas and backgrounds */
 			if (gpoly->type == 0x4a || gpoly->type == 0x4b)
 				continue;
@@ -277,7 +279,9 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr)
 				c = ga_get_count(&ml->subdivs);
 				for (j = 0; j < c; j++) {
 					gsd = ga_get(&ml->subdivs, j);
-					list_for_entry(gpoly, &gsd->lpolygons, l) {
+					cnt = ga_get_count(&gsd->polygons);
+					for (k=0; k < cnt; k++) {
+						gpoly = ga_get(&gsd->polygons, k);
 						if (gpoly == ptr) {
 							return gar_alloc_object(GO_POLYGON, gpoly);
 						}

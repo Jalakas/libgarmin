@@ -189,6 +189,10 @@ static int gar_load_ml_subdata(struct gar_subfile *sub, struct gar_maplevel *ml)
 		gsub = ga_get(&ml->subdivs, c);
 		if (gar_load_subdiv(sub, gsub)<0)
 			return -1;
+		ga_trim(&gsub->points);
+		ga_trim(&gsub->pois);
+		ga_trim(&gsub->polylines);
+		ga_trim(&gsub->polygons);
 		p++;
 	}
 	log(11,"Loaded %d subdivs\n", p);
@@ -255,10 +259,10 @@ static struct gar_subdiv *gar_subdiv_alloc(struct gar_subfile *subf)
 {
 	struct gar_subdiv *gsub = calloc(1, sizeof(*gsub));
 	if (gsub) {
-		ga_init(&gsub->points, 1, 256);
-		ga_init(&gsub->pois, 1, 256);
-		ga_init(&gsub->polylines, 1, 512);
-		list_init(&gsub->lpolygons);
+		ga_init(&gsub->points, 1, 128);
+		ga_init(&gsub->pois, 1, 128);
+		ga_init(&gsub->polylines, 1, 128);
+		ga_init(&gsub->polygons, 1, 128);
 		gsub->subfile = subf;
 	}
 	return gsub;
