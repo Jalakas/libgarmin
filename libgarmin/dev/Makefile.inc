@@ -1,5 +1,5 @@
 pkgdocdir=$(pkgdatadir)/doc
-CFLAGS = -fPIC
+CFLAGS = -shared
 AM_CPPFLAGS = -fPIC
 if DEBUG
 AM_CPPFLAGS += -DDEBUG

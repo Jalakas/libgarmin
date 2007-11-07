@@ -187,7 +187,7 @@ static u_int32_t gar_lbl_offset(struct gar_subfile *sub ,u_int32_t offlbl, int t
 					log(1, "LBL: Error can not seek to %zd\n", off);
 					return 0xFFFFFFFF;
 				}
-				rc = read(gimg->fd, b, 3);
+				rc = gread(gimg, b, 3);
 				if (rc!=3)
 					return 0xFFFFFFFF;
 				off = *(u_int32_t *)b;
@@ -228,7 +228,7 @@ int gar_get_lbl(struct gar_subfile *sub, off_t offset, int type, u_int8_t *buf, 
 		return -1;
 	}
 
-	bsp_fd_init(&bp, gimg->fd);
+	bsp_fd_init(&bp, gimg);
 	return sub->lbl->decode(&bp, buf, buflen);
 }
 
@@ -249,7 +249,7 @@ int gar_init_lbl(struct gar_subfile *sub)
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}
-	rc = read(gimg->fd, &lbl, sizeof(struct hdr_lbl_t));
+	rc = gread(gimg, &lbl, sizeof(struct hdr_lbl_t));
 	if (rc != sizeof(struct hdr_lbl_t)) {
 		log(1, "LBL: Can not read header\n");
 		return -1;
@@ -323,7 +323,7 @@ static int gar_get_at(struct gar_subfile *sub, off_t offset, char *buf, int bufl
 		return -1;
 	}
 
-	bsp_fd_init(&bp, gimg->fd);
+	bsp_fd_init(&bp, gimg);
 	if (!sub->lbl->decode)
 		return 0;
 	return sub->lbl->decode(&bp, (u_int8_t *)buf, buflen);
@@ -348,7 +348,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}
-	rc = read(gimg->fd, &lbl, sizeof(struct hdr_lbl_t));
+	rc = gread(gimg, &lbl, sizeof(struct hdr_lbl_t));
 	if (rc != sizeof(struct hdr_lbl_t)) {
 		log(1, "LBL: Can not read header\n");
 		return -1;
@@ -373,7 +373,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}
-	rc = read(gimg->fd, rb, lbl.lbl2_length);
+	rc = gread(gimg, rb, lbl.lbl2_length);
 	if (rc != lbl.lbl2_length) {
 		log(1, "LBL: Error reading countries\n");
 		free(rb);
@@ -408,7 +408,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}
-	rc = read(gimg->fd, rb, lbl.lbl3_length);
+	rc = gread(gimg, rb, lbl.lbl3_length);
 	if (rc != lbl.lbl3_length) {
 		log(1, "LBL: Error reading regions\n");
 		free(rb);
@@ -449,7 +449,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}
-	rc = read(gimg->fd, rb, lbl.lbl4_length);
+	rc = gread(gimg, rb, lbl.lbl4_length);
 	if (rc != lbl.lbl4_length) {
 		log(1, "LBL: Error reading cities\n");
 		free(rb);
@@ -507,7 +507,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}
-	rc = read(gimg->fd, rb, lbl.lbl8_length);
+	rc = gread(gimg, rb, lbl.lbl8_length);
 	if (rc != lbl.lbl8_length) {
 		log(1, "LBL: Error reading ZIPs\n");
 		free(rb);

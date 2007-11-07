@@ -47,7 +47,7 @@ int gar_init_net(struct gar_subfile *sub)
 		log(1, "NET: Error can not seek to %ld\n", off);
 		return -1;
 	}
-	rc = read(gimg->fd, &net, sizeof(struct hdr_net_t));
+	rc = gread(gimg, &net, sizeof(struct hdr_net_t));
 	if (rc != sizeof(struct hdr_net_t)) {
 		log(1, "NET: Can not read header\n");
 		return -1;
@@ -91,7 +91,7 @@ off_t gar_net_get_lbl_offset(struct gar_subfile *sub, off_t offset, int idx)
 		log(1, "NET: Error can not seek to %ld\n", o);
 		return 0;
 	}
-	rc = read(gimg->fd, buf, sizeof(buf));
+	rc = gread(gimg, buf, sizeof(buf));
 	if (rc > 3) {
 		cp = buf;
 		i = *(u_int32_t*)cp;

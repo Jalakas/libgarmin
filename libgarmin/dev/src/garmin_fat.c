@@ -170,7 +170,7 @@ int gar_load_fat(struct gimg *g)
 		log(10, "FAT size %d\n", fatend);
 	}
 	/* Read reserved FAT entries first */
-	while ((rc = read(g->fd, &fent, s)) == s) {
+	while ((rc = gread(g, &fent, s)) == s) {
 		if (fent.flag != 0x00)
 			break;
 		rsz+=rc;
@@ -195,7 +195,7 @@ int gar_load_fat(struct gimg *g)
 		count ++;
 		if (fatend && rsz>=fatend)
 			break;
-	} while ((rc = read(g->fd, &fent, s)) == s);
+	} while ((rc = gread(g, &fent, s)) == s);
 
 	if (!count) {
 		log(1, "Failed to read FAT\n");
@@ -227,7 +227,7 @@ int gar_fat_file2fd(struct gimg *g, char *name, int fd)
 	sz = fe->size;
 	lseek(g->fd, fe->offset, SEEK_SET);
 	while (sz) {
-		rc = read(g->fd, buf, sz > sizeof(buf) ? sizeof(buf) : sz);
+		rc = gread(g, buf, sz > sizeof(buf) ? sizeof(buf) : sz);
 		if (rc < 0) {
 			log(1, "Error reading file\n");
 			return -1;

@@ -60,7 +60,7 @@ static int gar_load_points_overview(struct gar_subfile *sub, struct hdr_tre_t *t
 		return -1;
 	sub->nfpoint = rc;
 	prec = calloc(rc, (tre->tre6_rec_size));
-	rc = read(g->fd, prec, tre->tre6_size);
+	rc = gread(g, prec, tre->tre6_size);
 	if (rc != tre->tre6_size) {
 		log(1, "Error reading polygon overviews: %d\n", rc);
 		free(prec);
@@ -109,7 +109,7 @@ static int gar_load_polygons_overview(struct gar_subfile *sub, struct hdr_tre_t 
 		return -1;
 	sub->nfpolygone = rc;
 	prec = calloc(rc, (tre->tre5_rec_size));
-	rc = read(g->fd, prec, tre->tre5_size);
+	rc = gread(g, prec, tre->tre5_size);
 	if (rc != tre->tre5_size) {
 		log(1, "Error reading polygon overviews: %d\n", rc);
 		free(prec);
@@ -158,7 +158,7 @@ static int gar_load_polylines_overview(struct gar_subfile *sub, struct hdr_tre_t
 		return -1;
 	sub->nfpolyline = rc;
 	prec = calloc(rc, (tre->tre4_rec_size));
-	rc = read(g->fd, prec, tre->tre4_size);
+	rc = gread(g, prec, tre->tre4_size);
 	if (rc != tre->tre4_size) {
 		log(1, "Error reading polylines overviews: %d\n", rc);
 		free(prec);
@@ -283,7 +283,7 @@ static ssize_t gar_get_rgnoff(struct gar_subfile *sub, ssize_t *l)
 		log(1, "Error can not seek to %zd\n", rgnoff);
 		return 0;
 	}
-	rc = read(g->fd, &rgnhdr, sizeof(struct hdr_rgn_t));
+	rc = gread(g, &rgnhdr, sizeof(struct hdr_rgn_t));
 	if (rc == sizeof(struct hdr_rgn_t)) {
 		if (strncmp("GARMIN RGN", rgnhdr.hsub.type, 10)) {
 			log(1, "RGN: Invalid header type: [%s]\n",
@@ -312,7 +312,7 @@ static int gar_load_ml_subdivs(struct gar_subfile *subf, struct gar_maplevel *ml
 		log(11, "Reading level:%d reading:%d\n",
 				ml->ml.level, ml->ml.nsubdiv);
 		for (i=0; i < ml->ml.nsubdiv; i++) {
-			if (read(g->fd, &subn, s) != s) {
+			if (gread(g, &subn, s) != s) {
 				log(1, "Error reading subdiv %d of maplevel:%d\n",
 						i, ml->ml.level);
 				return -1;
@@ -349,7 +349,7 @@ static int gar_load_ml_subdivs(struct gar_subfile *subf, struct gar_maplevel *ml
 		log(11, "Reading level:%d reading:%d\n",
 				ml->ml.level, ml->ml.nsubdiv);
 		for (i=0; i < ml->ml.nsubdiv; i++) {
-			if (read(g->fd, &subl, s1) != s1) {
+			if (gread(g, &subl, s1) != s1) {
 				log(1, "Error reading subdiv %d of maplevel:%d\n",
 						i, ml->ml.level);
 				return -1;
@@ -451,7 +451,7 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 			log(1, "Error can not allocate map level!\n");
 			return -1;
 		}
-		if (read(g->fd, &ml->ml, s) != s) {
+		if (gread(g, &ml->ml, s) != s) {
 			log(1, "Error reading map level %d\n", i);
 			return -1;
 		}
@@ -755,7 +755,7 @@ int gar_load_subfiles(struct gimg *g)
 			log(1, "Error can not seek to %zd\n", off);
 			goto out_err;
 		}
-		rc = read(g->fd, &tre, sizeof(struct hdr_tre_t));
+		rc = gread(g, &tre, sizeof(struct hdr_tre_t));
 		if (rc != sizeof(struct hdr_tre_t)) {
 			log(1, "Error can not read TRE header!\n");
 			goto out_err;

@@ -460,7 +460,7 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 		log(1, "Out of memory reading subdiv\n");
 		return -1;
 	}
-	rc = read(g->fd, data, rsize);
+	rc = gread(g, data, rsize);
 	if (rc != rsize) {
 		log(1, "Error reading subdiv want:%d got:%d\n", rsize, rc);
 		free(data);

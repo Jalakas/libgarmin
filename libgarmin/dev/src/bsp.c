@@ -53,10 +53,10 @@ int bsp_get_bits(struct bsp *bp, int bits)
 	return ret;
 }
 
-void bsp_fd_init(struct bspfd *bp, int fd)
+void bsp_fd_init(struct bspfd *bp, struct gimg *g)
 {
 	bp->cbit = 7;
-	bp->fd = fd;
+	bp->g = g;
 	bp->datalen = 0;
 	bp->ep = bp->cb = bp->buf; 
 }
@@ -64,7 +64,7 @@ void bsp_fd_init(struct bspfd *bp, int fd)
 static int bsp_fd_read(struct bspfd *bp)
 {
 	int rc;
-	rc = read(bp->fd, bp->buf, sizeof(bp->buf));
+	rc = gread(bp->g, bp->buf, sizeof(bp->buf));
 	if (rc < 0)
 		return -1;
 //	hexdump(bp->buf, rc);

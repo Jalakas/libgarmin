@@ -63,6 +63,7 @@ struct gimg {
 	struct gar *gar;
 	char *file;
 	int fd;
+	unsigned char xor;
 	ssize_t dataoffset;
 	ssize_t blocksize;
 	list_t lfatfiles;
@@ -108,3 +109,4 @@ struct gpoly {
 
 void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h);
 int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data);
+ssize_t gread(struct gimg *g, void *buf, size_t count);

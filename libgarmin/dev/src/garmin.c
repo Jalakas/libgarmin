@@ -41,6 +41,18 @@ void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h)
 		h->hour, h->min, h->sec);
 }
 
+ssize_t gread(struct gimg *g, void *buf, size_t count)
+{
+	ssize_t rc;
+	rc = read(g->fd, buf, count);
+	if (rc > 0 && g->xor) {
+		ssize_t i;
+		for (i=0; i < rc; i++)
+			((unsigned char *)buf)[i] ^= g->xor;
+	}
+	return rc;
+}
+
 static struct gimg *gimg_alloc(struct gar *gar, char *file)
 {
 	struct gimg *g;
@@ -88,7 +100,7 @@ static int gar_load_img_hdr(struct gimg *g)
 {
 	int rc;
 	struct hdr_img_t hdr;
-	rc = read(g->fd, &hdr, sizeof(struct hdr_img_t));
+	rc = gread(g, &hdr, sizeof(struct hdr_img_t));
 	if (rc < 0) {
 		log(7, "Read error: %d(%s)\n", errno, strerror(errno));
 		return -1;
@@ -137,6 +149,11 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data)
 		log(1, "Can not open file: [%s] errno=%d(%s)\n", 
 				g->file, errno, strerror(errno));
 		return -1;
+	}
+	read(g->fd, &g->xor, sizeof(g->xor));
+	lseek(g->fd, 0, SEEK_SET);
+	if (g->xor) {
+		log(1, "Map is XORed you can use garxor to speed the reading\n");
 	}
 	if (gar_load_img_hdr(g) < 0) {
 		log(1, "Failed to load header from: [%s]\n", g->file);

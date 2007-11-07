@@ -1,6 +1,7 @@
+struct gimg;
 /* Can read up to 32 bits */
 struct bspfd {
-	int fd;
+	struct gimg *g;
 	u_int8_t buf[4096];
 	int datalen;
 	u_int8_t *cb;
@@ -17,5 +18,5 @@ struct bsp {
 };
 void bsp_init(struct bsp *bp, u_int8_t *data, u_int32_t len);
 int bsp_get_bits(struct bsp *bp, int bits);
-void bsp_fd_init(struct bspfd *bp, int fd);
+void bsp_fd_init(struct bspfd *bp, struct gimg *g);
 int bsp_fd_get_bits(struct bspfd *bp, int bits);
