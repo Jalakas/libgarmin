@@ -66,12 +66,35 @@ struct gar_rect	{
 	double rllong;
 };
 
+
+/* Walk and parse all data */
+#define OPM_PARSE	(1<<0)
+/* Call a callback w/ every object */
+#define OPM_DUMP	(1<<1)
+/* Work as a map backend */
+#define OPM_GPS		(1<<2)
+
+typedef void (*dump_fn)(struct gobject *obj);
+
+#define DBGM_LBLS	(1<<0)
+#define DBGM_OBJSRC	(1<<1)
+
+
+struct gar_config {
+	int opm;
+	int maxsubdivs;		/* Load max N subdivs for OPM_GPS */
+	dump_fn cb;		/* Callback function for OPM_DUMP */
+	unsigned debugmask;	/* Debuging aid */
+};
+
 struct gimg;
 struct gar;
 
 typedef void (*log_fn)(char *file, int line, int level, char *fmt, ...)
 	__attribute__ ((format(printf,4,5)));
+/* Default init w/ config, keep for the latest navit release */
 struct gar *gar_init(char *tbd, log_fn l);
+struct gar *gar_init_cfg(char *tbd, log_fn l, struct gar_config *cfg);
 void gar_free(struct gar *g);
 int gar_img_load(struct gar *gar, char *file, int data);
 struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect);
@@ -108,10 +131,11 @@ int gar_fat_file2fd(struct gimg *g, char *name, int fd);
 /* Get ptr to a dskimg file */
 struct gimg *gar_get_dskimg(struct gar *gar, char *file);
 
+
 #define GARDEG(x) ((x) < 0x800000 ? (double)(x) * 360.0 / 16777216.0 : -(double)((x) - 0x100000) * 360.0 / 16777216.0)
 #define GARRAD(x) ((x) < 0x800000 ? (double)(x) * TWOPI / 16777216.0 : -(double)((x) - 0x100000) * TWOPI / 16777216.0)
-
 #define FEET2METER(x) ((x)/3.28084)
+
 #ifdef __cplusplus
 }
 #endif

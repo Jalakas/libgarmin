@@ -36,7 +36,11 @@ int ga_append(struct garray *ga, void *el)
 int ga_trim(struct garray *ga)
 {
 	void *rptr;
-	rptr = realloc(ga->ar, sizeof(void *) * ga->lastidx);
+	int s;
+	s = sizeof(void *) * ga->lastidx;
+	if (!s)
+		s = 1;
+	rptr = realloc(ga->ar, s);
 	if (!rptr)
 		return -1;
 	ga->elements = ga->lastidx;
@@ -65,6 +69,15 @@ void ga_clear(struct garray *ga, unsigned int idx)
 	ga->ar[idx] = NULL;
 	if (idx == ga->lastidx - 1)
 		ga->lastidx --;
+}
+
+void ga_empty(struct garray *ga)
+{
+	int i;
+	for (i=0; i < ga->lastidx; i++)
+		ga->ar[i] = NULL;
+	ga->lastidx = 0;
+	ga_trim(ga);
 }
 
 int ga_get_count(struct garray *ga)

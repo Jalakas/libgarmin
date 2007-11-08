@@ -19,7 +19,11 @@ static void logfn(char *file, int line, int level, char *fmt, ...)
 static struct gar * load(char *file)
 {
 	struct gar *g;
-	g = gar_init(NULL, logfn);
+	struct gar_config cfg;
+	cfg.opm = OPM_PARSE;
+	// FIXME: make cmdline arg
+	cfg.debugmask = 0; // DBGM_LBLS | DBGM_OBJSRC;
+	g = gar_init_cfg(NULL, logfn, &cfg);
 	if (!g)
 		return NULL;
 	if (gar_img_load(g, file, 1) > 0)

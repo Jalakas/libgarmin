@@ -316,6 +316,7 @@ outok:
 }
 
 // FIXME: This is very very slow
+// This function is obsolete now by gar_get_object_by_id
 struct gobject *gar_get_object(struct gar *gar, void *ptr)
 {
 	struct gimg *g;

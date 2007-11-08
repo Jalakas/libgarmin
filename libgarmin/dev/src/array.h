@@ -18,5 +18,6 @@ void ga_clear(struct garray *ga, unsigned int idx);
 int ga_get_count(struct garray *ga);
 void ga_set_base(struct garray *ga, unsigned int base);
 int ga_get_base(struct garray *ga);
+void ga_empty(struct garray *ga);
 #define _GAR_ARRAY_H__
 #endif

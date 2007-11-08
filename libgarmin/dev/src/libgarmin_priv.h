@@ -36,6 +36,7 @@ extern log_fn glogfn;
 //#define RAD(x) ((x) < 0x800000 ? (double)(x) * TWOPI / (1<<24) : -(double)((x) - 0x100000) * TWOPI / (1<<24))
 
 struct gar {
+	struct gar_config cfg;
 	char	*tdbdir;
 	int	tdbloaded;
 	log_fn	logfn;
@@ -86,8 +87,10 @@ struct gpoint {
 
 	unsigned is_poi :1,
 		has_subtype :1;
+#ifdef DEBUG
 	unsigned char *source;
 	int slen;
+#endif
 };
 
 struct gpoly {
@@ -103,10 +106,13 @@ struct gpoly {
 		scase:1;
 	int npoints;
 	struct gcoord *deltas;
+#ifdef DEBUG
 	unsigned char *source;
 	int slen;
+#endif
 };
 
 void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h);
 int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data);
 ssize_t gread(struct gimg *g, void *buf, size_t count);
+ssize_t gwrite(struct gimg *g, void *buf, size_t count);

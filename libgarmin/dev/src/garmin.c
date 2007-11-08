@@ -53,6 +53,16 @@ ssize_t gread(struct gimg *g, void *buf, size_t count)
 	return rc;
 }
 
+ssize_t gwrite(struct gimg *g, void *buf, size_t count)
+{
+	if (g->xor) {
+		ssize_t i;
+		for (i=0; i < count; i++)
+			((unsigned char *)buf)[i] ^= g->xor;
+	}
+	return write(g->fd, buf, count);
+}
+
 static struct gimg *gimg_alloc(struct gar *gar, char *file)
 {
 	struct gimg *g;
@@ -73,9 +83,19 @@ static struct gimg *gimg_alloc(struct gar *gar, char *file)
 	return g;
 }
 
-struct gar *gar_init(char *tbd, log_fn l)
+struct gar *gar_init_cfg(char *tbd, log_fn l, struct gar_config *cfg)
 {
 	struct gar *gar;
+
+	if (cfg->opm == OPM_DUMP) {
+		log(1, "Data dumping not implemented\n");
+		return NULL;
+	}
+
+	if (cfg->opm != OPM_PARSE && cfg->opm != OPM_GPS) {
+		log(1, "Unknown op mode: %d\n", cfg->opm);
+		return NULL;
+	}
 
 	gar = calloc(1, sizeof(*gar));
 	if (!gar)
@@ -86,9 +106,18 @@ struct gar *gar_init(char *tbd, log_fn l)
 		glogfn = l;
 	}
 
+	gar->cfg = *cfg;
 	log(1, "%s initializing ...\n", LIBVERSION);
 	list_init(&gar->limgs);
 	return gar;
+}
+
+struct gar *gar_init(char *tdb, log_fn l)
+{
+	struct gar_config cfg;
+	memset(&cfg, 0, sizeof(struct gar_config));
+	cfg.opm = OPM_GPS;
+	return gar_init_cfg(tdb, l, &cfg);
 }
 
 void gar_free(struct gar *g)

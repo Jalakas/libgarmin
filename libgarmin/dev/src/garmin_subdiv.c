@@ -208,28 +208,44 @@ out:
 	return total;
 }
 
-static void gar_copy_source(u_int8_t *dp, int l, u_int8_t **dst, int *len)
+static void gar_copy_source(struct gar_subfile *sub, u_int8_t *dp, int l, u_int8_t **dst, int *len)
 {
-	int i;
-	u_int8_t *s;
-	if (l>2048) {
-		log(1, "dp=%p len=%d\n", dp, l);
-		log(1, "Aborting ...\n");
-		sync();
-		abort();
+#ifdef DEBUG
+	if (!(sub->gimg->gar->cfg.debugmask & DBGM_OBJSRC))
 		return;
+	else {
+		int i;
+		u_int8_t *s;
+		if (l>2048) {
+			log(1, "dp=%p len=%d\n", dp, l);
+			log(1, "Aborting ...\n");
+			sync();
+			abort();
+			return;
+		}
+		s = malloc(l+1);
+		if (!s)
+			return;
+		*len = l;
+		i = 0;
+		while(i<l) {
+			s[i] = *dp;
+			i++;
+			dp++;
+		}
+		*dst = s;
 	}
-	s = malloc(l+1);
-	if (!s)
-		return;
-	*len = l;
-	i = 0;
-	while(i<l) {
-		s[i] = *dp;
-		i++;
-		dp++;
-	}
-	*dst = s;
+#endif
+}
+
+static void gar_free_poly(struct gpoly *gp)
+{
+#ifdef DEBUG
+	if(gp->source)
+		free(gp->source);
+#endif
+	free(gp->deltas);
+	free(gp);
 }
 
 static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int line, int *ok, int cshift)
@@ -371,6 +387,15 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	return total_bytes;
 }
 
+static void gar_free_point(struct gpoint *gp)
+{
+#ifdef DEBUG
+	if(gp->source)
+		free(gp->source);
+#endif
+	free(gp);
+}
+
 static int gar_parse_point(u_int8_t *dp, struct gpoint **ret, int forcest)
 {
 	struct gpoint *gp;
@@ -388,7 +413,6 @@ static int gar_parse_point(u_int8_t *dp, struct gpoint **ret, int forcest)
 		gp->has_subtype = !!(i & 0x800000);
 	}
 	gp->is_poi = !!(i & 0x400000);
-//	i = *(u_int32_t *)dp;
 	gp->lbloffset = i & 0x3FFFFF;
 	dp+=3;
 	gp->c.x = *(u_int16_t *)dp;
@@ -407,26 +431,66 @@ static int gar_parse_point(u_int8_t *dp, struct gpoint **ret, int forcest)
 	}
 	return 8;
 };
-#define DMPLBLS
+
 static void dmp_lbl(struct gar_subfile *sub, u_int32_t lbloff, int type)
 {
-#ifdef DMPLBLS
+#ifdef DEBUG
 	struct gimg *g = sub->gimg;
-	u_int8_t buf[2048];
-	off_t offsave = lseek(g->fd, 0, SEEK_CUR);
-	if (lbloff ==0 || lbloff == 0xFFFFFF) {
+	if (!(g->gar->cfg.debugmask & DBGM_LBLS))
 		return;
-	}
+	else {
+		u_int8_t buf[2048];
+		off_t offsave = lseek(g->fd, 0, SEEK_CUR);
+		if (lbloff ==0 || lbloff == 0xFFFFFF) {
+			return;
+		}
 
-	if (gar_get_lbl(sub, lbloff, type, buf, sizeof(buf)) > -1) {
-			if (*buf != '^' && *buf != '\0') 
-			log(9, "LBL[%04X]:[%s]\n", lbloff, buf);
+		if (gar_get_lbl(sub, lbloff, type, buf, sizeof(buf)) > -1) {
+				if (*buf != '^' && *buf != '\0') 
+				log(9, "LBL[%04X]:[%s]\n", lbloff, buf);
+		}
+		lseek(g->fd, offsave, SEEK_SET);
 	}
-	lseek(g->fd, offsave, SEEK_SET);
 #endif
 }
 
-int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
+void gar_free_subdiv_data(struct gar_subdiv *gsd)
+{
+	int i, cnt;
+	struct gpoint *gp;
+	struct gpoly  *gl;
+
+	cnt = ga_get_count(&gsd->pois);
+	for (i=0; i < cnt; i++) {
+		gp = ga_get(&gsd->pois, i);
+		if  (gp)
+			gar_free_point(gp);
+	}
+	ga_empty(&gsd->pois);
+	cnt = ga_get_count(&gsd->points);
+	for (i=0; i < cnt; i++) {
+		gp = ga_get(&gsd->points, i);
+		if  (gp)
+			gar_free_point(gp);
+	}
+	ga_empty(&gsd->points);
+	cnt = ga_get_count(&gsd->polylines);
+	for (i=0; i < cnt; i++) {
+		gl = ga_get(&gsd->polylines, i);
+		if  (gl)
+			gar_free_poly(gl);
+	}
+	ga_empty(&gsd->polylines);
+	cnt = ga_get_count(&gsd->polygons);
+	for (i=0; i < cnt; i++) {
+		gl = ga_get(&gsd->polygons, i);
+		if  (gl)
+			gar_free_poly(gl);
+	}
+	ga_empty(&gsd->polygons);
+}
+
+int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 {
 	ssize_t rsize;
 	u_int8_t *data;
@@ -545,10 +609,10 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 					GARDEG(gsub->north));
 				j = 0;
 			}
-			if (/*gp->type != 0 && */j) {
+			if (j) {
 				gp->subdiv = gsub;
 				ga_append(&gsub->pois, gp);
-			//	dmp_lbl(sub, gp->lbloffset, L_LBL);
+				dmp_lbl(sub, gp->lbloffset, L_LBL);
 			} else {
 				free(gp);
 			}
@@ -581,10 +645,10 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 					GARDEG(gsub->north));
 				j = 0;
 			}
-			if (/*gp->type != 0 && */j) {
+			if (j) {
 				gp->subdiv = gsub;
 				ga_append(&gsub->points, gp);
-			//	dmp_lbl(sub, gp->lbloffset, gp->is_poi ? L_POI : L_LBL);
+				dmp_lbl(sub, gp->lbloffset, gp->is_poi ? L_POI : L_LBL);
 			} else
 				free(gp);
 			d+=rc;
@@ -598,7 +662,8 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 		if (d>=data+rsize  || e > data+rsize) {
 			log(1,"Invalid polyline! data=%p rsize=%d ep=%p d=%p e=%p opline=%u opgon=%u\n",
 				data, rsize, data+rsize, d, e, opline, opgon);
-			return objcnt-1;
+			objcnt-=1;
+			goto out;
 		}
 		while (d < e) {
 			rc = gar_parse_poly(d, e, &poly, 1, &ok, gsub->shift);
@@ -607,9 +672,10 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 				poly->c.x += gsub->icenterlng;
 				poly->c.y += gsub->icenterlat;
 				poly->subdiv = gsub;
-				gar_copy_source(d, rc, &poly->source, &poly->slen);
+				gar_copy_source(sub, d, rc, &poly->source, &poly->slen);
+				/* FIXME: &gsub->polylines[MAXDRAWORDER] */
 				ga_append(&gsub->polylines, poly);
-//				dmp_lbl(sub, poly->lbloffset, L_LBL);
+				dmp_lbl(sub, poly->lbloffset, L_LBL);
 			}
 			d+=rc;
 		}
@@ -622,7 +688,8 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 		if (d>=data+rsize || e > data+rsize) {
 			log(1,"Invalid polygon! data=%p d=%p e=%p opline=%04X\n",
 				data, d, e, opline);
-			return objcnt-1;
+			objcnt-=1;
+			goto out;
 		}
 		while (d < e) {
 			rc = gar_parse_poly(d, e, &poly, 0, &ok,gsub->shift);
@@ -632,11 +699,12 @@ int gar_load_subdiv(struct gar_subfile *sub, struct gar_subdiv *gsub)
 				poly->c.y += gsub->icenterlat;
 				poly->subdiv = gsub;
 				ga_append(&gsub->polygons, poly);
-//				dmp_lbl(sub, poly->lbloffset, L_LBL);
+				dmp_lbl(sub, poly->lbloffset, L_LBL);
 			}
 			d+=rc;
 		}
 	}
-
+out:
+	free(data);
 	return objcnt;
 }
