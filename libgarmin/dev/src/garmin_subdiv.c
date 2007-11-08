@@ -440,7 +440,7 @@ static void dmp_lbl(struct gar_subfile *sub, u_int32_t lbloff, int type)
 		return;
 	else {
 		u_int8_t buf[2048];
-		off_t offsave = lseek(g->fd, 0, SEEK_CUR);
+		off_t offsave = glseek(g, 0, SEEK_CUR);
 		if (lbloff ==0 || lbloff == 0xFFFFFF) {
 			return;
 		}
@@ -449,7 +449,7 @@ static void dmp_lbl(struct gar_subfile *sub, u_int32_t lbloff, int type)
 				if (*buf != '^' && *buf != '\0') 
 				log(9, "LBL[%04X]:[%s]\n", lbloff, buf);
 		}
-		lseek(g->fd, offsave, SEEK_SET);
+		glseek(g, offsave, SEEK_SET);
 	}
 #endif
 }
@@ -516,7 +516,7 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 	}
 
 	log(15, "Subdiv size: %zd\n", rsize);
-	if (lseek(g->fd, gsub->rgn_start, SEEK_SET) != gsub->rgn_start) {
+	if (glseek(g, gsub->rgn_start, SEEK_SET) != gsub->rgn_start) {
 		log(1, "Error can not seek to %d\n", gsub->rgn_start);
 		return -1;
 	}

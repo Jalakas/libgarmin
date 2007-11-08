@@ -183,7 +183,7 @@ static u_int32_t gar_lbl_offset(struct gar_subfile *sub ,u_int32_t offlbl, int t
 				char b[3];
 				int rc;
 				off = sub->lbl->offset + sub->lbl->lbl6off +  offlbl; // << sub->lbl->addrshiftpoi);
-				if (lseek(gimg->fd, off, SEEK_SET) != off) {
+				if (glseek(gimg, off, SEEK_SET) != off) {
 					log(1, "LBL: Error can not seek to %zd\n", off);
 					return 0xFFFFFFFF;
 				}
@@ -223,7 +223,7 @@ int gar_get_lbl(struct gar_subfile *sub, off_t offset, int type, u_int8_t *buf, 
 	if (off == 0xFFFFFFFF)
 		return 0;
 
-	if (lseek(gimg->fd, off, SEEK_SET) != off) {
+	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %zd\n", off);
 		return -1;
 	}
@@ -245,7 +245,7 @@ int gar_init_lbl(struct gar_subfile *sub)
 		log(1,"No LBL file\n");
 		return 0;
 	}
-	if (lseek(gimg->fd, off, SEEK_SET) != off) {
+	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}
@@ -318,7 +318,7 @@ static int gar_get_at(struct gar_subfile *sub, off_t offset, char *buf, int bufl
 	if (off == 0xFFFFFFFF)
 		return -1;
 
-	if (lseek(gimg->fd, off, SEEK_SET) != off) {
+	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %zd\n", off);
 		return -1;
 	}
@@ -344,7 +344,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		log(1,"No LBL file\n");
 		return 0;
 	}
-	if (lseek(gimg->fd, off, SEEK_SET) != off) {
+	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}
@@ -369,7 +369,7 @@ int gar_init_srch(struct gar_subfile *sub)
 	}
 	off1 = off;
 	off += lbl.lbl2_offset;
-	if (lseek(gimg->fd, off, SEEK_SET) != off) {
+	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}
@@ -404,7 +404,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		return -1;
 	rb = malloc(lbl.lbl3_length);
 	off = off1 + lbl.lbl3_offset;
-	if (lseek(gimg->fd, off, SEEK_SET) != off) {
+	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}
@@ -445,7 +445,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		return -1;
 	rb = malloc(lbl.lbl4_length);
 	off = off1 + lbl.lbl4_offset;
-	if (lseek(gimg->fd, off, SEEK_SET) != off) {
+	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}
@@ -503,7 +503,7 @@ int gar_init_srch(struct gar_subfile *sub)
 		return -1;
 	rb = malloc(lbl.lbl8_length);
 	off = off1 + lbl.lbl8_offset;
-	if (lseek(gimg->fd, off, SEEK_SET) != off) {
+	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		return -1;
 	}

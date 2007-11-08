@@ -116,3 +116,4 @@ void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h);
 int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data);
 ssize_t gread(struct gimg *g, void *buf, size_t count);
 ssize_t gwrite(struct gimg *g, void *buf, size_t count);
+off_t glseek(struct gimg *g, off_t offset, int whence);

@@ -41,9 +41,27 @@ void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h)
 		h->hour, h->min, h->sec);
 }
 
+static void inline gcheckfd(struct gimg *g)
+{
+	if (g->fd == -1) {
+		g->fd = open(g->file, O_RDONLY);
+		if (g->fd < 0) {
+			log(1, "Error can not open:[%s] errno=%d(%s)\n",
+				g->file, errno, strerror(errno));
+		}
+	}
+}
+
+off_t glseek(struct gimg *g, off_t offset, int whence)
+{
+	gcheckfd(g);
+	return lseek(g->fd, offset, whence);
+}
+
 ssize_t gread(struct gimg *g, void *buf, size_t count)
 {
 	ssize_t rc;
+	gcheckfd(g);
 	rc = read(g->fd, buf, count);
 	if (rc > 0 && g->xor) {
 		ssize_t i;
@@ -55,6 +73,7 @@ ssize_t gread(struct gimg *g, void *buf, size_t count)
 
 ssize_t gwrite(struct gimg *g, void *buf, size_t count)
 {
+	gcheckfd(g);
 	if (g->xor) {
 		ssize_t i;
 		for (i=0; i < count; i++)

@@ -47,7 +47,7 @@ static int gar_load_points_overview(struct gar_subfile *sub, struct hdr_tre_t *t
 	}
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre6_offset;
-	if (lseek(g->fd, off, SEEK_SET) != off) {
+	if (glseek(g, off, SEEK_SET) != off) {
 		log(1, "Error can not seek to %zd\n", off);
 		return -1;
 	}
@@ -96,7 +96,7 @@ static int gar_load_polygons_overview(struct gar_subfile *sub, struct hdr_tre_t 
 	}
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre5_offset;
-	if (lseek(g->fd, off, SEEK_SET) != off) {
+	if (glseek(g, off, SEEK_SET) != off) {
 		log(1, "Error can not seek to %zd\n", off);
 		return -1;
 	}
@@ -145,7 +145,7 @@ static int gar_load_polylines_overview(struct gar_subfile *sub, struct hdr_tre_t
 	}
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre4_offset;
-	if (lseek(g->fd, off, SEEK_SET) != off) {
+	if (glseek(g, off, SEEK_SET) != off) {
 		log(1, "Error can not seek to %zd\n", off);
 		return -1;
 	}
@@ -278,7 +278,7 @@ static ssize_t gar_get_rgnoff(struct gar_subfile *sub, ssize_t *l)
 	struct hdr_rgn_t rgnhdr;
 	int rc;
 	struct gimg *g = sub->gimg;
-	if (lseek(g->fd, rgnoff, SEEK_SET) != rgnoff) {
+	if (glseek(g, rgnoff, SEEK_SET) != rgnoff) {
 		log(1, "Error can not seek to %zd\n", rgnoff);
 		return 0;
 	}
@@ -388,7 +388,7 @@ static int gar_load_subdivs(struct gar_subfile *sub, struct hdr_tre_t *tre)
 
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre2_offset;
-	if (lseek(g->fd, off, SEEK_SET) != off) {
+	if (glseek(g, off, SEEK_SET) != off) {
 		log(1, "Error can not seek to %zd\n", off);
 		return -1;
 	}
@@ -432,7 +432,7 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 
 	off = gar_subfile_offset(sub, "TRE");
 	off += tre->tre1_offset;
-	if (lseek(g->fd, off, SEEK_SET) != off) {
+	if (glseek(g, off, SEEK_SET) != off) {
 		log(1, "Error can not seek to %zd\n", off);
 		return -1;
 	}
@@ -750,7 +750,7 @@ int gar_load_subfiles(struct gimg *g)
 			log(1, "Error can not find TRE file!\n");
 			goto out_err;
 		}
-		if (lseek(g->fd, off, SEEK_SET) != off) {
+		if (glseek(g, off, SEEK_SET) != off) {
 			log(1, "Error can not seek to %zd\n", off);
 			goto out_err;
 		}

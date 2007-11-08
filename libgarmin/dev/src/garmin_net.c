@@ -43,7 +43,7 @@ int gar_init_net(struct gar_subfile *sub)
 		log(1,"No NET file\n");
 		return 0;
 	}
-	if (lseek(gimg->fd, off, SEEK_SET) != off) {
+	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "NET: Error can not seek to %ld\n", off);
 		return -1;
 	}
@@ -87,7 +87,7 @@ off_t gar_net_get_lbl_offset(struct gar_subfile *sub, off_t offset, int idx)
 		return 0;
 
 	o = sub->net->netoff + sub->net->net1_offset + (offset << sub->net->net1_addr_shift);
-	if (lseek(gimg->fd, o, SEEK_SET) != o) {
+	if (glseek(gimg, o, SEEK_SET) != o) {
 		log(1, "NET: Error can not seek to %ld\n", o);
 		return 0;
 	}

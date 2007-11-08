@@ -225,7 +225,7 @@ int gar_fat_file2fd(struct gimg *g, char *name, int fd)
 		return -1;
 	}
 	sz = fe->size;
-	lseek(g->fd, fe->offset, SEEK_SET);
+	glseek(g, fe->offset, SEEK_SET);
 	while (sz) {
 		rc = gread(g, buf, sz > sizeof(buf) ? sizeof(buf) : sz);
 		if (rc < 0) {
