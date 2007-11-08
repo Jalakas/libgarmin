@@ -275,6 +275,8 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 	sdidx = objid >> 16;
 	otype = objid & 0xFF;
 	oidx = (objid >> 8) & 0xFF;
+	log(13, "Looking for sdidx: %d otype:%d oidx: %d in %d\n",
+		sdidx, otype, oidx, mapid);
 	list_for_entry(g, &gar->limgs,l) {
 		list_for_entry(sub, &g->lsubfiles, l) {
 			if (sub->id == mapid) {
@@ -285,16 +287,16 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 					if (sd) {
 						switch(otype) {
 						case GO_POINT:
-							obj = ga_get(&sd->points, oidx);
+							obj = ga_get_abs(&sd->points, oidx);
 							goto outok;
 						case GO_POI:
-							obj = ga_get(&sd->pois, oidx);
+							obj = ga_get_abs(&sd->pois, oidx);
 							goto outok;
 						case GO_POLYLINE:
-							obj = ga_get(&sd->polylines, oidx);
+							obj = ga_get_abs(&sd->polylines, oidx);
 							goto outok;
 						case GO_POLYGON:
-							obj = ga_get(&sd->polylines, oidx);
+							obj = ga_get_abs(&sd->polylines, oidx);
 							goto outok;
 						default:
 							log(1, "Unknown object type: %d mapid:%X objid:%X\n",
@@ -709,7 +711,7 @@ char *gar_object_debug_str(struct gobject *o)
 	case GO_POINT:
 	case GO_POI:
 		gp = o->gptr;
-		type = gp->type;
+		type = gp->type << 8 | gp->subtype;
 		c = gp->c;
 		idx = gp->n;
 		sd = gp->subdiv;
