@@ -296,7 +296,7 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 							obj = ga_get_abs(&sd->polylines, oidx);
 							goto outok;
 						case GO_POLYGON:
-							obj = ga_get_abs(&sd->polylines, oidx);
+							obj = ga_get_abs(&sd->polygons, oidx);
 							goto outok;
 						default:
 							log(1, "Unknown object type: %d mapid:%X objid:%X\n",
