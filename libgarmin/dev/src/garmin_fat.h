@@ -6,7 +6,7 @@ struct fat_entry {
 };
 
 typedef struct fat_block_struct fat_entry_t;
-int gar_load_fat(struct gimg *g);
+int gar_load_fat(struct gimg *g, int dataoffset, int blocksize);
 struct gar_subfile;
 ssize_t gar_subfile_offset(struct gar_subfile *sub, char *ext);
 ssize_t gar_file_size(struct gimg *g, char *ext);

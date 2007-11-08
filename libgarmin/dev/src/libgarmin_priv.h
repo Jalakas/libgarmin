@@ -65,8 +65,6 @@ struct gimg {
 	char *file;
 	int fd;
 	unsigned char xor;
-	ssize_t dataoffset;
-	ssize_t blocksize;
 	list_t lfatfiles;
 	list_t lsubfiles;
 	int tdbbasemap;

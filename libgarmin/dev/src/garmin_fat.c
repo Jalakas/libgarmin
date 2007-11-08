@@ -110,7 +110,7 @@ struct fat_entry *gar_fat_get_fe_by_name(struct gimg *g, char *name)
 	return NULL;
 }
 
-static int gar_add_fe(struct gimg *g, struct FATblock_t *fent)
+static int gar_add_fe(struct gimg *g, struct FATblock_t *fent, int blocksize)
 {
 	struct fat_entry *fe, *fe1;
 	char *cp;
@@ -132,7 +132,7 @@ static int gar_add_fe(struct gimg *g, struct FATblock_t *fent)
 	cp += 3;
 	*cp = '\0';
 	fe->size = fent->size;
-	fe->offset = fent->blocks[0] * g->blocksize;
+	fe->offset = fent->blocks[0] * blocksize;
 	log(11, "File: [%s] size:[%ld] offset:[%ld/%08lX]\n", fe->filename,
 		fe->size, fe->offset,fe->offset);
 	fe1 = gar_fat_get_fe_by_name(g, fe->filename);
@@ -152,7 +152,7 @@ static int gar_add_fe(struct gimg *g, struct FATblock_t *fent)
 	return 0;
 }
 
-int gar_load_fat(struct gimg *g)
+int gar_load_fat(struct gimg *g, int dataoffset, int blocksize)
 {
 	struct FATblock_t fent;
 	ssize_t s = sizeof(struct FATblock_t);
@@ -160,7 +160,7 @@ int gar_load_fat(struct gimg *g)
 	int rc, rsz = 0;
 	struct fat_entry *fe;
 	int userootdir = 0;
-	int fatend = g->dataoffset;
+	int fatend = dataoffset;
 
 	if (!fatend) {
 		log(10, "FAT Will use size from rootdir\n");
@@ -191,7 +191,7 @@ int gar_load_fat(struct gimg *g)
 			if (fent.name[0] == ' ' && fent.type[0] == ' ')
 				fatend = fent.size - s;
 		}
-		gar_add_fe(g, &fent);
+		gar_add_fe(g, &fent, blocksize);
 		count ++;
 		if (fatend && rsz>=fatend)
 			break;
@@ -207,8 +207,8 @@ int gar_load_fat(struct gimg *g)
 	}
 
 	if (userootdir) {
-		g->dataoffset = fatend + sizeof(struct hdr_img_t);
-		log(1, "FAT DataOffset corrected to %d\n", g->dataoffset);
+		dataoffset = fatend + sizeof(struct hdr_img_t);
+		log(1, "FAT DataOffset corrected to %d\n", dataoffset);
 	}
 
 	return count * s;

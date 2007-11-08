@@ -144,7 +144,7 @@ void gar_free(struct gar *g)
 	log(1, "Implement me\n");
 }
 
-static int gar_load_img_hdr(struct gimg *g)
+static int gar_load_img_hdr(struct gimg *g, unsigned int *dataoffset, unsigned int *blocksize)
 {
 	int rc;
 	struct hdr_img_t hdr;
@@ -174,10 +174,10 @@ static int gar_load_img_hdr(struct gimg *g)
 	log(10, "File: [%s]\n", g->file);
 	log(10, "Desc1:[%s]\n", hdr.desc1);
 	log(10, "Desc2:[%s]\n", hdr.desc2);
-	g->blocksize = get_blocksize(&hdr);
-	log(10, "Blocksize: %u\n", g->blocksize);
-	g->dataoffset = hdr.dataoffset;
-	log(10, "Dataoffset: %u[%08X]\n", g->dataoffset,g->dataoffset);
+	*blocksize = get_blocksize(&hdr);
+	log(10, "Blocksize: %u\n", *blocksize);
+	*dataoffset = hdr.dataoffset;
+	log(10, "Dataoffset: %u[%08X]\n", *dataoffset, *dataoffset);
 	return 1;
 }
 
@@ -185,6 +185,8 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data)
 {
 	struct gimg *g;
 	int rc;
+	int blocksize;
+	int dataoffset;
 	g = gimg_alloc(gar, file);
 	if (!g) {
 		log(1,"Out of memory!\n");
@@ -203,12 +205,12 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data)
 	if (g->xor) {
 		log(1, "Map is XORed you can use garxor to speed the reading\n");
 	}
-	if (gar_load_img_hdr(g) < 0) {
+	if (gar_load_img_hdr(g, &dataoffset, &blocksize) < 0) {
 		log(1, "Failed to load header from: [%s]\n", g->file);
 		return -1;
 	}
 
-	rc = gar_load_fat(g);
+	rc = gar_load_fat(g, dataoffset, blocksize);
 	if (rc == 0)
 		return -1;
 	if (data) {
