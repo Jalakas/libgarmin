@@ -17,7 +17,8 @@
  * XXX: Use TDB for lookups
  */
 
-static int gar_tdb_load_img(struct gar *gar, char *file, int basemap, int data)
+static int gar_tdb_load_img(struct gar *gar, char *file, int basemap, int data,
+		double north, double east, double south, double west)
 {
 	char path[4096];
 	int rc;
@@ -27,7 +28,8 @@ static int gar_tdb_load_img(struct gar *gar, char *file, int basemap, int data)
 		return -1;
 	}
 	sprintf(path, "%s/%s.img", gar->tdbdir, file);
-	rc =  gar_img_load_dskimg(gar, path, basemap, data);
+	rc =  gar_img_load_dskimg(gar, path, basemap, data,
+					north, east, south, west);
 	if (rc < 0)
 		log(1, "Failed to load [%s]\n", path);
 	return rc;
@@ -162,7 +164,8 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 				tp = strrchr(imgname, '.');
 				if (tp)
 					*tp = '\0';
-				gar_tdb_load_img(gar, imgname, 1, data);
+				gar_tdb_load_img(gar, imgname, 1, data,
+					north, east, south, west);
 				break;
 			case TDB_DETAILMAP:
 				log(1, "DetailMap number: %08u\n", *(u_int32_t *)cp);
@@ -216,7 +219,8 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 				log(15, "term: %02X\n", *cp);
 				cp++;
 				log(11, "Left bytes: %d\n", block.size - (cp - buf));
-				gar_tdb_load_img(gar, imgname, 0, data);
+				gar_tdb_load_img(gar, imgname, 0, data,
+					north, east, south, west);
 				break;
 			case TDB_TAIL:
 				log(1, "TDB Tail block\n");

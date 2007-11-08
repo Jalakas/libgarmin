@@ -181,7 +181,8 @@ static int gar_load_img_hdr(struct gimg *g, unsigned int *dataoffset, unsigned i
 	return 1;
 }
 
-int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data)
+int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
+		double north, double east, double south, double west)
 {
 	struct gimg *g;
 	int rc;
@@ -219,6 +220,10 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data)
 		gar_load_subfiles(g);
 		log(1, "Loaded %d mapsets\n", g->mapsets);
 	}
+	g->north = north;
+	g->east = east;
+	g->south = south;
+	g->west = west;
 	list_append(&g->l, &gar->limgs);
 	return 1;
 }
@@ -265,7 +270,7 @@ int gar_img_load(struct gar *gar, char *file, int data)
 {
 	if (gar_is_gmapsupp(file) == 1) {
 		log(1, "Loading %s as disk image\n", file);
-		return gar_img_load_dskimg(gar, file, 0, data);
+		return gar_img_load_dskimg(gar, file, 0, data, 0,0,0,0);
 	} else {
 		log(1, "Loading %s as TDB\n", file);
 		return gar_parse_tdb(gar, file, data);

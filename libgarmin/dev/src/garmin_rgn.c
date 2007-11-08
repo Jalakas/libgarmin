@@ -944,6 +944,16 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 		gar_rect_log(1, "looking for", rect);
 
 	list_for_entry(g, &gar->limgs,l) {
+		if (rect && gar->tdbloaded) {
+			struct gar_rect r;
+			r.lulat = g->north;
+			r.lulong = g->west;
+			r.rllat = g->south;
+			r.rllong = g->east;
+			if (!gar_rects_intersectboth(rect, &r)) {
+				continue;
+			}
+		}
 		// FIXME for more than one image
 		files->zoomlevels = g->zoomlevels;
 		files->basebits = g->basebits;
