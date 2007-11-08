@@ -309,6 +309,12 @@ int gar_init_lbl(struct gar_subfile *sub)
 	return 0;
 }
 
+void gar_free_lbl(struct gar_subfile *sub)
+{
+	free(sub->lbl);
+	sub->lbl = NULL;
+}
+
 static int gar_get_at(struct gar_subfile *sub, off_t offset, char *buf, int buflen)
 {
 	u_int32_t off = offset;
@@ -538,4 +544,60 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 	sub->czips = idx;
 
 	return 0;
+}
+
+static void gar_free_region_def(struct region_def *rd)
+{
+	if (rd->name)
+		free(rd->name);
+	free(rd);
+}
+
+static void gar_free_city_def(struct city_def *cd)
+{
+	if (cd->label)
+		free(cd->label);
+	free(cd);
+}
+
+static void gar_free_zip_def(struct zip_def *zd)
+{
+	if (zd->code)
+		free(zd->code);
+	free(zd);
+}
+
+void gar_free_srch(struct gar_subfile *f)
+{
+	int i;
+	if (f->countries) {
+		for (i = 0; i < f->ccount; i++) {
+			if (f->countries[i])
+				free(f->countries[i]);
+		}
+	}
+
+	if (f->regions) {
+		for (i = 0; i < f->rcount; i++) {
+			if (f->regions[i])
+				gar_free_region_def(f->regions[i]);
+		}
+		free(f->regions);
+	}
+
+	if (f->cities) {
+		for (i = 0; i < f->cicount; i++) {
+			if (f->cities[i])
+				gar_free_city_def(f->cities[i]);
+		}
+		free(f->cities);
+	}
+
+	if (f->zips) {
+		for (i = 0; i < f->czips; i++) {
+			if (f->zips[i])
+				gar_free_zip_def(f->zips[i]);
+		}
+		free(f->zips);
+	}
 }

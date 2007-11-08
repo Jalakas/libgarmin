@@ -18,6 +18,12 @@ int ga_init(struct garray *ga, unsigned int base, unsigned int isize)
 	return s;
 }
 
+void ga_free(struct garray *ga)
+{
+	if (ga->ar)
+		free(ga->ar);
+}
+
 int ga_append(struct garray *ga, void *el)
 {
 	if (ga->lastidx == ga->elements) {

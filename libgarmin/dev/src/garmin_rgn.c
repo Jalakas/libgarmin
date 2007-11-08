@@ -82,6 +82,14 @@ static int gar_load_points_overview(struct gar_subfile *sub, struct hdr_tre_t *t
 	return 1;
 }
 
+static void gar_free_points_overview(struct gar_subfile *sub)
+{
+	if (sub->fpoint)
+		free(sub->fpoint);
+	sub->fpoint = NULL;
+	sub->nfpoint = 0;
+}
+
 static int gar_load_polygons_overview(struct gar_subfile *sub, struct hdr_tre_t *tre)
 {
 	ssize_t off;
@@ -129,6 +137,14 @@ static int gar_load_polygons_overview(struct gar_subfile *sub, struct hdr_tre_t 
 	}
 	free(prec);
 	return 1;
+}
+
+static void gar_free_polygons_overview(struct gar_subfile *sub)
+{
+	if (sub->fpolygone)
+		free(sub->fpolygone);
+	sub->fpolygone = NULL;
+	sub->nfpolygone = 0;
 }
 
 static int gar_load_polylines_overview(struct gar_subfile *sub, struct hdr_tre_t *tre)
@@ -179,6 +195,14 @@ static int gar_load_polylines_overview(struct gar_subfile *sub, struct hdr_tre_t
 	return 1;
 }
 
+static void gar_free_polylines_overview(struct gar_subfile *sub)
+{
+	if (sub->fpolyline)
+		free(sub->fpolyline);
+	sub->fpolyline = NULL;
+	sub->nfpolyline = 0;
+}
+
 static int gar_load_ml_subdata(struct gar_subfile *sub, struct gar_maplevel *ml)
 {
 	struct gar_subdiv *gsub;
@@ -195,6 +219,9 @@ static int gar_load_ml_subdata(struct gar_subfile *sub, struct gar_maplevel *ml)
 			ga_get_count(&gsub->polylines),
 			ga_get_count(&gsub->polygons));
 		if (sub->gimg->gar->cfg.opm == OPM_PARSE) {
+			gar_free_subdiv_data(gsub);
+		} else if (sub->gimg->gar->cfg.opm == OPM_DUMP) {
+			// for all subdiv objs do a callback
 			gar_free_subdiv_data(gsub);
 		}
 		p++;
@@ -270,6 +297,23 @@ static struct gar_subdiv *gar_subdiv_alloc(struct gar_subfile *subf)
 		gsub->subfile = subf;
 	}
 	return gsub;
+}
+
+static void gar_subdiv_free(struct gar_subdiv *sd)
+{
+	if (sd->loaded) {
+		if (sd->refcnt !=0) {
+			log(1, "Trying to free subdiv with refcnt:%d\n",
+				sd->refcnt);
+			return;
+		}
+		gar_free_subdiv_data(sd);
+	}
+	ga_free(&sd->points);
+	ga_free(&sd->pois);
+	ga_free(&sd->polylines);
+	ga_free(&sd->polygons);
+	free(sd);
 }
 
 static ssize_t gar_get_rgnoff(struct gar_subfile *sub, ssize_t *l)
@@ -495,75 +539,33 @@ static struct gar_subfile *gar_alloc_subfile(struct gimg *g, char *mapid)
 	return sub;
 }
 
-static void gar_free_region_def(struct region_def *rd)
-{
-	if (rd->name)
-		free(rd->name);
-	free(rd);
-}
-
-static void gar_free_city_def(struct city_def *cd)
-{
-	if (cd->label)
-		free(cd->label);
-	free(cd);
-}
-
-static void gar_free_zip_def(struct zip_def *zd)
-{
-	if (zd->code)
-		free(zd->code);
-	free(zd);
-}
-
 static void gar_free_subfile(struct gar_subfile *f)
 {
-	int i;
+	int i,j;
+	struct gar_subdiv *sd;
+	struct gar_maplevel *ml;
 	if (f->mapid)
 		free(f->mapid);
 	if (f->maplevels) {
 		for (i = 0; i < f->nlevels; i++) {
+			ml = f->maplevels[0];
+			i = ga_get_count(&ml->subdivs);
+			for (j = 0; j < i; j++) {
+				sd = ga_get(&ml->subdivs, j);
+				gar_subdiv_free(sd);
+			}
+			ga_free(&ml->subdivs);
 			free(f->maplevels[i]);
 		}
 		free(f->maplevels);
 	}
-	if (f->fpoint)
-		free(f->fpoint);
-	if (f->fpolyline)
-		free(f->fpolyline);
-	if (f->fpolygone)
-		free(f->fpolygone);
+	gar_free_points_overview(f);
+	gar_free_polylines_overview(f);
+	gar_free_polygons_overview(f);
 
-	if (f->countries) {
-		for (i = 0; i < f->ccount; i++) {
-			if (f->countries[i])
-				free(f->countries[i]);
-		}
-	}
-
-	if (f->regions) {
-		for (i = 0; i < f->rcount; i++) {
-			if (f->regions[i])
-				gar_free_region_def(f->regions[i]);
-		}
-		free(f->regions);
-	}
-
-	if (f->cities) {
-		for (i = 0; i < f->cicount; i++) {
-			if (f->cities[i])
-				gar_free_city_def(f->cities[i]);
-		}
-		free(f->cities);
-	}
-
-	if (f->zips) {
-		for (i = 0; i < f->czips; i++) {
-			if (f->zips[i])
-				gar_free_zip_def(f->zips[i]);
-		}
-		free(f->zips);
-	}
+	gar_free_lbl(f);
+	gar_free_net(f);
+	gar_free_srch(f);
 
 	free(f);
 }

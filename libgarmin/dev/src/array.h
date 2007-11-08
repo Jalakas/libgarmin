@@ -8,6 +8,7 @@ struct garray {
 };
 
 int ga_init(struct garray *ga, unsigned int base, unsigned int isize);
+void ga_free(struct garray *ga);
 int ga_append(struct garray *ga, void *el);
 int ga_trim(struct garray *ga);
 // Get zero based index

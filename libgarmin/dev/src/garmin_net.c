@@ -74,6 +74,12 @@ int gar_init_net(struct gar_subfile *sub)
 	return 1;
 }
 
+void gar_free_net(struct gar_subfile *sub)
+{
+	free(sub->net);
+	sub->net = NULL;
+}
+
 off_t gar_net_get_lbl_offset(struct gar_subfile *sub, off_t offset, int idx)
 {
 	struct gimg *gimg = sub->gimg;
