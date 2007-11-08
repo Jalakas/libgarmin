@@ -27,7 +27,7 @@ static int gar_tdb_load_img(struct gar *gar, char *file, int basemap, int data)
 		return -1;
 	}
 	sprintf(path, "%s/%s.img", gar->tdbdir, file);
-	rc =  gar_img_load_dskimg(gar, path, 0, data);
+	rc =  gar_img_load_dskimg(gar, path, basemap, data);
 	if (rc < 0)
 		log(1, "Failed to load [%s]\n", path);
 	return rc;

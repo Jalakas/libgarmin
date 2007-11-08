@@ -193,6 +193,7 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data)
 		return -1;
 	}
 
+	g->tdbbasemap = tdbbase;
 	g->file = strdup(file);
 	g->fd = open(file, O_RDONLY);
 	if (g->fd < 0) {
@@ -213,6 +214,7 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data)
 	rc = gar_load_fat(g, dataoffset, blocksize);
 	if (rc == 0)
 		return -1;
+	
 	if (data) {
 		gar_load_subfiles(g);
 		log(1, "Loaded %d mapsets\n", g->mapsets);
