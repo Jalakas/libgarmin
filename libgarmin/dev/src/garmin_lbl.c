@@ -329,7 +329,7 @@ static int gar_get_at(struct gar_subfile *sub, off_t offset, char *buf, int bufl
 	return sub->lbl->decode(&bp, (u_int8_t *)buf, buflen);
 }
 
-int gar_init_srch(struct gar_subfile *sub)
+int gar_init_srch(struct gar_subfile *sub, int what)
 {
 	struct hdr_lbl_t lbl;
 	struct gimg *gimg = sub->gimg;
@@ -353,48 +353,51 @@ int gar_init_srch(struct gar_subfile *sub)
 		log(1, "LBL: Can not read header\n");
 		return -1;
 	}
-	nc = lbl.lbl2_length/lbl.lbl2_rec_size;
-	log(1, "%d countries defined\n", nc);
-	if (!nc)
-		return 0;
-	sub->countries = calloc(nc + 1, sizeof(char *));
-	if (!sub->countries)
-		return -1;
-	idx = 1;
-	rb = malloc(lbl.lbl2_length);
-	if (!rb) {
-		free(sub->countries);
-		sub->countries = NULL;
-		return -1;
-	}
 	off1 = off;
-	off += lbl.lbl2_offset;
-	if (glseek(gimg, off, SEEK_SET) != off) {
-		log(1, "LBL: Error can not seek to %ld\n", off);
-		return -1;
-	}
-	rc = gread(gimg, rb, lbl.lbl2_length);
-	if (rc != lbl.lbl2_length) {
-		log(1, "LBL: Error reading countries\n");
+	if (what == 0) {
+		nc = lbl.lbl2_length/lbl.lbl2_rec_size;
+		log(1, "%d countries defined\n", nc);
+		if (!nc)
+			return 0;
+		sub->countries = calloc(nc + 1, sizeof(char *));
+		if (!sub->countries)
+			return -1;
+		idx = 1;
+		rb = malloc(lbl.lbl2_length);
+		if (!rb) {
+			free(sub->countries);
+			sub->countries = NULL;
+			return -1;
+		}
+		off += lbl.lbl2_offset;
+		if (glseek(gimg, off, SEEK_SET) != off) {
+			log(1, "LBL: Error can not seek to %ld\n", off);
+			return -1;
+		}
+		rc = gread(gimg, rb, lbl.lbl2_length);
+		if (rc != lbl.lbl2_length) {
+			log(1, "LBL: Error reading countries\n");
+			free(rb);
+			free(sub->countries);
+			sub->countries = NULL;
+			return -1;
+		}
+		cp = rb;
+		while (cp < rb + lbl.lbl2_length) {
+			off = *(u_int32_t *)cp;
+			off &= 0x00FFFFFF;
+			off <<= lbl.addr_shift;
+			off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
+			gar_get_at(sub, off, buf, sizeof(buf));
+			log(15, "LBL: CNT[%d] off=%03lX [%s]\n", idx, off, buf);
+			sub->countries[idx] = strdup(buf);
+			idx++;
+			cp += 3;
+		}
+		sub->ccount = idx;
 		free(rb);
-		free(sub->countries);
-		sub->countries = NULL;
-		return -1;
+		return idx;
 	}
-	cp = rb;
-	while (cp < rb + lbl.lbl2_length) {
-		off = *(u_int32_t *)cp;
-		off &= 0x00FFFFFF;
-		off <<= lbl.addr_shift;
-		off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
-		gar_get_at(sub, off, buf, sizeof(buf));
-		log(15, "LBL: CNT[%d] off=%03lX [%s]\n", idx, off, buf);
-		sub->countries[idx] = strdup(buf);
-		idx++;
-		cp += 3;
-	}
-	sub->ccount = idx;
-	free(rb);
 	nc = lbl.lbl3_length/lbl.lbl3_rec_size;
 	log(1, "%d regions defined\n", nc);
 	if (!nc)

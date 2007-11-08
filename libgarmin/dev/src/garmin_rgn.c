@@ -858,13 +858,14 @@ int gar_load_subfiles(struct gimg *g)
 		if (g->gar->cfg.opm != OPM_GPS)
 			gar_load_subdivs_data(sub);
 		list_append(&sub->l, &g->lsubfiles);
-		gar_init_srch(sub);
+		gar_init_srch(sub, 0);
 		mapsets++;
 	}
 	g->mapsets = mapsets;
 	gar_select_basemaps(g);
 	gar_calculate_zoom_levels(g);
-
+	close(g->fd);
+	g->fd = -1;
 	free(imgs);
 	return 0;
 out_err:
