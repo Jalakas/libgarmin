@@ -488,6 +488,7 @@ void gar_free_subdiv_data(struct gar_subdiv *gsd)
 			gar_free_poly(gl);
 	}
 	ga_empty(&gsd->polygons);
+	gsd->loaded = 0;
 }
 
 int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
@@ -706,5 +707,10 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 	}
 out:
 	free(data);
+	gsub->loaded = 1;
+	ga_trim(&gsub->points);
+	ga_trim(&gsub->pois);
+	ga_trim(&gsub->polylines);
+	ga_trim(&gsub->polygons);
 	return objcnt;
 }

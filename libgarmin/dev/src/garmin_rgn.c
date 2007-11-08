@@ -189,10 +189,6 @@ static int gar_load_ml_subdata(struct gar_subfile *sub, struct gar_maplevel *ml)
 		gsub = ga_get(&ml->subdivs, c);
 		if (gar_load_subdiv_data(sub, gsub)<0)
 			return -1;
-		ga_trim(&gsub->points);
-		ga_trim(&gsub->pois);
-		ga_trim(&gsub->polylines);
-		ga_trim(&gsub->polygons);
 		log(11, "Points: %d POIs: %d Lines:%d Polys:%d\n",
 			ga_get_count(&gsub->points),
 			ga_get_count(&gsub->pois),
@@ -859,7 +855,8 @@ int gar_load_subfiles(struct gimg *g)
 		gar_load_points_overview(sub, &tre);
 
 		gar_load_subdivs(sub, &tre);
-		gar_load_subdivs_data(sub);
+		if (g->gar->cfg.opm != OPM_GPS)
+			gar_load_subdivs_data(sub);
 		list_append(&sub->l, &g->lsubfiles);
 		gar_init_srch(sub);
 		mapsets++;

@@ -26,8 +26,59 @@
 #include "garmin_rgn.h"
 #include "garmin_lbl.h"
 #include "garmin_order.h"
+#include "garmin_subdiv.h"
 #include "geoutils.h"
 #include "array.h"
+
+static void gar_ref_subdiv(struct gobject *o)
+{
+	struct gpoint *gp;
+	struct gpoly *gl;
+	struct gar_subdiv *sd = NULL;
+
+	switch (o->type) {
+		case GO_POINT:
+		case GO_POI:
+			gp = o->gptr;
+			sd = gp->subdiv;
+			break;
+		case GO_POLYLINE:
+		case GO_POLYGON:
+			gl = o->gptr;
+			sd = gl->subdiv;
+			break;
+		default:
+			break;
+	};
+	if (sd)
+		sd->refcnt ++;
+}
+
+static void gar_unref_subdiv(struct gobject *o)
+{
+	struct gpoint *gp;
+	struct gpoly *gl;
+	struct gar_subdiv *sd = NULL;
+
+	switch (o->type) {
+		case GO_POINT:
+		case GO_POI:
+			gp = o->gptr;
+			sd = gp->subdiv;
+			break;
+		case GO_POLYLINE:
+		case GO_POLYGON:
+			gl = o->gptr;
+			sd = gl->subdiv;
+		default:
+			break;
+	};
+	if (sd) {
+		sd->refcnt --;
+		if (sd->refcnt == 0)
+			gar_free_subdiv_data(sd);
+	}
+}
 
 static struct gobject *gar_alloc_object(int type, void *obj)
 {
@@ -37,6 +88,7 @@ static struct gobject *gar_alloc_object(int type, void *obj)
 		return o;
 	o->type = type;
 	o->gptr = obj;
+	gar_ref_subdiv(o);
 	return o;
 }
 
@@ -45,6 +97,7 @@ void gar_free_objects(struct gobject *g)
 	struct gobject *gn;
 	while (g) {
 		gn = g->next;
+		gar_unref_subdiv(g);
 		free(g);
 		g = gn;
 	}
@@ -134,6 +187,10 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 	log(15, "subdiv:%d cx=%d cy=%d north=%d west=%d south=%d east=%d\n",
 		gsd->n, gsd->icenterlng, gsd->icenterlat, gsd->north, gsd->west,
 		gsd->south, gsd->east);
+	if (!gsd->loaded) {
+		if (gar_load_subdiv_data(gsub, gsd) < 0)
+			goto out_err;
+	}
 	if (start) {
 		cnt = ga_get_count(&gsd->polygons);
 		for (i=0; i < cnt; i++) {
@@ -285,19 +342,23 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 					ml = sub->maplevels[i];
 					sd = ga_get_abs(&ml->subdivs, sdidx);
 					if (sd) {
+						if (!sd->loaded) {
+							if (gar_load_subdiv_data(sub, sd) < 0)
+								goto out;
+						}
 						switch(otype) {
 						case GO_POINT:
 							obj = ga_get_abs(&sd->points, oidx);
-							goto outok;
+							goto out;
 						case GO_POI:
 							obj = ga_get_abs(&sd->pois, oidx);
-							goto outok;
+							goto out;
 						case GO_POLYLINE:
 							obj = ga_get_abs(&sd->polylines, oidx);
-							goto outok;
+							goto out;
 						case GO_POLYGON:
 							obj = ga_get_abs(&sd->polygons, oidx);
-							goto outok;
+							goto out;
 						default:
 							log(1, "Unknown object type: %d mapid:%X objid:%X\n",
 								otype, mapid,objid);
@@ -309,7 +370,7 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 		}
 	}
 	return NULL;
-outok:
+out:
 	if (obj)
 		return gar_alloc_object(otype, obj);
 	return NULL;

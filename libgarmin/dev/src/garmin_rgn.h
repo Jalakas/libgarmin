@@ -7,6 +7,7 @@ int gar_load_subfiles(struct gimg *g);
 
 struct gar_subdiv {
 	struct gar_subfile *subfile;
+	unsigned int refcnt;
 	u_int16_t n;
 	u_int16_t next;	// section of next level
 	unsigned terminate :1;
@@ -15,7 +16,8 @@ struct gar_subdiv {
 	unsigned haspoints :1,
 		hasidxpoints :1,
 		haspolylines :1,
-		haspolygons : 1;
+		haspolygons : 1,
+		loaded: 1;
 	u_int32_t icenterlng;
 	u_int32_t icenterlat;
 	int north; // north boundary of area covered by this subsection
