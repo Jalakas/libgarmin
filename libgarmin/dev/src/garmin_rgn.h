@@ -61,11 +61,10 @@ struct gar_net_info;
 
 struct gar_subfile {
 	list_t l;
+	int loaded;
 	struct gimg *gimg;
 	char *mapid;
 	unsigned int id;
-	struct gar_lbl_t *lbl;
-	struct gar_net_info *net;
 	ssize_t rgnoffset;
 	ssize_t rgnlen;
 	int transparent:1,
@@ -78,6 +77,8 @@ struct gar_subfile {
 	int subdividx;
 	int nlevels;
 	struct gar_maplevel **maplevels;
+	struct gar_lbl_t *lbl;
+	struct gar_net_info *net;
 	char **countries;
 	int ccount;
 	struct region_def **regions;

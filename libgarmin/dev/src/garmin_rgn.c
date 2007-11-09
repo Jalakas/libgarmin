@@ -840,8 +840,6 @@ int gar_load_subfiles(struct gimg *g)
 		if (sub->east == sub->west){
 			sub->east = -sub->east;
 		}
-		gar_init_lbl(sub);
-		gar_init_net(sub);
 		sub->rgnoffset = gar_get_rgnoff(sub, &sub->rgnlen);
 		if (!sub->rgnoffset) {
 			log(1, "Can not find RGN file\n");
@@ -852,6 +850,10 @@ int gar_load_subfiles(struct gimg *g)
 			log(1, "Error loading map levels!\n");
 			goto out_err;
 		}
+
+		gar_init_lbl(sub);
+		gar_init_net(sub);
+
 		gar_load_polylines_overview(sub, &tre);
 		gar_load_polygons_overview(sub, &tre);
 		gar_load_points_overview(sub, &tre);
@@ -860,12 +862,15 @@ int gar_load_subfiles(struct gimg *g)
 		if (g->gar->cfg.opm != OPM_GPS)
 			gar_load_subdivs_data(sub);
 		list_append(&sub->l, &g->lsubfiles);
-		gar_init_srch(sub, 0);
+//		gar_init_srch(sub, 0);
 		mapsets++;
 	}
 	g->mapsets = mapsets;
 	gar_select_basemaps(g);
 	gar_calculate_zoom_levels(g);
+	if (!g->gar->tdbloaded) {
+		// XXX copy basemaps bounds to g->bounds
+	}
 	close(g->fd);
 	g->fd = -1;
 	free(imgs);

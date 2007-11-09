@@ -20,6 +20,9 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -128,6 +131,21 @@ struct gar *gar_init_cfg(char *tbd, log_fn l, struct gar_config *cfg)
 	gar->cfg = *cfg;
 	log(1, "%s initializing ...\n", LIBVERSION);
 	list_init(&gar->limgs);
+#if 0
+	log(1, "struct gimg=%d\n", sizeof(struct gimg));
+	log(1, "struct gar_subfile=%d\n", sizeof(struct gar_subfile));
+	log(1, "struct gar_subdiv=%d\n", sizeof(struct gar_subdiv));
+#endif
+	if (0) {
+	struct rlimit rlmt;
+
+	rlmt.rlim_cur = 300 * 1024 * 1024;
+	rlmt.rlim_max = 300 * 1024 * 1024;
+	if(setrlimit(RLIMIT_AS, &rlmt))
+		log(1, "setrlimit DATA failed (%s)\n",
+			strerror(errno));
+	}
+
 	return gar;
 }
 
@@ -217,6 +235,9 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 		return -1;
 	
 	if (data) {
+		// FIXME: When we have a TDB we can skip this
+		// but when no TDB must load, we will keep
+		// the dskimg loaded and deal w/ subfiles
 		gar_load_subfiles(g);
 		log(1, "Loaded %d mapsets\n", g->mapsets);
 	}
