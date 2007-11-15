@@ -544,6 +544,7 @@ static void gar_free_subfile_data(struct gar_subfile *f)
 	int i,j,n;
 	struct gar_subdiv *sd;
 	struct gar_maplevel *ml;
+#if 0
 	if (f->maplevels) {
 		for (i = 0; i < f->nlevels; i++) {
 			ml = f->maplevels[i];
@@ -558,6 +559,7 @@ static void gar_free_subfile_data(struct gar_subfile *f)
 		}
 		free(f->maplevels);
 	}
+#endif
 	gar_free_points_overview(f);
 	gar_free_polylines_overview(f);
 	gar_free_polygons_overview(f);
@@ -620,12 +622,12 @@ int gar_load_subfile_data(struct gar_subfile *sub)
 		log(1, "Error can not read TRE header!\n");
 		goto out_err;
 	}
-
+#if 0
 	if (gar_load_maplevels(sub, &tre)<0) {
 		log(1, "Error loading map levels!\n");
 		goto out_err;
 	}
-
+#endif
 	gar_init_lbl(sub);
 	gar_init_net(sub);
 
@@ -917,13 +919,12 @@ int gar_load_subfiles(struct gimg *g)
 			log(1, "Can not find RGN file\n");
 			goto out_err;
 		}
+		if (gar_load_maplevels(sub, &tre)<0) {
+			log(1, "Error loading map levels!\n");
+			goto out_err;
+		}
 
 		if (g->gar->cfg.opm != OPM_GPS) {
-			if (gar_load_maplevels(sub, &tre)<0) {
-				log(1, "Error loading map levels!\n");
-				goto out_err;
-			}
-
 			gar_init_lbl(sub);
 			gar_init_net(sub);
 
