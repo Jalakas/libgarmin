@@ -544,7 +544,11 @@ static void gar_free_subfile_data(struct gar_subfile *f)
 	int i,j,n;
 	struct gar_subdiv *sd;
 	struct gar_maplevel *ml;
-#if 0
+#if 1
+/* FIXME: Used SDs are freed automagicaly 
+ * but rest are freed here, get_objects and friends
+ * needs to be FIXED
+ */
 	if (f->maplevels) {
 		for (i = 0; i < f->nlevels; i++) {
 			ml = f->maplevels[i];
@@ -554,10 +558,10 @@ static void gar_free_subfile_data(struct gar_subfile *f)
 				if (sd)
 					gar_subdiv_free(sd);
 			}
-			free(f->maplevels[i]);
-			ga_free(&ml->subdivs);
+//			free(f->maplevels[i]);
+			ga_empty(&ml->subdivs);
 		}
-		free(f->maplevels);
+//		free(f->maplevels);
 	}
 #endif
 	gar_free_points_overview(f);

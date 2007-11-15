@@ -477,6 +477,7 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 		log(1, "Loading %s basemap:%s\n", gsub->mapid, gsub->basemap ? "yes" : "no");
 		if (!gsub->loaded) {
 			// FIXME: error handle
+			// FIXME: Load only the sd-s that are in the selected level
 			gar_load_subfile_data(gsub);
 		}
 		for (i = 0; i < gsub->nlevels; i++) {
