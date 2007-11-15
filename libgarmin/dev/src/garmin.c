@@ -55,6 +55,20 @@ static void inline gcheckfd(struct gimg *g)
 	}
 }
 
+int gopen(struct gimg *g)
+{
+	if (g->fd == -1)
+		g->fd = open(g->file, O_RDONLY);
+	return g->fd;
+}
+
+int gclose(struct gimg *g)
+{
+	int fd = g->fd;
+	g->fd = -1;
+	return close(fd);
+}
+
 off_t glseek(struct gimg *g, off_t offset, int whence)
 {
 	gcheckfd(g);

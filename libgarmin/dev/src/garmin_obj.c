@@ -51,7 +51,7 @@ static void gar_ref_subdiv(struct gobject *o)
 			break;
 	};
 	if (sd)
-		sd->refcnt ++;
+		gar_subdiv_ref(sd);
 }
 
 static void gar_unref_subdiv(struct gobject *o)
@@ -73,11 +73,8 @@ static void gar_unref_subdiv(struct gobject *o)
 		default:
 			break;
 	};
-	if (sd) {
-		sd->refcnt --;
-		if (sd->refcnt == 0)
-			gar_free_subdiv_data(sd);
-	}
+	if (sd)
+		gar_subdiv_unref(sd);
 }
 
 static struct gobject *gar_alloc_object(int type, void *obj)
@@ -337,6 +334,10 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 	list_for_entry(g, &gar->limgs,l) {
 		list_for_entry(sub, &g->lsubfiles, l) {
 			if (sub->id == mapid) {
+				if (!sub->loaded) {
+					// FIXME: error handle
+					gar_load_subfile_data(sub);
+				}
 				/* FIXME: This can be improved */
 				for(i=0; i < sub->nlevels; i++) {
 					ml = sub->maplevels[i];
@@ -474,6 +475,10 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	for (nsub = 0; nsub < gm->lastsub ; nsub++) {
 		gsub = gm->subs[nsub];
 		log(1, "Loading %s basemap:%s\n", gsub->mapid, gsub->basemap ? "yes" : "no");
+		if (!gsub->loaded) {
+			// FIXME: error handle
+			gar_load_subfile_data(gsub);
+		}
 		for (i = 0; i < gsub->nlevels; i++) {
 nextlvl:
 			ml = gsub->maplevels[i];

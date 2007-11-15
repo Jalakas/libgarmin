@@ -3,7 +3,6 @@
 #include "GarminTypedef.h"
 
 struct gimg;
-int gar_load_subfiles(struct gimg *g);
 
 struct gar_subdiv {
 	struct gar_subfile *subfile;
@@ -62,6 +61,7 @@ struct gar_net_info;
 struct gar_subfile {
 	list_t l;
 	int loaded;
+	unsigned int refcnt;
 	struct gimg *gimg;
 	char *mapid;
 	unsigned int id;
@@ -95,3 +95,7 @@ struct gar_subfile {
 	int nfpolygone;
 };
 
+int gar_load_subfiles(struct gimg *g);
+int gar_load_subfile_data(struct gar_subfile *sub);
+void gar_subfile_ref(struct gar_subfile *s);
+void gar_subfile_unref(struct gar_subfile *s);

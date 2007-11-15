@@ -539,18 +539,47 @@ static struct gar_subfile *gar_alloc_subfile(struct gimg *g, char *mapid)
 	return sub;
 }
 
+static void gar_free_subfile_data(struct gar_subfile *f)
+{
+	int i,j,n;
+	struct gar_subdiv *sd;
+	struct gar_maplevel *ml;
+	if (f->maplevels) {
+		for (i = 0; i < f->nlevels; i++) {
+			ml = f->maplevels[i];
+			n = ga_get_count(&ml->subdivs);
+			for (j = 0; j < n; j++) {
+				sd = ga_get(&ml->subdivs, j);
+				if (sd)
+					gar_subdiv_free(sd);
+			}
+			free(f->maplevels[i]);
+			ga_free(&ml->subdivs);
+		}
+		free(f->maplevels);
+	}
+	gar_free_points_overview(f);
+	gar_free_polylines_overview(f);
+	gar_free_polygons_overview(f);
+
+	gar_free_lbl(f);
+	gar_free_net(f);
+	gar_free_srch(f);
+	f->loaded = 0;
+}
+
 static void gar_free_subfile(struct gar_subfile *f)
 {
-	int i,j;
+	int i,j,n;
 	struct gar_subdiv *sd;
 	struct gar_maplevel *ml;
 	if (f->mapid)
 		free(f->mapid);
 	if (f->maplevels) {
 		for (i = 0; i < f->nlevels; i++) {
-			ml = f->maplevels[0];
-			i = ga_get_count(&ml->subdivs);
-			for (j = 0; j < i; j++) {
+			ml = f->maplevels[i];
+			n = ga_get_count(&ml->subdivs);
+			for (j = 0; j < n; j++) {
 				sd = ga_get(&ml->subdivs, j);
 				gar_subdiv_free(sd);
 			}
@@ -568,6 +597,49 @@ static void gar_free_subfile(struct gar_subfile *f)
 	gar_free_srch(f);
 
 	free(f);
+}
+
+int gar_load_subfile_data(struct gar_subfile *sub)
+{
+	struct hdr_tre_t tre;
+	struct gimg *g = sub->gimg;
+	ssize_t off;
+	int rc;
+
+	off = gar_subfile_offset(sub, "TRE");
+	if (!off) {
+		log(1, "Error can not find TRE file!\n");
+		goto out_err;
+	}
+	if (glseek(g, off, SEEK_SET) != off) {
+		log(1, "Error can not seek to %zd\n", off);
+		goto out_err;
+	}
+	rc = gread(g, &tre, sizeof(struct hdr_tre_t));
+	if (rc != sizeof(struct hdr_tre_t)) {
+		log(1, "Error can not read TRE header!\n");
+		goto out_err;
+	}
+
+	if (gar_load_maplevels(sub, &tre)<0) {
+		log(1, "Error loading map levels!\n");
+		goto out_err;
+	}
+
+	gar_init_lbl(sub);
+	gar_init_net(sub);
+
+	gar_load_polylines_overview(sub, &tre);
+	gar_load_polygons_overview(sub, &tre);
+	gar_load_points_overview(sub, &tre);
+
+	gar_load_subdivs(sub, &tre);
+	sub->loaded = 1;
+//	gar_load_subdivs_data(sub);
+
+	return 0;
+out_err:
+	return -1;
 }
 
 static void gar_calculate_zoom_levels(struct gimg *g)
@@ -846,21 +918,23 @@ int gar_load_subfiles(struct gimg *g)
 			goto out_err;
 		}
 
-		if (gar_load_maplevels(sub, &tre)<0) {
-			log(1, "Error loading map levels!\n");
-			goto out_err;
-		}
+		if (g->gar->cfg.opm != OPM_GPS) {
+			if (gar_load_maplevels(sub, &tre)<0) {
+				log(1, "Error loading map levels!\n");
+				goto out_err;
+			}
 
-		gar_init_lbl(sub);
-		gar_init_net(sub);
+			gar_init_lbl(sub);
+			gar_init_net(sub);
 
-		gar_load_polylines_overview(sub, &tre);
-		gar_load_polygons_overview(sub, &tre);
-		gar_load_points_overview(sub, &tre);
+			gar_load_polylines_overview(sub, &tre);
+			gar_load_polygons_overview(sub, &tre);
+			gar_load_points_overview(sub, &tre);
 
-		gar_load_subdivs(sub, &tre);
-		if (g->gar->cfg.opm != OPM_GPS)
+			gar_load_subdivs(sub, &tre);
+//		if (g->gar->cfg.opm != OPM_GPS)
 			gar_load_subdivs_data(sub);
+		}
 		list_append(&sub->l, &g->lsubfiles);
 //		gar_init_srch(sub, 0);
 		mapsets++;
@@ -871,8 +945,7 @@ int gar_load_subfiles(struct gimg *g)
 	if (!g->gar->tdbloaded) {
 		// XXX copy basemaps bounds to g->bounds
 	}
-	close(g->fd);
-	g->fd = -1;
+	gclose(g);
 	free(imgs);
 	return 0;
 out_err:
@@ -985,4 +1058,18 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 		return NULL;
 	}
 	return files;
+}
+
+void gar_subfile_ref(struct gar_subfile *s)
+{
+	s->refcnt ++;
+	// ref img
+}
+
+void gar_subfile_unref(struct gar_subfile *s)
+{
+	s->refcnt --;
+	if (s->refcnt == 0) {
+		gar_free_subfile_data(s);
+	}
 }
