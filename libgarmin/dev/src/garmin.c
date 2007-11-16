@@ -66,7 +66,9 @@ int gclose(struct gimg *g)
 {
 	int fd = g->fd;
 	g->fd = -1;
-	return close(fd);
+	if (fd != -1)
+		return close(fd);
+	return 0;
 }
 
 off_t glseek(struct gimg *g, off_t offset, int whence)

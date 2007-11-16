@@ -975,6 +975,12 @@ static struct gmap *gar_alloc_gmap(void)
 
 void gar_free_gmap(struct gmap *g)
 {
+	int i;
+	struct gar_subfile *sub;
+	for (i=0; i < g->lastsub; i++) {
+		sub = g->subs[i];
+		gclose(sub->gimg);
+	}
 	free(g->subs);
 	free(g);
 }
