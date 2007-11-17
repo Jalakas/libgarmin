@@ -432,6 +432,7 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr)
 	return NULL;
 }
 static void gar_debug_objects(struct gobject *o);
+
 /*
  XXX Make gar_get_objects_zoom and gar_get_objects_level
  XXX to work with zoom(bits) and with levels
@@ -455,7 +456,7 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	if (!gsub)
 		return -1;
 	if (flags&GO_GET_ROUTABLE) {
-		bits = 24;
+		bits = gm->basebits+gm->zoomlevels;
 		log(7, "Looking for roads at last level: %d bits\n",
 		gm->basebits+gm->zoomlevels);
 	} else {
@@ -471,7 +472,11 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	baselevel = gm->minlevel;
 
 	log(1, "Basemap bits:%d level = %d\n", basebits, baselevel);
-
+	if (gm->lastsub == 1 && gm->subs[0]->basemap) {
+		// Check for screwed images where no detail is available 
+		if (bits > gsub->maplevels[gsub->nlevels-1]->ml.bits)
+			bits = gsub->maplevels[gsub->nlevels-1]->ml.bits;
+	}
 	for (nsub = 0; nsub < gm->lastsub ; nsub++) {
 		gsub = gm->subs[nsub];
 		log(1, "Loading %s basemap:%s\n", gsub->mapid, gsub->basemap ? "yes" : "no");
