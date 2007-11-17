@@ -480,7 +480,7 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 			// FIXME: Load only the sd-s that are in the selected level
 			// FIXME: Load only if have enough bits
 			if (gsub->maplevels[0]->ml.inherited && 
-				gsub->maplevels[0]->ml.bits < bits)
+				gsub->maplevels[0]->ml.bits <= bits)
 					gar_load_subfile_data(gsub);
 		}
 		for (i = 0; i < gsub->nlevels; i++) {
