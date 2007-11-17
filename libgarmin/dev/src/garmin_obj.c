@@ -320,7 +320,7 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 	unsigned int sdidx;
 	unsigned int otype;
 	unsigned int oidx;
-	int i;
+	int i,j;
 	void *obj = NULL;
 	struct gar_maplevel *ml;
 	struct gar_subdiv *sd;
@@ -329,7 +329,7 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 	sdidx = objid >> 16;
 	otype = objid & 0xFF;
 	oidx = (objid >> 8) & 0xFF;
-	log(13, "Looking for sdidx: %d otype:%d oidx: %d in %d\n",
+	log(1, "Looking for sdidx: %d otype:%d oidx: %d in %d\n",
 		sdidx, otype, oidx, mapid);
 	list_for_entry(g, &gar->limgs,l) {
 		list_for_entry(sub, &g->lsubfiles, l) {
@@ -365,6 +365,9 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 								otype, mapid,objid);
 						}
 						break;
+					} else if (0) {
+						j = ga_get_count(&ml->subdivs);
+						log(1, "Can not find subdiv: %d have %d\n", sdidx, j);
 					}
 				}
 			}

@@ -572,6 +572,7 @@ static void gar_free_subfile_data(struct gar_subfile *f)
 //		free(f->maplevels);
 	}
 #endif
+	f->subdividx = 1;
 	gar_free_points_overview(f);
 	gar_free_polylines_overview(f);
 	gar_free_polygons_overview(f);
