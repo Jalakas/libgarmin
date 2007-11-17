@@ -437,6 +437,7 @@ static int gar_load_subdivs(struct gar_subfile *sub, struct hdr_tre_t *tre)
 		return -1;
 	}
 
+	sub->subdividx = 1;
 	for (i=0; i < sub->nlevels; i++) {
 		if (i == sub->nlevels - 1)
 			last = 1;

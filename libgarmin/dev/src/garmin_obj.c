@@ -172,7 +172,7 @@ static struct gar_subdiv *gar_find_subdiv_by_idx(struct gar_subfile *gsub,
 	return NULL;
 }
 
-static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, int level, int start)
+static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, int level, int start, int routable)
 {
 	struct gobject *first = NULL, *o = NULL, *p;
 	struct gpoint *gp;
@@ -189,23 +189,25 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 			goto out_err;
 	}
 	if (start) {
-		cnt = ga_get_count(&gsd->polygons);
-		for (i=0; i < cnt; i++) {
-			gpoly = ga_get(&gsd->polygons, i);
-			/* Do not return definition areas and backgrounds */
-			if (gpoly->type == 0x4a || gpoly->type == 0x4b)
-				continue;
-			if (!gar_is_pgone_visible(gsub, level, gpoly))
-				continue;
-			p = gar_alloc_object(GO_POLYGON, gpoly);
-			if (!p)
-				goto out_err;
-			if (first) {
-				o->next = p;
-				o = p; 
-			} else
-				o = first = p;
-			objs++;
+		if (!routable) {
+			cnt = ga_get_count(&gsd->polygons);
+			for (i=0; i < cnt; i++) {
+				gpoly = ga_get(&gsd->polygons, i);
+				/* Do not return definition areas and backgrounds */
+				if (gpoly->type == 0x4a || gpoly->type == 0x4b)
+					continue;
+				if (!gar_is_pgone_visible(gsub, level, gpoly))
+					continue;
+				p = gar_alloc_object(GO_POLYGON, gpoly);
+				if (!p)
+					goto out_err;
+				if (first) {
+					o->next = p;
+					o = p; 
+				} else
+					o = first = p;
+				objs++;
+			}
 		}
 		cnt = ga_get_count(&gsd->polylines);
 		for (i=0; i < cnt; i++) {
@@ -222,36 +224,37 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 				o = first = p;
 			objs++;
 		}
-
-		cnt = ga_get_count(&gsd->points);
-		for (i=0; i < cnt; i++) {
-			gp = ga_get(&gsd->points, i);
-			if (!gar_is_point_visible(gsub, level, gp))
-				continue;
-			p = gar_alloc_object(GO_POINT, gp);
-			if (!p)
-				goto out_err;
-			if (first) {
-				o->next = p;
-				o = p; 
-			} else
-				o = first = p;
-			objs++;
-		}
-		cnt = ga_get_count(&gsd->pois);
-		for (i=0; i < cnt; i++) {
-			gp = ga_get(&gsd->pois, i);
-			if (!gar_is_point_visible(gsub, level, gp))
-				continue;
-			p = gar_alloc_object(GO_POI, gp);
-			if (!p)
-				goto out_err;
-			if (first) {
-				o->next = p;
-				o = p; 
-			} else
-				o = first = p;
-			objs++;
+		if (!routable) {
+			cnt = ga_get_count(&gsd->points);
+			for (i=0; i < cnt; i++) {
+				gp = ga_get(&gsd->points, i);
+				if (!gar_is_point_visible(gsub, level, gp))
+					continue;
+				p = gar_alloc_object(GO_POINT, gp);
+				if (!p)
+					goto out_err;
+				if (first) {
+					o->next = p;
+					o = p; 
+				} else
+					o = first = p;
+				objs++;
+			}
+			cnt = ga_get_count(&gsd->pois);
+			for (i=0; i < cnt; i++) {
+				gp = ga_get(&gsd->pois, i);
+				if (!gar_is_point_visible(gsub, level, gp))
+					continue;
+				p = gar_alloc_object(GO_POI, gp);
+				if (!p)
+					goto out_err;
+				if (first) {
+					o->next = p;
+					o = p; 
+				} else
+					o = first = p;
+				objs++;
+			}
 		}
 	}
 
@@ -277,7 +280,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 		if (gss) {
 			list_for_entry(gs, gss->l.p, l) {
 				log(15, "Loading subdiv: %d\n", gs->n);
-				p = gar_get_subdiv_objs(gs, &i, level, 0);
+				p = gar_get_subdiv_objs(gs, &i, level, 0, routable);
 				if (p) {
 					objs += i;
 					if (first) {
@@ -365,11 +368,12 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 								otype, mapid,objid);
 						}
 						break;
-					} else if (0) {
-						j = ga_get_count(&ml->subdivs);
-						log(1, "Can not find subdiv: %d have %d\n", sdidx, j);
 					}
 				}
+				j = 0;
+				for(i=0; i < sub->nlevels; i++)
+					j += sub->maplevels[i]->ml.nsubdiv;
+				log(1, "Can not find subdiv: %d have %d\n", sdidx, j);
 			}
 		}
 	}
@@ -454,14 +458,16 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	int basebits = 6;
 	int baselevel = 0;
 	int sdcount;
+	int routable = flags&GO_GET_ROUTABLE;
 
 	gsub = gm->subs[0];
 	if (!gsub)
 		return -1;
-	if (flags&GO_GET_ROUTABLE) {
+	if (routable) {
 		bits = gm->basebits+gm->zoomlevels;
 		log(7, "Looking for roads at last level: %d bits\n",
 		gm->basebits+gm->zoomlevels);
+		rect = NULL;
 	} else {
 		bits = level;
 		log(7, "Level =%d  bits = %d subfiles:%d\n", level, bits, gm->lastsub);
@@ -521,7 +527,7 @@ nextlvl:
 				gsd = ga_get(&ml->subdivs, k);
 				if (rect && !gar_subdiv_visible(gsd, rect))
 					continue;
-				p = gar_get_subdiv_objs(gsd, &j, ml->ml.level, 1);
+				p = gar_get_subdiv_objs(gsd, &j, ml->ml.level, 1, routable);
 				if (p) {
 					log(15, "%s subdiv:%d gave %d objects\n",
 						gsub->mapid, gsd->n, j);
