@@ -534,6 +534,14 @@ static struct gar_subfile *gar_alloc_subfile(struct gimg *g, char *mapid)
 	} else {
 		sub->id = atoi(sub->mapid);
 	}
+	if (!sub->id) {
+		if (g->tdbbasemap) {
+			/* our mapid is probably a string so since it's the basemap 
+			 * give it the number one 
+			 */
+			sub->id = 1;
+		}
+	}
 	list_init(&sub->l);
 	sub->subdividx = 1;
 	return sub;

@@ -728,7 +728,7 @@ int gar_object_mapid(struct gobject *o)
 	}
 	if (sd)
 		return sd->subfile->id;
-	return 0;
+	return -1;
 }
 
 int gar_object_index(struct gobject *o)
