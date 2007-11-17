@@ -85,6 +85,7 @@ struct gar_config {
 	int maxsubdivs;		/* Load max N subdivs for OPM_GPS */
 	dump_fn cb;		/* Callback function for OPM_DUMP */
 	unsigned debugmask;	/* Debuging aid */
+	int debuglevel;		/* Debug level */
 };
 
 struct gimg;

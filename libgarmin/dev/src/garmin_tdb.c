@@ -11,6 +11,14 @@
 #include "GarminTypedef.h"
 #include "garmin_tdb.h"
 
+#ifdef STANDALONE
+#undef log
+#define log(x, y...) fprintf(stderr, ## y)
+int gar_img_load_dskimg(struct gar *gar, char *a, int bm, int data,
+	double north, double east, double south, double west)
+{
+}
+#endif
 #define GAR4DEG(x) ((double)(x)* 360.0 / (1<<31))
 
 /*
@@ -23,6 +31,8 @@ static int gar_tdb_load_img(struct gar *gar, char *file, int basemap, int data,
 	char path[4096];
 	int rc;
 
+	if (!gar)
+		return 0;
 	if (!gar->tdbdir) {
 		log(1, "Trying to load [%s] but not TDB header seen yet\n", file);
 		return -1;
@@ -46,6 +56,7 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 	int version = 0;
 	int c;
 	int havebase = -1;
+	int td4bm = 0;
 	float north, south, east, west;
 	char imgname[128];
 	fd = open(file, O_RDONLY);
@@ -81,13 +92,15 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 					close(fd);
 					return -1;
 				}
-				gar->tdbdir = strdup(file);
-				tp = strrchr(gar->tdbdir, '/');
-				if (tp)
-					*tp = '\0';
-				else
-					*gar->tdbdir = '\0';
-				gar->tdbloaded = 1;
+				if (gar) {
+					gar->tdbdir = strdup(file);
+					tp = strrchr(gar->tdbdir, '/');
+					if (tp)
+						*tp = '\0';
+					else
+						*gar->tdbdir = '\0';
+					gar->tdbloaded = 1;
+				}
 				break;
 			case TDB_COPYRIGHT:
 				log(1, "Map copyrights:\n");
@@ -118,6 +131,7 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 				if (version == 3) {
 					log(1, "BaseMap number: %08u\n", *(u_int32_t *)cp);
 					log(11, "Parent map: %08u\n", *(u_int32_t *)cp+4);
+					sprintf(imgname, "%08u", *(u_int32_t *)cp);
 				} else if (version == 4) {
 					uc = cp;
 					log(1, "BaseMap number: [%02X][%02X][%02X][%02X]\n", *uc, *(uc+1), *(uc+2), *(uc+3));
@@ -126,7 +140,6 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 					log(1, "Unknown TDB version\n");
 					break;
 				}
-				havebase = 1;
 				if (version == 3) {
 					north = GAR4DEG(*(u_int32_t *)(cp+8));
 					east = GAR4DEG(*(u_int32_t *)(cp+0xc));
@@ -145,28 +158,39 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 					log(1, "Unknown TDB version:%d\n", version);
 					break;
 				}
-				log(9, "North: %f\n", north);
-				log(9, "West: %f\n", west);
-				log(9, "South: %f\n", south);
-				log(9, "East: %f\n", east);
+				log(9, "North: %fC West: %fC South: %fC East: %fC\n",
+					north, west, south, east);
 				cp+= 0x18;
 				if (cp < buf+block.size) {
 					log(9, "Descr:[%s]\n", cp);
 					cp += strlen(cp) + 1;
 				}
 				log(11, "Left bytes: %d\n", block.size - (cp - buf));
-				tp = strrchr(file, '/');
-				if (tp) {
-					sprintf(imgname, "%s", tp+1);
-				} else {
-					strncpy(imgname, file, sizeof(imgname)-1);
-					imgname[sizeof(imgname)-1] = '\0';
+				if (version == 4) {
+					tp = strrchr(file, '/');
+					if (tp) {
+						sprintf(imgname, "%s", tp+1);
+					} else {
+						strncpy(imgname, file, sizeof(imgname)-1);
+						imgname[sizeof(imgname)-1] = '\0';
+					}
+					tp = strrchr(imgname, '.');
+					if (tp)
+						*tp = '\0';
 				}
-				tp = strrchr(imgname, '.');
-				if (tp)
-					*tp = '\0';
-				gar_tdb_load_img(gar, imgname, 1, data,
-					north, east, south, west);
+				if (version == 3) {
+					havebase = 1;
+					gar_tdb_load_img(gar, imgname, 1, data,
+						north, east, south, west);
+				} else if (version == 4) {
+					havebase = 1;
+					/* IN v4 looks like there are definitions pointing in the basemap */
+					if (!td4bm) {
+						gar_tdb_load_img(gar, imgname, 1, data,
+							north, east, south, west);
+						td4bm = 1;
+					}
+				}
 				break;
 			case TDB_DETAILMAP:
 				log(1, "DetailMap number: %08u\n", *(u_int32_t *)cp);
@@ -194,10 +218,8 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 					log(1, "Unknown TDB version:%d\n", version);
 					break;
 				}
-				log(9, "North: %f\n", north);
-				log(9, "West: %f\n", west);
-				log(9, "South: %f\n", south);
-				log(9, "East: %f\n", east);
+				log(9, "North: %fC West: %fC South: %fC East: %fC\n",
+					north, west, south, east);
 				cp+= 0x18;
 				if (cp < buf+block.size) {
 					log(9, "Descr:[%s]\n", cp);
@@ -213,10 +235,6 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 					log(15, "size: %08u\n", *(u_int32_t*)cp);
 					cp+=4;
 				}
-				if (0 && version == 4) {
-					log(15, "file:[%s]\n", cp);
-					cp += strlen(cp) + 1;
-				}
 				log(15, "term: %02X\n", *cp);
 				cp++;
 				log(11, "Left bytes: %d\n", block.size - (cp - buf));
@@ -224,7 +242,7 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 					north, east, south, west);
 				break;
 			case TDB_TAIL:
-				log(1, "TDB Tail block\n");
+				log(11, "TDB Tail block\n");
 				for (c=0; c < block.size; c++) {
 					log(11, "[%02X]\n", *(unsigned char *)cp);
 					cp++;
@@ -242,6 +260,6 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 #ifdef STANDALONE
 int main(int argc, char **argv)
 {
-	return gar_parse_tdb(argv[1]);
+	return gar_parse_tdb(NULL,argv[1],0);
 }
 #endif

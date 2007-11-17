@@ -37,10 +37,10 @@ int gar_init_net(struct gar_subfile *sub)
 	struct hdr_net_t net;
 	int rc;
 
-	log(1, "NET initializing ...\n");
+	log(11, "NET initializing ...\n");
 	off = gar_subfile_offset(sub, "NET");
 	if (!off) {
-		log(1,"No NET file\n");
+		log(11,"No NET file\n");
 		return 0;
 	}
 	if (glseek(gimg, off, SEEK_SET) != off) {

@@ -257,10 +257,12 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 		gar_load_subfiles(g);
 		log(1, "Loaded %d mapsets\n", g->mapsets);
 	}
+#if 0
 	g->north = north;
 	g->east = east;
 	g->south = south;
 	g->west = west;
+#endif
 	list_append(&g->l, &gar->limgs);
 	return 1;
 }
@@ -303,14 +305,36 @@ static int gar_is_gmapsupp(char *file)
 	return 1;
 }
 
+static void gar_calc_tdblevels(struct gar *gar)
+{
+	int minbits = 0;
+	int maxbits = 0;
+	int p;
+	struct gimg *g;
+	list_for_entry(g, &gar->limgs, l) {
+		if (g->tdbbasemap) {
+			minbits = g->basebits;
+		} else {
+			p = g->basebits+g->zoomlevels;
+			if (p > maxbits)
+				maxbits = p;
+		}
+	}
+	gar->basebits = minbits;
+	gar->zoomlevels = maxbits - minbits;
+}
+
 int gar_img_load(struct gar *gar, char *file, int data)
 {
 	if (gar_is_gmapsupp(file) == 1) {
 		log(1, "Loading %s as disk image\n", file);
 		return gar_img_load_dskimg(gar, file, 0, data, 0,0,0,0);
 	} else {
+		int rc;
 		log(1, "Loading %s as TDB\n", file);
-		return gar_parse_tdb(gar, file, data);
+		rc = gar_parse_tdb(gar, file, data);
+		gar_calc_tdblevels(gar);
+		return rc;
 	}
 }
 

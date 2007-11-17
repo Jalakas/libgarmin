@@ -716,6 +716,10 @@ static int gar_check_basemap(struct gar_subfile *sub)
 {
 	if (1 || gar_subfile_have_bits(sub, 18)) {
 		sub->basemap = 1;
+		sub->gimg->north = sub->north;
+		sub->gimg->east = sub->east;
+		sub->gimg->south = sub->south;
+		sub->gimg->west = sub->west;
 		log(1, "%s selected as a basemap\n", sub->mapid);
 		return 1;
 	} else {
@@ -737,7 +741,7 @@ static int gar_select_basemaps(struct gimg *g)
 	unsigned int minid = ~0;
 	char *ptr, *eptr;
 
-	log(1, "Selecting basemap ...\n");
+	log(11, "Selecting basemap ...\n");
 	list_for_entry(sub, &g->lsubfiles, l) {
 		if (*sub->mapid == 'I') {
 			ptr = sub->mapid+1;
@@ -843,8 +847,8 @@ int gar_load_subfiles(struct gimg *g)
 			log(1, "Invalid file type:[%s]\n", tre.hsub.type);
 			goto out_err;
 		}
-		gar_log_file_date(1, "TRE Created", &tre.hsub);
-		log(10, "TRE header: len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
+		gar_log_file_date(11, "TRE Created", &tre.hsub);
+		log(11, "TRE header: len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
 			tre.hsub.length, tre.tre1_offset, tre.tre1_size,
 			tre.tre2_offset, tre.tre2_size);
 		log(19, "TRE ver=[%02X] flag=[%02X]\n",
@@ -1032,6 +1036,11 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 	if (rect)
 		gar_rect_log(1, "looking for", rect);
 
+	if (gar->tdbloaded) {
+		files->zoomlevels = gar->zoomlevels;
+		files->basebits = gar->basebits;
+	}
+
 	list_for_entry(g, &gar->limgs,l) {
 		if (rect && gar->tdbloaded) {
 			struct gar_rect r;
@@ -1044,10 +1053,12 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 			}
 		}
 		// FIXME for more than one image
-		files->zoomlevels = g->zoomlevels;
-		files->basebits = g->basebits;
-		files->minlevel = g->minlevel;
-		files->maxlevel = g->maxlevel;
+		if (!gar->tdbloaded) {
+			files->zoomlevels = g->zoomlevels;
+			files->basebits = g->basebits;
+			files->minlevel = g->minlevel;
+			files->maxlevel = g->maxlevel;
+		}
 		rsub = realloc(files->subs, (files->subfiles + g->mapsets) * sizeof(struct gar_subfile *));
 		if (rsub) {
 			files->subs = rsub;

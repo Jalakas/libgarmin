@@ -163,11 +163,11 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize)
 	int fatend = dataoffset;
 
 	if (!fatend) {
-		log(10, "FAT Will use size from rootdir\n");
+		log(11, "FAT Will use size from rootdir\n");
 		userootdir = 1;
 	} else {
 		fatend -= sizeof(struct hdr_img_t);
-		log(10, "FAT size %d\n", fatend);
+		log(11, "FAT size %d\n", fatend);
 	}
 	/* Read reserved FAT entries first */
 	while ((rc = gread(g, &fent, s)) == s) {
@@ -203,12 +203,12 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize)
 	}
 	log(1, "FAT Directory %d entries %d bytes\n", count, rsz);
 	list_for_entry(fe, &g->lfatfiles, l) {
-		log(1,"%s %ld\n",fe->filename,fe->size);
+		log(11,"%s %ld\n",fe->filename,fe->size);
 	}
 
 	if (userootdir) {
 		dataoffset = fatend + sizeof(struct hdr_img_t);
-		log(1, "FAT DataOffset corrected to %d\n", dataoffset);
+		log(11, "FAT DataOffset corrected to %d\n", dataoffset);
 	}
 
 	return count * s;

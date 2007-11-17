@@ -238,7 +238,8 @@ int gar_init_lbl(struct gar_subfile *sub)
 	off_t off;
 	struct gimg *gimg = sub->gimg;
 	int rc;
-	log(1, "LBL initializing ...\n");
+
+	log(11, "LBL initializing ...\n");
 	off = gar_subfile_offset(sub, "LBL");
 	if (!off) {
 		log(1,"No LBL file\n");
@@ -257,7 +258,7 @@ int gar_init_lbl(struct gar_subfile *sub)
 		log(1, "LBL: Invalid header type:[%s]\n", lbl.hsub.type);
 		return -1;
 	}
-	gar_log_file_date(1, "LBL Created", &lbl.hsub);
+	gar_log_file_date(11, "LBL Created", &lbl.hsub);
 	l = gar_alloc_lbl();
 	if (!l) {
 		log(1, "LBL: Out of memory\n");
@@ -265,22 +266,22 @@ int gar_init_lbl(struct gar_subfile *sub)
 	}
 	switch(lbl.coding) {
 		case 0x06:
-			log(1,"LBL: Uses 6bit coding\n");
+			log(11,"LBL: Uses 6bit coding\n");
 			l->decode = gar_lbl_decode6;
 			l->bits = 6;
 			break;
 		case 0x08:
-			log(1,"LBL: Uses 8bit coding\n");
+			log(11,"LBL: Uses 8bit coding\n");
 			l->decode = gar_lbl_decode8;
 			l->bits = 8;
 			break;
 		case 0x09:
-			log(1,"LBL: Uses 9bit coding\n");
+			log(11,"LBL: Uses 9bit coding\n");
 			l->decode = gar_lbl_decode9;
 			l->bits = 9;
 			break;
 		case 0x0A:
-			log(1,"LBL: Uses 10bit coding\n");
+			log(11,"LBL: Uses 10bit coding\n");
 			l->decode = gar_lbl_decode10;
 			l->bits = 0x0a;
 			break;
@@ -295,7 +296,7 @@ int gar_init_lbl(struct gar_subfile *sub)
 			sprintf(l->codepage,"Big5");
 		else 
 			sprintf(l->codepage,"ascii");
-		log(1,"LBL: Uses %s encoding:%d\n", l->codepage,lbl.codepage);
+		log(11,"LBL: Uses %s encoding:%d\n", l->codepage,lbl.codepage);
 	}
 	l->offset = off;
 	l->lbl1off = lbl.lbl1_offset;

@@ -39,6 +39,8 @@ struct gar {
 	struct gar_config cfg;
 	char	*tdbdir;
 	int	tdbloaded;
+	int	basebits;
+	int	zoomlevels;
 	log_fn	logfn;
 	list_t	limgs;
 };
