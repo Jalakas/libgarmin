@@ -20,5 +20,8 @@ int ga_get_count(struct garray *ga);
 void ga_set_base(struct garray *ga, unsigned int base);
 int ga_get_base(struct garray *ga);
 void ga_empty(struct garray *ga);
+/* Bitmap arrays */
+int bm_is_set(unsigned char *bmap, int bit);
+int bm_set_bit(unsigned char *bmap, int bit);
 #define _GAR_ARRAY_H__
 #endif

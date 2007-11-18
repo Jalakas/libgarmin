@@ -120,3 +120,17 @@ int main(int argc, char **argv)
 	printf("%d\n", g.elements);
 }
 #endif
+
+int bm_is_set(unsigned char *bmap, int bit)
+{
+	if (bmap[bit/8] & (1<<(bit%8)))
+		return 1;
+	return 0;
+}
+
+int bm_set_bit(unsigned char *bmap, int bit)
+{
+	bmap[bit/8] |= 1<<(bit%8);
+	return 1;
+}
+

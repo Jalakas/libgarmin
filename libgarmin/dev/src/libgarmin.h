@@ -115,6 +115,8 @@ int gar_object_subtype(struct gobject *o);
 int gar_get_object_dcoord(struct gmap *gm, struct gobject *o, int ndelta, struct gcoord *ret);
 int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret);
 
+int gar_is_object_dcoord_node(struct gmap *gm, struct gobject *o, int ndelta);
+
 int gar_get_object_deltas(struct gobject *o);
 /* Get lbl as strdup'ed string */
 char *gar_get_object_lbl(struct gobject *o);

@@ -134,6 +134,8 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 			reg = bsp_get_bits(bp, 1);
 			if (reg==-1)
 				goto out;
+			if (reg)
+				bm_set_bit(gp->nodemap, total);
 		}
 		reg = bsp_get_bits(bp, bpx);
 		if (reg==-1)
@@ -244,6 +246,8 @@ static void gar_free_poly(struct gpoly *gp)
 	if(gp->source)
 		free(gp->source);
 #endif
+	if (gp->nodemap)
+		free(gp->nodemap);
 	free(gp->deltas);
 	free(gp);
 }
@@ -356,6 +360,9 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 		return total_bytes;
 	}
 	gp->npoints = cnt;
+	if (extra_bit) {
+		gp->nodemap = calloc(cnt/8+1, sizeof(unsigned char));
+	}
 	if ((cnt == 1 && bs_len) || !bs_len) {
 		log(1, "Error have %d points but  datalen is %d, bpx=%d, bpy=%d si.sign_info_bits=%d\n",cnt, bs_len, bpx, bpy,si.sign_info_bits);
 		log(1, "dp=%02X extra_bit=%d bs_info=%02X\n", *dp,extra_bit,bs_info);

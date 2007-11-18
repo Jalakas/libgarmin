@@ -645,6 +645,17 @@ int gar_get_object_dcoord(struct gmap *gm, struct gobject *o, int ndelta, struct
 	return 0;
 }
 
+int gar_is_object_dcoord_node(struct gmap *gm, struct gobject *o, int ndelta)
+{
+	struct gpoly *gp;
+	if  (o->type == GO_POINT || o->type == GO_POI)
+		return 0;
+	gp = o->gptr;
+	if (gp->nodemap && ndelta < gp->npoints) {
+		return bm_is_set(gp->nodemap, ndelta);
+	}
+	return 0;
+}
 
 char *gar_get_object_lbl(struct gobject *o)
 {

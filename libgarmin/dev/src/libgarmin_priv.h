@@ -110,6 +110,7 @@ struct gpoly {
 		scase:1;
 	int npoints;
 	struct gcoord *deltas;
+	unsigned char *nodemap;
 #ifdef DEBUG
 	unsigned char *source;
 	int slen;
