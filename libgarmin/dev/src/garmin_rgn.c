@@ -22,6 +22,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "libgarmin.h"
 #include "libgarmin_priv.h"
 #include "garmin_rgn.h"
@@ -464,6 +466,19 @@ static struct gar_maplevel *gar_alloc_maplevel(int base)
 	return ml;
 }
 
+static int gar_have_extml(struct gar_subfile *sub)
+{
+	char buf[2048];
+	char *cp;
+	struct stat st;
+	sprintf(buf, "%s", sub->gimg->file);
+	cp = strrchr(buf, '/');
+	if (!cp)
+		return 0;
+	sprintf(cp+1, "%s.MLD", sub->mapid);
+	return !stat(buf, &st);
+}
+
 static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 {
 	ssize_t off;
@@ -474,12 +489,27 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 	int i;
 	int totalsubdivs = 0;
 	int base = 1;
+	int extlevels = tre->hsub.flag & 0x80;
+	int efd = -1;
 
-	off = gar_subfile_offset(sub, "TRE");
-	off += tre->tre1_offset;
-	if (glseek(g, off, SEEK_SET) != off) {
-		log(1, "Error can not seek to %zd\n", off);
-		return -1;
+	if (!extlevels) {
+		off = gar_subfile_offset(sub, "TRE");
+		off += tre->tre1_offset;
+		if (glseek(g, off, SEEK_SET) != off) {
+			log(1, "Error can not seek to %zd\n", off);
+			return -1;
+		}
+	} else {
+		char buf[2048];
+		char *cp;
+		sprintf(buf, "%s", sub->gimg->file);
+		cp = strrchr(buf, '/');
+		if (!cp)
+			return -1;
+		sprintf(cp+1, "%s.MLD", sub->mapid);
+		efd = open(buf, O_RDONLY);
+		if (efd < 0)
+			return -1;
 	}
 	nlevels = tre->tre1_size / s;
 	log(10, "Have %d levels\n", nlevels);
@@ -495,9 +525,17 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 			log(1, "Error can not allocate map level!\n");
 			return -1;
 		}
-		if (gread(g, &ml->ml, s) != s) {
-			log(1, "Error reading map level %d\n", i);
-			return -1;
+		if (!extlevels) {
+			if (gread(g, &ml->ml, s) != s) {
+				log(1, "Error reading map level %d\n", i);
+				return -1;
+			}
+		} else {
+			if (read(efd, &ml->ml, s) != s) {
+				log(1, "Error reading map level %d\n", i);
+				close(efd);
+				return -1;
+			}
 		}
 		log(10, "ML[%d] level=%d inherited=%d bits:%d nsubdiv=%d unkn=[%d %d %d]\n",
 			i, ml->ml.level, ml->ml.inherited, ml->ml.bits, ml->ml.nsubdiv,
@@ -513,6 +551,8 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 		totalsubdivs += ml->ml.nsubdiv;
 		base += ml->ml.nsubdiv;
 	}
+	if (extlevels)
+		close(efd);
 	return totalsubdivs;
 }
 
@@ -900,10 +940,12 @@ int gar_load_subfiles(struct gimg *g)
 			tre.byte0x00000070_0x00000073[3]);
 		
 		if (tre.hsub.flag & 0x80){
-			log(1, "File contains locked / encypted data. Garmin does not\n"
-				"want you to use this file with any other software than\n"
-				"the one supplied by Garmin.\n");
-			goto out_err;
+			if (!gar_have_extml(sub)) {
+				log(1, "File contains locked / encypted data. Garmin does not\n"
+					"want you to use this file with any other software than\n"
+					"the one supplied by Garmin.\n");
+				goto out_err;
+			}
 		}
 		
 		log(10, "POI_flags=%04X\n",tre.POI_flags);
@@ -937,6 +979,7 @@ int gar_load_subfiles(struct gimg *g)
 			log(1, "Can not find RGN file\n");
 			goto out_err;
 		}
+
 		if (gar_load_maplevels(sub, &tre)<0) {
 			log(1, "Error loading map levels!\n");
 			goto out_err;
