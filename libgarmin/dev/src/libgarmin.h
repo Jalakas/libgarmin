@@ -134,11 +134,17 @@ int gar_fat_file2fd(struct gimg *g, char *name, int fd);
 /* Get ptr to a dskimg file */
 struct gimg *gar_get_dskimg(struct gar *gar, char *file);
 
+#define F_ONEWAY	(1<<0)
+#define F_SEGMENTED	(1<<1)
+
+int gar_object_flags(struct gobject *o);
+
 
 #define GARDEG(x) ((x) < 0x800000 ? (double)(x) * 360.0 / 16777216.0 : -(double)((x) - 0x100000) * 360.0 / 16777216.0)
 #define GARRAD(x) ((x) < 0x800000 ? (double)(x) * TWOPI / 16777216.0 : -(double)((x) - 0x100000) * TWOPI / 16777216.0)
 #define DEGGAR(x) ((x) * (1/(360.0/(1<<24))))
 #define FEET2METER(x) ((x)/3.28084)
+
 
 #ifdef __cplusplus
 }

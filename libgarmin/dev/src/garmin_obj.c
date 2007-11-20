@@ -751,6 +751,28 @@ int gar_object_mapid(struct gobject *o)
 	return -1;
 }
 
+int gar_object_flags(struct gobject *o)
+{
+	int ret = 0;
+	struct gpoly *gp;
+	switch (o->type) {
+	case GO_POINT:
+	case GO_POI:
+	case GO_POLYGON:
+		break;
+	case GO_POLYLINE:
+		gp = o->gptr;
+		if (gp->dir)
+			ret |= F_ONEWAY;
+		if (gp->extrabit)
+			ret |= F_SEGMENTED;
+		break;
+	default:
+		log(1, "Error unknown object type:%d\n", o->type);
+	}
+	return ret;
+}
+
 int gar_object_index(struct gobject *o)
 {
 	switch (o->type) {
