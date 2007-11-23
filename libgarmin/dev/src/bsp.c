@@ -47,7 +47,8 @@ int bsp_get_bits(struct bsp *bp, int bits)
 		}
 		if (bp->cb >= bp->ep)
 			return -1;
-		ret |= (!!(*bp->cb & (1<<bp->cbit))) << i;
+		if (*bp->cb & (1<<bp->cbit))
+			ret |= 1 << i;
 		bp->cbit ++;
 	}
 	return ret;
