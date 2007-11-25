@@ -845,7 +845,7 @@ static int gar_select_basemaps(struct gimg *g)
 
 int gar_load_subfiles(struct gimg *g)
 {
-	ssize_t off;
+	ssize_t off, off1;
 	int rc,j;
 	struct hdr_tre_t tre;
 	struct gar_subfile *sub;
@@ -967,7 +967,7 @@ int gar_load_subfiles(struct gimg *g)
 			GARDEG(sub->east),
 			GARDEG(sub->south),
 			GARDEG(sub->west));
-#warning calculate area  area= (pi/180)R^2 |sin(lat1)-sin(lat2)| |lon1-lon2|
+// FIXME calculate area  area= (pi/180)R^2 |sin(lat1)-sin(lat2)| |lon1-lon2|
 		log(1, "Transparent: %s, Area: %.2f m\n", sub->transparent ? "Yes" : "No",
 			sub->area);
 
@@ -980,6 +980,12 @@ int gar_load_subfiles(struct gimg *g)
 			goto out_err;
 		}
 
+		off1 = gar_subfile_offset(sub, "NET");
+		if (off1)
+			sub->have_net = 1;
+		off1 = gar_subfile_offset(sub, "NOD");
+		if (off1)
+			sub->have_nod = 1;
 		if (gar_load_maplevels(sub, &tre)<0) {
 			log(1, "Error loading map levels!\n");
 			goto out_err;
@@ -1042,7 +1048,7 @@ void gar_free_gmap(struct gmap *g)
 	free(g);
 }
 
-static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *rect)
+static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *rect, int flags)
 {
 	struct gar_subfile *sub;
 	struct gar_rect r;
@@ -1052,6 +1058,8 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 	idx = files->lastsub;
 
 	list_for_entry(sub, &g->lsubfiles, l) {
+		if (flags & GO_GET_ROUTABLE && !sub->have_net)
+			continue;
 		if (rect) {
 			r.lulat = sub->north; //DEG(sub->north);
 			r.lulong = sub->west; //DEG(sub->west);
@@ -1076,7 +1084,7 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 }
 
 // public api
-struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
+struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect, int flags)
 {
 	struct gimg *g;
 	struct gmap *files;
@@ -1105,7 +1113,6 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 				continue;
 			}
 		}
-		// FIXME for more than one image
 		if (!gar->tdbloaded) {
 			files->zoomlevels = g->zoomlevels;
 			files->basebits = g->basebits;
@@ -1119,7 +1126,7 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect)
 		} else {
 			break;
 		}
-		fnd = gar_find_subs(files, g, rect);
+		fnd = gar_find_subs(files, g, rect, flags);
 		if (fnd) {
 			if (rect) {
 			log(15, "Found subfile for %f %f %f %f\n",

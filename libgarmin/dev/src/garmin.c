@@ -220,8 +220,8 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 {
 	struct gimg *g;
 	int rc;
-	int blocksize;
-	int dataoffset;
+	unsigned int blocksize;
+	unsigned int dataoffset;
 	g = gimg_alloc(gar, file);
 	if (!g) {
 		log(1,"Out of memory!\n");

@@ -488,6 +488,10 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	}
 	for (nsub = 0; nsub < gm->lastsub ; nsub++) {
 		gsub = gm->subs[nsub];
+		if (routable) {
+			if (!gsub->have_net)
+				continue;
+		}
 		log(1, "Loading %s basemap:%s\n", gsub->mapid, gsub->basemap ? "yes" : "no");
 		if (!gsub->loaded) {
 			// FIXME: error handle

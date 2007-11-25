@@ -68,7 +68,9 @@ struct gar_subfile {
 	ssize_t rgnoffset;
 	ssize_t rgnlen;
 	int transparent:1,
-	    basemap:1;
+	    basemap:1,
+	    have_net:1,
+	    have_nod;
 	double north;
 	double east;
 	double south;

@@ -722,16 +722,3 @@ out:
 	return objcnt;
 }
 
-void gar_subdiv_ref(struct gar_subdiv *sd)
-{
-	gar_subfile_ref(sd->subfile);
-	sd->refcnt ++;
-}
-
-void gar_subdiv_unref(struct gar_subdiv *sd)
-{
-	sd->refcnt --;
-	if (sd->refcnt == 0)
-		gar_free_subdiv_data(sd);
-	gar_subfile_unref(sd->subfile);
-}

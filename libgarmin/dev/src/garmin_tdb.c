@@ -133,7 +133,7 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 					log(11, "Parent map: %08u\n", *(u_int32_t *)cp+4);
 					sprintf(imgname, "%08u", *(u_int32_t *)cp);
 				} else if (version == 4) {
-					uc = cp;
+					uc = (unsigned char *)cp;
 					log(1, "BaseMap number: [%02X][%02X][%02X][%02X]\n", *uc, *(uc+1), *(uc+2), *(uc+3));
 					log(11, "Parent map: [%02X][%02X][%02X][%02X]\n", *(uc+4), *(uc+5), *(uc+6), *(uc+7));
 				} else {

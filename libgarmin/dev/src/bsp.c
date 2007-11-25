@@ -34,25 +34,6 @@ void bsp_init(struct bsp *bp, u_int8_t *data, u_int32_t len)
 	bp->ep = data+len;
 	bp->cb = bp->data; 
 }
-// LSB to MSB
-int bsp_get_bits(struct bsp *bp, int bits)
-{
-	u_int32_t ret = 0;
-	int i;
-	
-	for (i=0; i < bits; i++) {
-		if (bp->cbit == 8) {
-			bp->cbit = 0;
-			bp->cb++;
-		}
-		if (bp->cb >= bp->ep)
-			return -1;
-		if (*bp->cb & (1<<bp->cbit))
-			ret |= 1 << i;
-		bp->cbit ++;
-	}
-	return ret;
-}
 
 void bsp_fd_init(struct bspfd *bp, struct gimg *g)
 {
