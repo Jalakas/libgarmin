@@ -214,7 +214,7 @@ struct hdr_net_t
 	u_int8_t  net1_addr_shift;    ///< 0x0000001D
 	u_int32_t net2_offset;        ///< 0x0000001E .. 0x00000021
 	u_int32_t net2_length;        ///< 0x00000022 .. 0x00000025
-	u_int16_t net2_addr_shift;    ///< 0x00000026
+	u_int8_t net2_addr_shift;    ///< 0x00000026
 	u_int32_t net3_offset;        ///< 0x00000027 .. 0x0000002A
 	u_int32_t net3_length;        ///< 0x0000002B .. 0x0000002E
 } __attribute((packed));

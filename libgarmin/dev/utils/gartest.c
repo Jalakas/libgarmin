@@ -71,17 +71,17 @@ North: 43.716080C, East: 29.987290C, South: 43.688679C, West: 29.932551C pnt:0, 
 		fprintf(stderr, "Failed to load: [%s]\n", file);
 		return 0;
 	}
-	gar_find_subfiles(gar, &r);
+	gar_find_subfiles(gar, &r, 0);
 	r.lulat = 44.281147;
 	r.lulong = 22.274888;
 	r.rllat = 42.787006;
 	r.rllong = 24.032700;
-	gar_find_subfiles(gar, &r);
+	gar_find_subfiles(gar, &r,0);
 	r.lulat = 24.281147;
 	r.lulong = 12.274888;
 	r.rllat = 22.787006;
 	r.rllong = 14.032700;
-	gar_find_subfiles(gar, &r);
+	gar_find_subfiles(gar, &r,0);
 /*
 43.892183C, East: 22.952971C, South: 43.638103C,
  West: 22.643273C
@@ -90,7 +90,7 @@ North: 43.716080C, East: 29.987290C, South: 43.688679C, West: 29.932551C pnt:0, 
 	r.lulong = 22.643273;
 	r.rllat = 43.638103;
 	r.rllong = 22.952971;
-	gar_find_subfiles(gar, &r);
+	gar_find_subfiles(gar, &r,0);
 	gar_free(gar);
 	return 0;
 }

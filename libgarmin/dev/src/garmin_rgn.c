@@ -1000,8 +1000,9 @@ int gar_load_subfiles(struct gimg *g)
 			gar_load_points_overview(sub, &tre);
 
 			gar_load_subdivs(sub, &tre);
-//		if (g->gar->cfg.opm != OPM_GPS)
 			gar_load_subdivs_data(sub);
+			if (sub->net)
+				gar_net_parse_sorted(sub);
 		}
 		list_append(&sub->l, &g->lsubfiles);
 //		gar_init_srch(sub, 0);

@@ -22,9 +22,9 @@ struct gar_net_info {
 	u_int32_t net3_length;
 };
 
-struct road_def {
-	char *labels[4];
-	u_int32_t sr_offset;
+struct net_data {
+	off_t labels[4];
+	u_int32_t sr_offset[4];
 	u_int8_t road_flags;
 	u_int8_t road_len;
 };
@@ -58,7 +58,7 @@ int gar_init_net(struct gar_subfile *sub)
 		return -1;
 	}
 
-	ni = calloc(1, sizeof(*ni));
+	ni = malloc(sizeof(*ni));
 	if (!ni)
 		return -1;
 	ni->netoff = off;
@@ -109,4 +109,36 @@ off_t gar_net_get_lbl_offset(struct gar_subfile *sub, off_t offset, int idx)
 		return i;
 	} else
 		return 0;
+}
+
+int gar_net_parse_sorted(struct gar_subfile *sub)
+{
+	unsigned char buf[3];
+	int i, rc;
+	unsigned int val;
+	int lblidx, c = 0;
+	int roadptr;
+	off_t o;
+	if (!sub->net->net3_offset) {
+		log(1, "NET: No sorted roads defined\n");
+		return 0;
+	}
+	o = sub->net->netoff + sub->net->net3_offset;
+	if (glseek(sub->gimg, o, SEEK_SET) != o) {
+		log(1, "NET: Error can not seek to %ld\n", o);
+		return 0;
+	}
+	for (i=0; i < sub->net->net3_length/3; i++) {
+		rc = gread(sub->gimg, buf, 3);
+		if (rc < 0)
+			break;
+		val = *(unsigned int *)buf;
+		lblidx = val >> 21;
+		lblidx &= 3;
+		roadptr = val & 0x001FFFFF;
+		log(11, "lblidx=%d roadptr=%d\n", lblidx, roadptr);
+		c++;
+	}
+	log(11, "Total %d roads\n", c);
+	return c;
 }
