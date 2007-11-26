@@ -97,6 +97,10 @@ static struct gar_nod_info *gar_init_nod(struct gar_subfile *sub)
 		log(1, "NOD: Can not read header\n");
 		return NULL;
 	}
+	if (strncmp("GARMIN NOD", nod.hsub.type,10)) {
+		log(1, "NOD: Invalid header type: [%s]\n", nod.hsub.type);
+		return NULL;
+	}
 	n = malloc(sizeof(*n));
 	if (!n)
 		return n;

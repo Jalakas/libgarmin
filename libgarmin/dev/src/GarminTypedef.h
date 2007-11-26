@@ -257,7 +257,7 @@ struct hdr_nod_t
 	u_int32_t	bondlength;	//  0x35    Boundary nodes length        4
 	u_int8_t	bondrecsize;	//  0x39    Boundary nodes record length 1
 	u_int32_t	zeroterm;	//  0x3a    0x000000                     4
-};
+} __attribute((packed));;
 
 #define SPEEDCLASS(x)	((x)&0x0F)
 #define ROADTYPE(x)	((x)>>4)
