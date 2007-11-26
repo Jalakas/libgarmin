@@ -362,6 +362,13 @@ struct gobject *gar_get_subfile_object_byidx(struct gar_subfile *sub,
 out:
 	if (obj)
 		return gar_alloc_object(otype, obj);
+	else {
+		if (otype == GO_POLYLINE) {
+			int size = ga_get_count(&sd->polylines);
+			log(1, "Can not find idx:%d sdidx:%d, have maxidx:%d\n",
+						oidx, sdidx, size);
+		}
+	}
 	return NULL;
 }
 

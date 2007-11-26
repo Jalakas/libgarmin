@@ -57,9 +57,9 @@ struct road_info {
 	u_int32_t *sr_offset;
 	u_int8_t road_flags;
 	u_int8_t road_len;
-	/* count for rio and ri */
-	int ri_cnt;
+	int rio_cnt;
 	u_int8_t *rio;
+	int ri_cnt;
 	u_int32_t *ri;
 	struct street_addr_info *sai;
 	u_int32_t nod_offset;
@@ -68,6 +68,7 @@ struct road_info {
 struct nod_info {
 	u_int8_t roadclass;
 	u_int32_t nod1ptr;
+	// bitstream ??
 };
 
 static void gar_free_nod(struct gar_nod_info *nod)
@@ -280,6 +281,7 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 			if (gread(gimg, f2, size) != size)
 				goto out_err;
 		} else if (fl == 1) {
+			log(1, "NET: Error f2 type=1\n");
 			/* Not in the PDF, the guess is that its idx/sdidx */
 			f2 = malloc(3);
 			gread(gimg, f2, 3);
@@ -301,8 +303,8 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 			unsigned char buf[3];
 			log(1, "NET: Error f3 type=%d\n", fl);
 			gread(gimg, buf, 3);
-			log(1, "Data: [%02X][%02X]\n",
-				buf[0], buf[1]);
+			log(1, "Data: [%02X][%02X][%02X]\n",
+				buf[0], buf[1], buf[2]);
 		}
 	}
 	sai = malloc(sizeof(*sai));
@@ -328,7 +330,7 @@ static void gar_log_road_info(struct gar_subfile *sub, struct road_info *ri)
 	int i;
 	int idx;
 	int sdidx;
-	char buf[1024];
+	unsigned char buf[1024];
 	struct gobject *o;
 	log(11, "Labels at %ld %ld %ld %ld\n",
 		ri->labels[0],ri->labels[1],ri->labels[2],ri->labels[3]);
@@ -367,7 +369,7 @@ static void gar_log_road_info(struct gar_subfile *sub, struct road_info *ri)
 		!!(ri->road_flags&RFL_MAJORHW));
 
 	log(11, "segments per level:\n");
-	for (i=0; i < ri->ri_cnt; i++) {
+	for (i=0; i < ri->rio_cnt; i++) {
 		log(11, "%d %d\n", i, ri->rio[i]);
 	}
 	for (i=0; i < ri->ri_cnt; i++) {
@@ -434,6 +436,7 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	u_int32_t road_len;
 	u_int8_t rio[100];
 	unsigned ri_cnt = 0;
+	unsigned rio_cnt = 0;
 	u_int32_t ri[100];
 	u_int8_t tmp;
 	u_int8_t hnb = 0;
@@ -488,7 +491,9 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	while (42) {
 		if (gread(gimg, &tmp, 1) < 0)
 			return NULL;
-		rio[ri_cnt++] = tmp & 0x3f;
+		rio[rio_cnt] = tmp & 0x3f;
+		ri_cnt += rio[rio_cnt];
+		rio_cnt++;
 		if (tmp & (1<<7))
 			break;
 	}
@@ -510,13 +515,16 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	if (flags & RFL_NODINFO) {
 		if (gread(gimg, &tmp, sizeof(u_int8_t)) < 0)
 			return NULL;
+		log(11, "NET: nod info:%d\n", tmp);
 		if ((tmp & 3) == 1) {
 			tmp = 2;
 		} else if ((tmp & 3) == 2) {
 			tmp = 3;
+		} else if ((tmp & 3) == 3) {
+			tmp = 2;
 		} else {
-			tmp = 0;
 			log(1, "NET: Unknow nod info:%d\n", tmp);
+			tmp = 0;
 //			return NULL;
 		}
 		if (tmp) {
@@ -525,9 +533,10 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 				return NULL;
 			if (tmp == 3)
 				nodptr = *(u_int32_t*)buf;
-			else
+			else if (tmp == 2)
 				nodptr = *(u_int16_t*)buf;
-			nodptr &= 0x3FFFFF;
+			else if (tmp == 1)
+				nodptr = *(u_int8_t*)buf;
 		}
 	}
 	rd = calloc(1,sizeof(*rd));
@@ -539,18 +548,21 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	}
 	for (i=0; i < lblidx; i++)
 		rd->labels[i] = labels[i];
-	rd->sr_cnt = segidx; 
-	rd->sr_offset = malloc(segidx * sizeof(rd->sr_offset));
-	if (!rd->sr_offset) {
-		free(rd);
-		return NULL;
-	} 
-	for (i=0; i < segidx; i++)
-		rd->sr_offset[i] = segs[i];
+	if (segidx) {
+		rd->sr_cnt = segidx; 
+		rd->sr_offset = malloc(segidx * sizeof(rd->sr_offset));
+		if (!rd->sr_offset) {
+			free(rd);
+			return NULL;
+		} 
+		for (i=0; i < segidx; i++)
+			rd->sr_offset[i] = segs[i];
+	}
 	rd->road_flags = flags;
 	rd->road_len = road_len;
+	rd->rio_cnt = rio_cnt;
+	rd->rio = malloc(rio_cnt * sizeof(u_int8_t));
 	rd->ri_cnt = ri_cnt;
-	rd->rio = malloc(ri_cnt * sizeof(u_int8_t));
 	rd->ri = malloc(ri_cnt * sizeof(u_int32_t));
 	if (!rd->ri || !rd->rio) {
 		free(rd->sr_offset);
@@ -559,8 +571,10 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 		free(rd);
 		return NULL;
 	}
-	for (i=0; i < ri_cnt; i++) {
+	for (i=0; i < rio_cnt; i++) {
 		rd->rio[i] = rio[i];
+	}
+	for (i=0; i < ri_cnt; i++) {
 		rd->ri[i] = ri[i];
 	}
 	rd->sai = sai;

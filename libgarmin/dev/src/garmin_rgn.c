@@ -1001,11 +1001,12 @@ int gar_load_subfiles(struct gimg *g)
 
 			gar_load_subdivs(sub, &tre);
 			gar_load_subdivs_data(sub);
+			gar_init_srch(sub, 0);
+			gar_init_srch(sub, 1);
 			if (sub->net)
 				gar_net_parse_sorted(sub);
 		}
 		list_append(&sub->l, &g->lsubfiles);
-//		gar_init_srch(sub, 0);
 		mapsets++;
 	}
 	g->mapsets = mapsets;
