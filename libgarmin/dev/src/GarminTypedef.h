@@ -247,8 +247,7 @@ struct hdr_nod_t
 	struct hdr_subfile_part_t hsub;
 	u_int32_t	nod1offset;	// 0x15    Offset for section NOD1      4
 	u_int32_t	nod1length;	// 0x19    Length of section NOD1       4
-	u_int16_t	unknown1;	// 0x1D    Unknown                      2
-	u_int16_t	unknown2;	// 0x1F    Unknown                      2
+	u_int32_t	nod1recsize;
 	u_int16_t	unknown3;	// 0x21    Unknown                      2
 	u_int16_t	unknown4;	// 0x23    Unknown                      2
 	u_int32_t	nod2offset;	// 0x25    Road data offset, NOD2       4

@@ -67,10 +67,10 @@ struct gar_subfile {
 	unsigned int id;
 	ssize_t rgnoffset;
 	ssize_t rgnlen;
-	int transparent:1,
+	unsigned transparent:1,
 	    basemap:1,
 	    have_net:1,
-	    have_nod;
+	    have_nod:1;
 	double north;
 	double east;
 	double south;

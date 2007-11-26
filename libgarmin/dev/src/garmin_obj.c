@@ -317,18 +317,63 @@ static int gar_subdiv_visible(struct gar_subdiv *sd, struct gar_rect *rect)
 	return gar_rects_intersectboth(&sr, rect);
 }
 
+
+struct gobject *gar_get_subfile_object_byidx(struct gar_subfile *sub,
+				int sdidx, int oidx, int otype)
+{
+	int i,j;
+	struct gar_subdiv *sd;
+	struct gar_maplevel *ml;
+	void *obj = NULL;
+	/* FIXME: This can be improved */
+	for(i=0; i < sub->nlevels; i++) {
+		ml = sub->maplevels[i];
+		sd = ga_get_abs(&ml->subdivs, sdidx);
+		if (sd) {
+			if (!sd->loaded) {
+				if (gar_load_subdiv_data(sub, sd) < 0)
+					goto out;
+			}
+			switch(otype) {
+			case GO_POINT:
+				obj = ga_get_abs(&sd->points, oidx);
+				goto out;
+			case GO_POI:
+				obj = ga_get_abs(&sd->pois, oidx);
+				goto out;
+			case GO_POLYLINE:
+				obj = ga_get_abs(&sd->polylines, oidx);
+				goto out;
+			case GO_POLYGON:
+				obj = ga_get_abs(&sd->polygons, oidx);
+				goto out;
+			default:
+				log(1, "Unknown object type: %d mapid:%s\n",
+					otype, sub->mapid);
+			}
+			break;
+		}
+	}
+	j = 0;
+	for(i=0; i < sub->nlevels; i++)
+		j += sub->maplevels[i]->ml.nsubdiv;
+	log(1, "Can not find subdiv: %d have %d\n", sdidx, j);
+	return NULL;
+out:
+	if (obj)
+		return gar_alloc_object(otype, obj);
+	return NULL;
+}
+
 struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 					unsigned int objid)
 {
 	unsigned int sdidx;
 	unsigned int otype;
 	unsigned int oidx;
-	int i,j;
-	void *obj = NULL;
-	struct gar_maplevel *ml;
-	struct gar_subdiv *sd;
 	struct gimg *g;
 	struct gar_subfile *sub;
+	struct gobject *go = NULL;
 	sdidx = objid >> 16;
 	otype = objid & 0xFF;
 	oidx = (objid >> 8) & 0xFF;
@@ -341,47 +386,13 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 					// FIXME: error handle
 					gar_load_subfile_data(sub);
 				}
-				/* FIXME: This can be improved */
-				for(i=0; i < sub->nlevels; i++) {
-					ml = sub->maplevels[i];
-					sd = ga_get_abs(&ml->subdivs, sdidx);
-					if (sd) {
-						if (!sd->loaded) {
-							if (gar_load_subdiv_data(sub, sd) < 0)
-								goto out;
-						}
-						switch(otype) {
-						case GO_POINT:
-							obj = ga_get_abs(&sd->points, oidx);
-							goto out;
-						case GO_POI:
-							obj = ga_get_abs(&sd->pois, oidx);
-							goto out;
-						case GO_POLYLINE:
-							obj = ga_get_abs(&sd->polylines, oidx);
-							goto out;
-						case GO_POLYGON:
-							obj = ga_get_abs(&sd->polygons, oidx);
-							goto out;
-						default:
-							log(1, "Unknown object type: %d mapid:%X objid:%X\n",
-								otype, mapid,objid);
-						}
-						break;
-					}
-				}
-				j = 0;
-				for(i=0; i < sub->nlevels; i++)
-					j += sub->maplevels[i]->ml.nsubdiv;
-				log(1, "Can not find subdiv: %d have %d\n", sdidx, j);
+				go = gar_get_subfile_object_byidx(sub,
+						sdidx, oidx, otype);
+				break;
 			}
 		}
 	}
-	return NULL;
-out:
-	if (obj)
-		return gar_alloc_object(otype, obj);
-	return NULL;
+	return go;
 }
 
 // FIXME: This is very very slow

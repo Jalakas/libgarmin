@@ -125,3 +125,5 @@ ssize_t gwrite(struct gimg *g, void *buf, size_t count);
 off_t glseek(struct gimg *g, off_t offset, int whence);
 int gopen(struct gimg *g);
 int gclose(struct gimg *g);
+struct gobject *gar_get_subfile_object_byidx(struct gar_subfile *sub,
+				int sdidx, int oidx, int otype);

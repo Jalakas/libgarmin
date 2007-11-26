@@ -337,7 +337,7 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	bs_info = *dp;
 	dp++;
 	if (extra_bit)
-		dl = 11;
+		dl = 15;
 #ifdef DBGEXTRA
 	if (extra_bit) {
 			u_int8_t *t = dp;
