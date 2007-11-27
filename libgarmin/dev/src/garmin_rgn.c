@@ -215,7 +215,7 @@ static int gar_load_ml_subdata(struct gar_subfile *sub, struct gar_maplevel *ml)
 		gsub = ga_get(&ml->subdivs, c);
 		if (gar_load_subdiv_data(sub, gsub)<0)
 			return -1;
-		log(11, "Points: %d POIs: %d Lines:%d Polys:%d\n",
+		log(13, "Points: %d POIs: %d Lines:%d Polys:%d\n",
 			ga_get_count(&gsub->points),
 			ga_get_count(&gsub->pois),
 			ga_get_count(&gsub->polylines),
@@ -280,7 +280,7 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 			GARDEG(gsub->south),
 			GARDEG(gsub->west),
 			gsub->icenterlng, gsub->icenterlat);
-	log(11, "Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
+	log(13, "Subdiv North: %fC, East: %fC, South: %fC, West: %fC cx=%d cy=%d\n",
 		GARDEG(gsub->north),
 		GARDEG(gsub->east),
 		GARDEG(gsub->south),

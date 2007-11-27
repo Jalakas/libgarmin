@@ -205,13 +205,13 @@ static int gar_load_img_hdr(struct gimg *g, unsigned int *dataoffset, unsigned i
 		log(1, "Invalid identifier: [%s]\n", hdr.identifier);
 		return -1;
 	}
-	log(10, "File: [%s]\n", g->file);
+	log(15, "File: [%s]\n", g->file);
 	log(10, "Desc1:[%s]\n", hdr.desc1);
 	log(10, "Desc2:[%s]\n", hdr.desc2);
 	*blocksize = get_blocksize(&hdr);
-	log(10, "Blocksize: %u\n", *blocksize);
+	log(15, "Blocksize: %u\n", *blocksize);
 	*dataoffset = hdr.dataoffset;
-	log(10, "Dataoffset: %u[%08X]\n", *dataoffset, *dataoffset);
+	log(15, "Dataoffset: %u[%08X]\n", *dataoffset, *dataoffset);
 	return 1;
 }
 

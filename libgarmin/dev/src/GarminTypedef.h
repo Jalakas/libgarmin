@@ -209,12 +209,15 @@ struct hdr_lbl_t
 struct hdr_net_t
 {
 	struct hdr_subfile_part_t hsub;
+	// NET1 Road definitions
 	u_int32_t net1_offset;        ///< 0x00000015 .. 0x00000018
 	u_int32_t net1_length;        ///< 0x00000019 .. 0x0000001C
 	u_int8_t  net1_addr_shift;    ///< 0x0000001D
+	// Segmented roads
 	u_int32_t net2_offset;        ///< 0x0000001E .. 0x00000021
 	u_int32_t net2_length;        ///< 0x00000022 .. 0x00000025
 	u_int8_t net2_addr_shift;    ///< 0x00000026
+	// Sorted Roads
 	u_int32_t net3_offset;        ///< 0x00000027 .. 0x0000002A
 	u_int32_t net3_length;        ///< 0x0000002B .. 0x0000002E
 } __attribute((packed));
@@ -245,28 +248,34 @@ struct garmin_bmp_t{
 struct hdr_nod_t
 {
 	struct hdr_subfile_part_t hsub;
+	// Unknown
 	u_int32_t	nod1offset;	// 0x15    Offset for section NOD1      4
 	u_int32_t	nod1length;	// 0x19    Length of section NOD1       4
 	u_int32_t	nod1recsize;
 	u_int16_t	unknown3;	// 0x21    Unknown                      2
 	u_int16_t	unknown4;	// 0x23    Unknown                      2
+	// Road Data
 	u_int32_t	nod2offset;	// 0x25    Road data offset, NOD2       4
 	u_int32_t	nod2length;	// 0x29    Road data length             4
 	u_int32_t	unknown5;	// addres shift? 0x2d    0x00000000 ???               4
+	// Boundary Nodes
 	u_int32_t	bondoffset;	//  0x31    Boundary nodes offset, NOD3  4
 	u_int32_t	bondlength;	//  0x35    Boundary nodes length        4
 	u_int8_t	bondrecsize;	//  0x39    Boundary nodes record length 1
 	u_int32_t	zeroterm;	//  0x3a    0x000000                     4
-} __attribute((packed));;
+} __attribute((packed));
 
 #define SPEEDCLASS(x)	((x)&0x0F)
 #define ROADTYPE(x)	((x)>>4)
 
 struct nod_road_data {
-	u_int8_t	roadclass;
-	u_int24_t	nod1off;
-	u_int8_t	bitstream;
-};
+	u_int8_t	roadclass;	// 0
+	u_int24_t	nod1off;	// 1
+	// b1 -> bigger size, bigger value may be connections ?
+	u_int8_t	nodes;		// 4
+	u_int8_t	b2;		// 5
+	u_int8_t	b3;		// 6
+} __attribute((packed));
 
 struct nod_bond {
 	u_int24_t	east;	//  coord_east    3

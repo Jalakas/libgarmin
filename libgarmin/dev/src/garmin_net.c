@@ -51,6 +51,9 @@ struct street_addr_info {
 	u_int8_t	*field3;
 };
 
+/* 
+ * There is no bitstream at the end of this as the PDF says in the maps i have
+ */
 struct road_info {
 	off_t labels[10];
 	int sr_cnt;
@@ -61,14 +64,9 @@ struct road_info {
 	u_int8_t *rio;
 	int ri_cnt;
 	u_int32_t *ri;
+	u_int8_t hnb;
 	struct street_addr_info *sai;
 	u_int32_t nod_offset;
-};
-
-struct nod_info {
-	u_int8_t roadclass;
-	u_int32_t nod1ptr;
-	// bitstream ??
 };
 
 static void gar_free_nod(struct gar_nod_info *nod)
@@ -118,6 +116,27 @@ static struct gar_nod_info *gar_init_nod(struct gar_subfile *sub)
 	log(11, "off nod1=%d, nod2=%d, nod3=%d\n",
 			nod.nod1offset, nod.nod2offset, nod.bondoffset);
 	return n;
+}
+
+static unsigned int b3l;
+static void * gar_read_nod2(struct gar_subfile *sub, off_t offset)
+{
+	struct gimg *gimg = sub->gimg;
+	struct nod_road_data nrd;
+	u_int32_t n1;
+	off_t o = sub->net->nod->nodoff + sub->net->nod->nod2_offset + offset;
+	if (glseek(gimg, o, SEEK_SET) != o) {
+		log(1, "NET: Error can not seek to %ld\n", o);
+		return NULL;
+	}
+	if (gread(gimg, &nrd, sizeof(struct nod_road_data)) < 0)
+		return NULL;
+	n1 = *(u_int32_t*)nrd.nod1off & 0x00FFFFFF;
+	log(11, "n2: %ld rc %d n1 %d nodes %d b2 [%02X] b3 [%02X]\n",
+		offset, nrd.roadclass, n1, 
+		nrd.nodes, nrd.b2, nrd.b3);
+	b3l+=nrd.b3;
+	return NULL;
 }
 
 int gar_init_net(struct gar_subfile *sub)
@@ -330,7 +349,8 @@ static void gar_log_road_info(struct gar_subfile *sub, struct road_info *ri)
 	int i;
 	int idx;
 	int sdidx;
-	unsigned char buf[1024];
+	unsigned char buf[2048];
+	int sz;
 	struct gobject *o;
 	log(11, "Labels at %ld %ld %ld %ld\n",
 		ri->labels[0],ri->labels[1],ri->labels[2],ri->labels[3]);
@@ -358,9 +378,9 @@ static void gar_log_road_info(struct gar_subfile *sub, struct road_info *ri)
 		for (i=0; i < ri->sr_cnt; i++)
 			log(11, "Seg at:%d\n", ri->sr_offset[i]);
 	}
-	log(11, "road_flags=%d road_len=%d\n",
-		ri->road_flags, ri->road_len);
-	log(11, "unk0:%d, oneway:%d, lock:%d, unk3:%d, ar:%d, mhw:%d\n",
+	log(11, "road_flags=%d road_len=%d hnb=%d "
+		"unk0:%d, oneway:%d, lock:%d, unk3:%d, ar:%d, mhw:%d\n",
+		ri->road_flags, ri->road_len, ri->hnb,
 		!!(ri->road_flags&RFL_UNKNOWN0),
 		!!(ri->road_flags&RFL_ONEWAY),
 		!!(ri->road_flags&RFL_LOCKTOROAD),
@@ -368,23 +388,27 @@ static void gar_log_road_info(struct gar_subfile *sub, struct road_info *ri)
 		!!(ri->road_flags&RFL_ADDRONRIGHT),
 		!!(ri->road_flags&RFL_MAJORHW));
 
-	log(11, "segments per level:\n");
+	sz = 0;
 	for (i=0; i < ri->rio_cnt; i++) {
-		log(11, "%d %d\n", i, ri->rio[i]);
+		sz += sprintf(buf + sz, "%d %d ", i, ri->rio[i]);
 	}
+	log(11, "segments per level: %s\n", buf);
+	sz = 0;
 	for (i=0; i < ri->ri_cnt; i++) {
 		idx = ri->ri[i] & 0xff;
 		sdidx = ri->ri[i] >> 8;
 		sdidx &= 0xFFFF;
 		// 8 bits idx, 16 bits subdiv
-		log(11, "%d i:%d sd:%d\n", i, idx, sdidx);
+		sz += snprintf(buf + sz, sizeof(buf) - sz, "%d i:%d sd:%d ", i, idx, sdidx);
 		/* this is the road on the differnet map levels */
 		o = gar_get_subfile_object_byidx(sub, sdidx, idx, GO_POLYLINE);
 		if (o) {
-			char *cp = gar_object_debug_str(o);
-			if (cp) {
-				log(11, "%s\n", cp);
-				free(cp);
+			if (i==0) {
+				char *cp = gar_object_debug_str(o);
+				if (cp) {
+					log(11, "%s\n", cp);
+					free(cp);
+				}
 			}
 #if 0
 			cp = gar_get_object_lbl(o);
@@ -398,12 +422,15 @@ static void gar_log_road_info(struct gar_subfile *sub, struct road_info *ri)
 			log(1, "NET: Error can not find object\n");
 		}
 	}
+	log(11, "segments:%s\n", buf);
 	if (ri->sai) {
 		log(11, "Have street address info\n");
 		// gar_log_sai(ri->sai);
 	}
-	if (ri->nod_offset)
-		log(11, "nod data at %u\n", ri->nod_offset);
+	if (ri->road_flags & RFL_NODINFO) {
+		gar_read_nod2(sub, ri->nod_offset);
+//		log(11, "nod data at %u\n", ri->nod_offset);
+	}
 }
 
 static void gar_free_road_info(struct road_info *ri)
@@ -423,7 +450,7 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 {
 	struct road_info *rd;
 	struct gimg *gimg = sub->gimg;
-	off_t o;
+	off_t o,o1;
 	int lblidx = 0;
 	off_t labels[10];
 	char buf[4];
@@ -434,10 +461,10 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	char seg = 0;
 	u_int8_t flags;
 	u_int32_t road_len;
-	u_int8_t rio[100];
+	u_int8_t rio[25];
 	unsigned ri_cnt = 0;
 	unsigned rio_cnt = 0;
-	u_int32_t ri[100];
+	u_int32_t *ri;
 	u_int8_t tmp;
 	u_int8_t hnb = 0;
 	struct street_addr_info *sai = NULL;
@@ -496,7 +523,14 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 		rio_cnt++;
 		if (tmp & (1<<7))
 			break;
+		if (rio_cnt == 25) {
+			log(1, "NET: Too many rios\n");
+			break;
+		}
 	}
+	ri = malloc(ri_cnt * sizeof(u_int32_t));
+	if (!ri)
+		return NULL;
 	for (j=0; j < ri_cnt; j++) {
 		rc = gread(gimg, buf, 3);
 		if (rc != 3)
@@ -515,7 +549,8 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	if (flags & RFL_NODINFO) {
 		if (gread(gimg, &tmp, sizeof(u_int8_t)) < 0)
 			return NULL;
-		log(11, "NET: nod info:%d\n", tmp);
+		if (tmp > 2)
+			log(11, "NET: nod info:%d\n", tmp);
 		if ((tmp & 3) == 1) {
 			tmp = 2;
 		} else if ((tmp & 3) == 2) {
@@ -563,7 +598,7 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	rd->rio_cnt = rio_cnt;
 	rd->rio = malloc(rio_cnt * sizeof(u_int8_t));
 	rd->ri_cnt = ri_cnt;
-	rd->ri = malloc(ri_cnt * sizeof(u_int32_t));
+	rd->ri = ri;
 	if (!rd->ri || !rd->rio) {
 		free(rd->sr_offset);
 		free(rd->ri);
@@ -577,8 +612,11 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	for (i=0; i < ri_cnt; i++) {
 		rd->ri[i] = ri[i];
 	}
+	rd->hnb = hnb;
 	rd->sai = sai;
 	rd->nod_offset = nodptr;
+	o1 = glseek(gimg, 0, SEEK_CUR);
+	log(13, "roadptr %ld read %ld\n", offset, o1-o);
 	return rd;
 }
 
@@ -611,7 +649,7 @@ int gar_net_parse_sorted(struct gar_subfile *sub)
 		lblidx = val >> 21;
 		lblidx &= 3;
 		roadptr = val & 0x001FFFFF;
-		log(11, "lblidx=%d roadptr=%d\n", lblidx, roadptr);
+		log(11, "lblidx %d roadptr %d\n", lblidx, roadptr);
 		ri = gar_parse_road_info(sub, roadptr);
 		if (ri) {
 			gar_log_road_info(sub, ri);
@@ -622,7 +660,7 @@ int gar_net_parse_sorted(struct gar_subfile *sub)
 		}
 		c++;
 	}
-	log(11, "Total %d roads, %d parsed\n", c, p);
+	log(11, "Total %d roads, %d parsed b3l=%u\n", c, p,b3l);
 	gar_subfile_unref(sub);
 	return c;
 }

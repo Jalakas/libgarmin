@@ -116,7 +116,7 @@ static int gar_add_fe(struct gimg *g, struct FATblock_t *fent, int blocksize)
 	char *cp;
 
 	if(!strncmp(fent->name,"MAPSOURC",8) || !strncmp(fent->name,"SENDMAP2", 8)) {
-		log(7, "Skipping MAPSOURCE or SENDMAP file\n");
+		log(17, "Skipping MAPSOURCE or SENDMAP file\n");
 		return 0;
 	}
 
@@ -133,7 +133,7 @@ static int gar_add_fe(struct gimg *g, struct FATblock_t *fent, int blocksize)
 	*cp = '\0';
 	fe->size = fent->size;
 	fe->offset = fent->blocks[0] * blocksize;
-	log(11, "File: [%s] size:[%ld] offset:[%ld/%08lX]\n", fe->filename,
+	log(15, "File: [%s] size:[%ld] offset:[%ld/%08lX]\n", fe->filename,
 		fe->size, fe->offset,fe->offset);
 	fe1 = gar_fat_get_fe_by_name(g, fe->filename);
 	if (fe1) {
@@ -146,7 +146,7 @@ static int gar_add_fe(struct gimg *g, struct FATblock_t *fent, int blocksize)
 			fe1->size = fe->size;
 		free(fe);
 	} else {
-		log(11, "Creating FAT file:[%s]\n", fe->filename);
+		log(15, "Creating FAT file:[%s] %ld\n", fe->filename, fe->size);
 		list_append(&fe->l, &g->lfatfiles);
 	}
 	return 0;
@@ -163,11 +163,11 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize)
 	int fatend = dataoffset;
 
 	if (!fatend) {
-		log(11, "FAT Will use size from rootdir\n");
+		log(15, "FAT Will use size from rootdir\n");
 		userootdir = 1;
 	} else {
 		fatend -= sizeof(struct hdr_img_t);
-		log(11, "FAT size %d\n", fatend);
+		log(15, "FAT size %d\n", fatend);
 	}
 	/* Read reserved FAT entries first */
 	while ((rc = gread(g, &fent, s)) == s) {
@@ -176,7 +176,7 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize)
 		rsz+=rc;
 		count ++;
 	}
-	log(11, "FAT Reserved entries %d\n", count);
+	log(17, "FAT Reserved entries %d\n", count);
 	count = 0;
 	do {
 		rsz+=rc;
@@ -203,12 +203,12 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize)
 	}
 	log(1, "FAT Directory %d entries %d bytes\n", count, rsz);
 	list_for_entry(fe, &g->lfatfiles, l) {
-		log(11,"%s %ld\n",fe->filename,fe->size);
+		log(10,"%s %ld\n",fe->filename,fe->size);
 	}
 
 	if (userootdir) {
 		dataoffset = fatend + sizeof(struct hdr_img_t);
-		log(11, "FAT DataOffset corrected to %d\n", dataoffset);
+		log(15, "FAT DataOffset corrected to %d\n", dataoffset);
 	}
 
 	return count * s;
