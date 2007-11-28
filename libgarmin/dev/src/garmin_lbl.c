@@ -137,13 +137,8 @@ static int gar_lbl_decode8(struct bspfd *bp, u_int8_t *out, ssize_t len)
 			*cp++ = '@';
 			sz++;
 		} else {
-			if (isascii(c)) {
-				*cp++ = c;
-				sz ++;
-			} else {
-				if (sz +4 < len)
-					sz += sprintf((char *)cp, "[%02X]", c);
-			}
+			*cp++ = c;
+			sz ++;
 		}
 		if (sz >=len-1)
 			break;
