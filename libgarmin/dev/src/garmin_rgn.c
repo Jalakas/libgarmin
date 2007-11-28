@@ -901,6 +901,8 @@ int gar_load_subfiles(struct gimg *g)
 			goto out_err;
 		}
 		gar_log_file_date(11, "TRE Created", &tre.hsub);
+		if (tre.hsub.length < 116)
+			tre.mapID = 0;
 		log(11, "TRE mapID: %d[%08X] draw priority: %d\n", tre.mapID, tre.mapID, tre.drawprio);
 		log(11, "TRE header: len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
 			tre.hsub.length, tre.tre1_offset, tre.tre1_size,

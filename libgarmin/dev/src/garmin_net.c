@@ -128,7 +128,37 @@ static struct gar_nod_info *gar_init_nod(struct gar_subfile *sub)
 	return n;
 }
 
-static unsigned int b3l;
+static void print_buf(char *pref, unsigned char *a, int s)
+{
+	char buf[4096];
+	int i,sz = 0;
+	for (i=0; i < s; i++) {
+		sz += sprintf(buf+sz, "%02X ",a[i]);
+	}
+	log(11, "%s :%s\n", pref, buf);
+}
+
+struct nod1_data {
+	u_int8_t	b[12];
+} __attribute((packed));
+
+static void * gar_read_nod1(struct gar_subfile *sub, off_t offset)
+{
+	struct gimg *gimg = sub->gimg;
+	struct nod1_data nd;
+	char buf[128];
+	off_t o = sub->net->nod->nodoff + sub->net->nod->nod1_offset + offset;
+	if (glseek(gimg, o, SEEK_SET) != o) {
+		log(1, "NET: Error can not seek to %ld\n", o);
+		return NULL;
+	}
+	if (gread(gimg, &nd, sizeof(nd)) < 0)
+		return NULL;
+	sprintf(buf, "nod1 %ld", offset);
+	print_buf(buf, (unsigned char *)&nd, sizeof(nd));
+	return NULL;
+}
+
 static void * gar_read_nod2(struct gar_subfile *sub, off_t offset)
 {
 	struct gimg *gimg = sub->gimg;
@@ -145,7 +175,7 @@ static void * gar_read_nod2(struct gar_subfile *sub, off_t offset)
 	log(11, "n2: %ld rc %d n1 %d nodes %d b2 [%02X] b3 [%02X]\n",
 		offset, nrd.roadclass, n1, 
 		nrd.nodes, nrd.b2, nrd.b3);
-	b3l+=nrd.b3;
+	gar_read_nod1(sub, n1);
 	return NULL;
 }
 
@@ -567,7 +597,7 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 		} else if ((tmp & 3) == 2) {
 			tmp = 3;
 		} else if ((tmp & 3) == 3) {
-			tmp = 2;
+			tmp = 1;
 		} else {
 			log(1, "NET: Unknow nod info:%d\n", tmp);
 			tmp = 0;
@@ -578,11 +608,11 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 			if (gread(gimg, buf, tmp) < 0)
 				return NULL;
 			if (tmp == 3)
-				nodptr = *(u_int32_t*)buf;
+				nodptr = *(u_int32_t*)buf & 0xffffff;
 			else if (tmp == 2)
-				nodptr = *(u_int16_t*)buf;
+				nodptr = *(u_int16_t*)buf & 0xffff;
 			else if (tmp == 1)
-				nodptr = *(u_int8_t*)buf;
+				nodptr = *(u_int8_t*)buf & 0xff;
 		}
 	}
 	rd = calloc(1,sizeof(*rd));
@@ -671,7 +701,7 @@ int gar_net_parse_sorted(struct gar_subfile *sub)
 		}
 		c++;
 	}
-	log(11, "Total %d roads, %d parsed b3l=%u\n", c, p,b3l);
+	log(11, "Total %d roads, %d parsed\n", c, p);
 	gar_subfile_unref(sub);
 	return c;
 }
