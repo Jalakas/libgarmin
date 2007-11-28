@@ -115,6 +115,8 @@ static int gar_lbl_decode8(struct bspfd *bp, u_int8_t *out, ssize_t len)
 	int c, sz = 0;
 	unsigned char *cp = out;
 	while ((c = bsp_fd_get_bits(bp,8)) > -1) {
+		if (!c)
+			break;
 		if (c == 0x1A) {
 			*cp++ = '$';
 			sz++;

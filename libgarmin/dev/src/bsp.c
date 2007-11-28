@@ -78,7 +78,17 @@ int bsp_fd_get_bits(struct bspfd *bp, int bits)
 			return -1;
 	if (!bp->datalen)
 		return -1;
-
+	if (bits == 8 && bp->cbit == 7) {
+		ret = *bp->cb;
+		bp->cb++;
+		if (bp->cb == bp->ep) {
+			if (bsp_fd_read(bp) < 0)
+				return -1;
+			if (!bp->datalen)
+				return -1;
+		}
+		return ret;
+	}
 	for (i=0; i < bits; i++) {
 		if (bp->cbit < 0) {
 			bp->cbit = 7;

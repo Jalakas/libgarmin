@@ -2,7 +2,7 @@ struct gimg;
 /* Can read up to 32 bits */
 struct bspfd {
 	struct gimg *g;
-	u_int8_t buf[4096];
+	u_int8_t buf[64];
 	int datalen;
 	u_int8_t *cb;
 	u_int8_t *ep;

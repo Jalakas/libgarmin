@@ -579,7 +579,7 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	rd = calloc(1,sizeof(*rd));
 	if (!rd)
 		return NULL;
-	if (lblidx > 3) {
+	if (lblidx > 4) {
 		for (i=0; i < lblidx; i++)
 			log(11, "LBL:%d %ld\n", i, labels[i]);
 	}
