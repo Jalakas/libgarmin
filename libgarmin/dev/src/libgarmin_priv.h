@@ -5,8 +5,12 @@
 #include <math.h>
 
 extern log_fn glogfn;
-#define glog(g, l, x ...)	g->logfn(__FILE__, __LINE__, l, ## x)
-#define log(l, x ...)	glogfn(__FILE__, __LINE__, l, ## x)
+extern int debug_level;
+// #define glog(g, l, x ...)	g->logfn(__FILE__, __LINE__, l, ## x)
+#define log(l, x ...)	do {							\
+				if (l <= debug_level)				\
+					glogfn(__FILE__, __LINE__, l, ## x);	\
+			} while(0)
 
 #define SIGN2B(x) (((x) < 0x8000)   ?  (x) : ((x)-0x10000))
 #define SIGN3B(x) (((x) < 0x800000) ?  (x) : ((x)-0x1000000))

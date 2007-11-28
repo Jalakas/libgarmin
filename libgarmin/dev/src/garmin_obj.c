@@ -498,7 +498,7 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	basebits = gm->basebits;
 	baselevel = gm->minlevel;
 
-	log(1, "Basemap bits:%d level = %d\n", basebits, baselevel);
+	log(3, "Basemap bits:%d level = %d\n", basebits, baselevel);
 	if (gm->lastsub == 1 && gm->subs[0]->basemap) {
 		// Check for screwed images where no detail is available 
 		if (bits > gsub->maplevels[gsub->nlevels-1]->ml.bits)
@@ -510,7 +510,7 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 			if (!gsub->have_net)
 				continue;
 		}
-		log(1, "Loading %s basemap:%s\n", gsub->mapid, gsub->basemap ? "yes" : "no");
+		log(3, "Loading %s basemap:%s\n", gsub->mapid, gsub->basemap ? "yes" : "no");
 		if (!gsub->loaded) {
 			// FIXME: error handle
 			// FIXME: Load only the sd-s that are in the selected level
@@ -541,7 +541,7 @@ nextlvl:
 			if (ml->ml.bits < bits) {
 				continue;
 			}
-			log(1, "Loading level:%d bits:%d\n",
+			log(3, "Loading level:%d bits:%d\n",
 				ml->ml.level, ml->ml.bits);
 			lvlobjs = 0;
 			sdcount = ga_get_count(&ml->subdivs);

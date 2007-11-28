@@ -201,7 +201,7 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize)
 		log(1, "Failed to read FAT\n");
 		return 0;
 	}
-	log(1, "FAT Directory %d entries %d bytes\n", count, rsz);
+	log(10, "FAT Directory %d entries %d bytes\n", count, rsz);
 	list_for_entry(fe, &g->lfatfiles, l) {
 		log(10,"%s %ld\n",fe->filename,fe->size);
 	}

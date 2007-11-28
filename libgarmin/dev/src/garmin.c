@@ -36,6 +36,7 @@
 #include "garmin_tdb.h"
 
 log_fn glogfn;
+int debug_level = 1;
 
 void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h)
 {
@@ -124,6 +125,7 @@ static struct gimg *gimg_alloc(struct gar *gar, char *file)
 struct gar *gar_init_cfg(char *tbd, log_fn l, struct gar_config *cfg)
 {
 	struct gar *gar;
+	char modename[50] = "";
 
 	if (cfg->opm == OPM_DUMP) {
 		log(1, "Data dumping not implemented\n");
@@ -145,7 +147,14 @@ struct gar *gar_init_cfg(char *tbd, log_fn l, struct gar_config *cfg)
 	}
 
 	gar->cfg = *cfg;
-	log(1, "%s initializing ...\n", LIBVERSION);
+	if (gar->cfg.opm == OPM_GPS)
+		strcpy(modename, "GPS Backend");
+	else if (gar->cfg.opm == OPM_PARSE)
+		strcpy(modename, "Parser");
+	else if (gar->cfg.opm == OPM_DUMP)
+		strcpy(modename, "Data dumper");
+	debug_level = cfg->debuglevel;
+	log(1, "%s initializing as %s\n", LIBVERSION, modename);
 	list_init(&gar->limgs);
 #if 0
 	log(1, "struct gimg=%d\n", sizeof(struct gimg));
@@ -170,6 +179,7 @@ struct gar *gar_init(char *tdb, log_fn l)
 	struct gar_config cfg;
 	memset(&cfg, 0, sizeof(struct gar_config));
 	cfg.opm = OPM_GPS;
+	cfg.debuglevel = 10;
 	return gar_init_cfg(tdb, l, &cfg);
 }
 

@@ -860,13 +860,15 @@ int gar_load_subfiles(struct gimg *g)
 	log(1, "Have %d mapsets\n", nimgs);
 	if (!imgs)
 		return -1;
-	for (rc = 0; rc < nimgs; rc++) {
-		strcpy(buf, imgs[rc]);
-		cp = strchr(buf, '.');
-		if (!cp)
-			continue;
-		*cp = '\0';
-		log(1, "mapset: %s\n", buf);
+	if (debug_level >= 7) {
+		for (rc = 0; rc < nimgs; rc++) {
+			strcpy(buf, imgs[rc]);
+			cp = strchr(buf, '.');
+			if (!cp)
+				continue;
+			*cp = '\0';
+			log(1, "mapset: %s\n", buf);
+		}
 	}
 
 	for (j = 0; j < nimgs; j++) {
@@ -875,7 +877,7 @@ int gar_load_subfiles(struct gimg *g)
 		if (!cp)
 			continue;
 		*cp = '\0';
-		log(1, "Loading mapset id: %s\n", buf);
+		log(5, "Loading mapset id: %s\n", buf);
 		sub = gar_alloc_subfile(g, buf);
 		if (!sub)
 			return -1;
@@ -962,13 +964,13 @@ int gar_load_subfiles(struct gimg *g)
 		sub->south = SIGN3B(i32);
 		i32 = (*(u_int32_t*)tre.westbound) & 0x00FFFFFF;
 		sub->west = SIGN3B(i32);
-		log(1, "Boundaries - North: %fC, East: %fC, South: %fC, West: %fC\n",
+		log(5, "Boundaries - North: %fC, East: %fC, South: %fC, West: %fC\n",
 			GARDEG(sub->north),
 			GARDEG(sub->east),
 			GARDEG(sub->south),
 			GARDEG(sub->west));
 // FIXME calculate area  area= (pi/180)R^2 |sin(lat1)-sin(lat2)| |lon1-lon2|
-		log(1, "Transparent: %s, Area: %.2f m\n", sub->transparent ? "Yes" : "No",
+		log(5, "Transparent: %s, Area: %.2f m\n", sub->transparent ? "Yes" : "No",
 			sub->area);
 
 		if (sub->east == sub->west){
@@ -1071,7 +1073,7 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 			gar_rect_log(12, buf, &r);
 		}
 		if (!rect || gar_rects_intersectboth(rect, &r)) {
-			log(1, "Found subfile %d: [%s]\n", idx, sub->mapid);
+			log(5, "Found subfile %d: [%s]\n", idx, sub->mapid);
 			gar_rect_log(15, "subfile", &r);
 			files->subs[idx] = sub;
 			idx++;
@@ -1080,7 +1082,7 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 				break;
 		}
 	}
-	log(12, "Found %d subfiles\n", nf);
+	log(2, "Found %d subfiles\n", nf);
 	files->lastsub = idx;
 	return nf;
 }
@@ -1097,7 +1099,7 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect, int flags
 	if (!files)
 		return NULL;
 	if (rect)
-		gar_rect_log(1, "looking for", rect);
+		gar_rect_log(5, "looking for", rect);
 
 	if (gar->tdbloaded) {
 		files->zoomlevels = gar->zoomlevels;

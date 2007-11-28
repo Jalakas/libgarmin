@@ -23,6 +23,7 @@ static struct gar * load(char *file)
 	cfg.opm = OPM_PARSE;
 	// FIXME: make cmdline arg
 	cfg.debugmask = 0; // DBGM_LBLS | DBGM_OBJSRC;
+	cfg.debuglevel = debug;
 	g = gar_init_cfg(NULL, logfn, &cfg);
 	if (!g)
 		return NULL;

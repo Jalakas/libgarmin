@@ -190,6 +190,8 @@ int gar_init_net(struct gar_subfile *sub)
 
 void gar_free_net(struct gar_subfile *sub)
 {
+	if (!sub->net)
+		return;
 	if (sub->net->nod)
 		gar_free_nod(sub->net->nod);
 	free(sub->net);
