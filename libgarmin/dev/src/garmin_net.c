@@ -111,10 +111,20 @@ static struct gar_nod_info *gar_init_nod(struct gar_subfile *sub)
 	n->nod3_offset = nod.bondoffset;
 	n->nod3_length = nod.bondlength;
 	n->nod3_recsize = nod.bondrecsize;
+	log(11, "nod hdrlen=%d\n", nod.hsub.length);
 	log(11, "len nod1=%d, nod2=%d, nod3=%d\n",
 			nod.nod1length, nod.nod2length, nod.bondlength);
 	log(11, "off nod1=%d, nod2=%d, nod3=%d\n",
 			nod.nod1offset, nod.nod2offset, nod.bondoffset);
+	log(11, "len b1 %0x b2 %0x 3 %0x 4 %0x, unk3=%0x, unk4=%0x unk5=%0x zterm1=%x\n",
+			nod.b1, nod.b2, nod.b3, nod.b4,nod.unknown3, nod.unknown4,
+			nod.unknown5, nod.zeroterm1);
+	if (nod.hsub.length > 63) {
+		log(11, "nod bond2offset=%d len=%d u1off=%d len=%d u2off=%d len=%d\n",
+			nod.bond2offset, nod.bond2lenght,
+			nod.u1offset, nod.u1lenght,
+			nod.u2offset, nod.u2lenght);
+	}
 	return n;
 }
 
@@ -541,7 +551,6 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 		ri[j] = i;
 	}
 	if (flags & RFL_STREETADDRINFO) {
-		log(11, "Parsing street address\n");
 		if (gread(gimg, &hnb, sizeof(u_int8_t)) < 0)
 			return NULL;
 		sai = gar_parse_addr_info(sub);

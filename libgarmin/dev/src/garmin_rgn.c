@@ -336,6 +336,7 @@ static ssize_t gar_get_rgnoff(struct gar_subfile *sub, ssize_t *l)
 			return 0;
 		}
 		*l = rgnhdr.length;
+		log(11, "rgn header len: %d\n",rgnhdr.hsub.length);
 		return rgnoff+rgnhdr.offset;
 	}
 	return 0;
@@ -900,6 +901,7 @@ int gar_load_subfiles(struct gimg *g)
 			goto out_err;
 		}
 		gar_log_file_date(11, "TRE Created", &tre.hsub);
+		log(11, "TRE mapID: %d[%08X] draw priority: %d\n", tre.mapID, tre.mapID, tre.drawprio);
 		log(11, "TRE header: len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
 			tre.hsub.length, tre.tre1_offset, tre.tre1_size,
 			tre.tre2_offset, tre.tre2_size);
@@ -912,19 +914,18 @@ int gar_load_subfiles(struct gimg *g)
 			tre.byte0x0000003B_0x0000003E[1],
 			tre.byte0x0000003B_0x0000003E[2],
 			tre.byte0x0000003B_0x0000003E[3]);
-		log(19, "40-49[%02X][%02X][%02X][%02X]"
+		log(19, "41-49[%02X][%02X][%02X][%02X]"
 			     "[%02X][%02X][%02X][%02X]"
-			     "[%02X][%02X]\n",
-			tre.byte0x00000040_0x00000049[0],
-			tre.byte0x00000040_0x00000049[1],
-			tre.byte0x00000040_0x00000049[2],
-			tre.byte0x00000040_0x00000049[3],
-			tre.byte0x00000040_0x00000049[4],
-			tre.byte0x00000040_0x00000049[5],
-			tre.byte0x00000040_0x00000049[6],
-			tre.byte0x00000040_0x00000049[7],
-			tre.byte0x00000040_0x00000049[8],
-			tre.byte0x00000040_0x00000049[9]);
+			     "[%02X]\n",
+			tre.byte0x00000041_0x00000049[0],
+			tre.byte0x00000041_0x00000049[1],
+			tre.byte0x00000041_0x00000049[2],
+			tre.byte0x00000041_0x00000049[3],
+			tre.byte0x00000041_0x00000049[4],
+			tre.byte0x00000041_0x00000049[5],
+			tre.byte0x00000041_0x00000049[6],
+			tre.byte0x00000041_0x00000049[7],
+			tre.byte0x00000041_0x00000049[8]);
 		log(19, "54-57[%02X][%02X][%02X][%02X]\n",
 			tre.byte0x00000054_0x00000057[0],
 			tre.byte0x00000054_0x00000057[1],

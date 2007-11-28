@@ -94,9 +94,10 @@ struct hdr_tre_t
 	u_int32_t tre3_offset;        ///< 0x00000031 .. 0x00000034
 	u_int32_t tre3_size;          ///< 0x00000035 .. 0x00000038
 	u_int16_t tre3_rec_size;      ///< 0x00000039 .. 0x0000003A
-	u_int8_t  byte0x0000003B_0x0000003E[4];
-	u_int8_t  POI_flags;          ///< 0x0000003F
-	u_int8_t  byte0x00000040_0x00000049[10];
+	u_int8_t byte0x0000003B_0x0000003E[4];
+	u_int8_t POI_flags;          ///< 0x0000003F
+	u_int8_t drawprio;		// map draw priority
+	u_int8_t  byte0x00000041_0x00000049[9];
 	u_int32_t tre4_offset;        ///< 0x0000004A .. 0x0000004D
 	u_int32_t tre4_size;          ///< 0x0000004E .. 0x00000051
 	u_int16_t tre4_rec_size;      ///< 0x00000052 .. 0x00000053
@@ -110,7 +111,8 @@ struct hdr_tre_t
 	u_int16_t tre6_rec_size;      ///< 0x0000006E .. 0x0000006F
 	u_int8_t  byte0x00000070_0x00000073[4];
 	/*-----------------------------------------------------*/
-	u_int8_t  byte0x00000074_0x0000007B[8];
+	u_int32_t mapID;
+	u_int8_t  byte0x00000078_0x0000007B[4];
 	u_int32_t tre7_offset;        ///< 0x0000007C .. 0x0000007F
 	u_int32_t tre7_size;          ///< 0x00000080 .. 0x00000083
 	u_int32_t tre7_rec_size;      ///< 0x00000084 .. 0x00000085
@@ -251,7 +253,11 @@ struct hdr_nod_t
 	// Unknown
 	u_int32_t	nod1offset;	// 0x15    Offset for section NOD1      4
 	u_int32_t	nod1length;	// 0x19    Length of section NOD1       4
-	u_int32_t	nod1recsize;
+//	u_int32_t	nod1recsize;
+	u_int8_t	b1;
+	u_int8_t	b2;
+	u_int8_t	b3;
+	u_int8_t	b4;
 	u_int16_t	unknown3;	// 0x21    Unknown                      2
 	u_int16_t	unknown4;	// 0x23    Unknown                      2
 	// Road Data
@@ -262,7 +268,18 @@ struct hdr_nod_t
 	u_int32_t	bondoffset;	//  0x31    Boundary nodes offset, NOD3  4
 	u_int32_t	bondlength;	//  0x35    Boundary nodes length        4
 	u_int8_t	bondrecsize;	//  0x39    Boundary nodes record length 1
-	u_int32_t	zeroterm;	//  0x3a    0x000000                     4
+	u_int16_t	zeroterm1;	// 0x21    Unknown                      2
+	u_int16_t	zeroterm2;	// 0x23    Unknown                      2
+	// if header len > 63
+	u_int8_t	zero5;
+	u_int16_t	bond2offset;
+	u_int16_t	zero3;
+	u_int16_t	bond2lenght;
+	u_int16_t	zero4;
+	u_int32_t	u1offset;
+	u_int32_t	u1lenght;
+	u_int32_t	u2offset;
+	u_int32_t	u2lenght;
 } __attribute((packed));
 
 #define SPEEDCLASS(x)	((x)&0x0F)
