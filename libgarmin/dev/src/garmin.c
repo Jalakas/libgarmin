@@ -265,7 +265,7 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 		// but when no TDB must load, we will keep
 		// the dskimg loaded and deal w/ subfiles
 		gar_load_subfiles(g);
-		log(1, "Loaded %d mapsets\n", g->mapsets);
+		log(6, "Loaded %d mapsets\n", g->mapsets);
 	}
 #if 0
 	g->north = north;

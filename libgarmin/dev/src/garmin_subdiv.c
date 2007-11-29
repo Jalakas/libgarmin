@@ -193,7 +193,7 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 			log(15, "Point %d have zero deltas eb=%d\n", total, si->extrabit);
 //			break;
 		}
-		if (x || y) {
+		if (1 ||x || y) {
 			gp->deltas[total].x = x << (shift);
 			gp->deltas[total].y = y << (shift);
 			//log(dl, "x=%d, y=%d\n", gp->deltas[i].x, gp->deltas[i].y); 

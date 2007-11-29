@@ -719,7 +719,7 @@ static void gar_calculate_zoom_levels(struct gimg *g)
 			lb = j;
 		}
 	}
-	log(1, "Have %d levels base bits=%d bits=%d\n", i, fb, lb - fb);
+	log(6, "Have %d levels base bits=%d bits=%d\n", i, fb, lb - fb);
 	g->basebits = fb;
 	g->zoomlevels = lb - fb;
 	g->minlevel = 100;
@@ -738,7 +738,7 @@ static void gar_calculate_zoom_levels(struct gimg *g)
 			}
 		}
 	}
-	log(1, "Minlevel=%d Maxlevel=%d\n", g->minlevel, g->maxlevel);
+	log(9, "Minlevel=%d Maxlevel=%d\n", g->minlevel, g->maxlevel);
 }
 
 static int gar_subfile_have_bits(struct gar_subfile *sub, int bits)
@@ -765,10 +765,10 @@ static int gar_check_basemap(struct gar_subfile *sub)
 		sub->gimg->east = sub->east;
 		sub->gimg->south = sub->south;
 		sub->gimg->west = sub->west;
-		log(1, "%s selected as a basemap\n", sub->mapid);
+		log(6, "%s selected as a basemap\n", sub->mapid);
 		return 1;
 	} else {
-		log(1, "%s not used as basemap, no enough bits\n",
+		log(9, "%s not used as basemap, no enough bits\n",
 			sub->mapid);
 	}
 	return 0;
@@ -869,7 +869,7 @@ int gar_load_subfiles(struct gimg *g)
 	int mapsets=0;
 
 	imgs = gar_file_get_subfiles(g, &nimgs);
-	log(1, "Have %d mapsets\n", nimgs);
+	log(4, "Have %d mapsets\n", nimgs);
 	if (!imgs)
 		return -1;
 	if (debug_level >= 7) {

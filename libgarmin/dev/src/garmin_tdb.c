@@ -125,16 +125,17 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 					log(1, "[%02X][%02X]%s\n", *cp, *(cp+1),cp+2);
 					cp+=2+strlen(cp+2) + 1;
 				}
-				log(1, "Left bytes: %d\n", block.size - (cp - buf));
+				log(11, "Left bytes: %d\n", block.size - (cp - buf));
 				break;
 			case TDB_BASEMAP:
 				if (version == 3) {
-					log(1, "BaseMap number: %08u\n", *(u_int32_t *)cp);
+					log(4, "BaseMap number: %08u\n", *(u_int32_t *)cp);
 					log(11, "Parent map: %08u\n", *(u_int32_t *)cp+4);
 					sprintf(imgname, "%08u", *(u_int32_t *)cp);
 				} else if (version == 4) {
 					uc = (unsigned char *)cp;
-					log(1, "BaseMap number: [%02X][%02X][%02X][%02X]\n", *uc, *(uc+1), *(uc+2), *(uc+3));
+					log(4, "BaseMap number: %08u\n", *(u_int32_t *)cp);
+					log(11, "BaseMap number: [%02X][%02X][%02X][%02X]\n", *uc, *(uc+1), *(uc+2), *(uc+3));
 					log(11, "Parent map: [%02X][%02X][%02X][%02X]\n", *(uc+4), *(uc+5), *(uc+6), *(uc+7));
 				} else {
 					log(1, "Unknown TDB version\n");
@@ -193,7 +194,7 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 				}
 				break;
 			case TDB_DETAILMAP:
-				log(1, "DetailMap number: %08u\n", *(u_int32_t *)cp);
+				log(4, "DetailMap number: %08u\n", *(u_int32_t *)cp);
 				sprintf(imgname, "%08u", *(u_int32_t *)cp);
 				log(11, "Parent map: %08u\n", *(u_int32_t *)cp+4);
 				if (version == 3) {
