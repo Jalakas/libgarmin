@@ -65,6 +65,7 @@ struct gar_subfile {
 	struct gimg *gimg;
 	char *mapid;
 	unsigned int id;
+	unsigned char drawprio;
 	ssize_t rgnoffset;
 	ssize_t rgnlen;
 	unsigned transparent:1,

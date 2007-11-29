@@ -677,12 +677,6 @@ int gar_load_subfile_data(struct gar_subfile *sub)
 		log(1, "Error can not read TRE header!\n");
 		goto out_err;
 	}
-#if 0
-	if (gar_load_maplevels(sub, &tre)<0) {
-		log(1, "Error loading map levels!\n");
-		goto out_err;
-	}
-#endif
 	gar_init_lbl(sub);
 	gar_init_net(sub);
 
@@ -844,6 +838,23 @@ static int gar_select_basemaps(struct gimg *g)
 	return minid;
 }
 
+/* order subfile by drawprio higher at the begining */
+static void gar_register_subfile(struct gimg *g, struct gar_subfile *sub)
+{
+	struct gar_subfile *s;
+	if (list_empty(&g->lsubfiles)) {
+		list_append(&sub->l, &g->lsubfiles);
+		return;
+	}
+	list_for_entry(s, &g->lsubfiles, l) {
+		if (s->drawprio >= sub->drawprio) {
+			list_prepend(&sub->l, &s->l);
+			return;
+		}
+	}
+	list_append(&sub->l, &g->lsubfiles);
+}
+
 int gar_load_subfiles(struct gimg *g)
 {
 	ssize_t off, off1;
@@ -903,6 +914,9 @@ int gar_load_subfiles(struct gimg *g)
 		gar_log_file_date(11, "TRE Created", &tre.hsub);
 		if (tre.hsub.length < 116)
 			tre.mapID = 0;
+		else
+			sub->id = tre.mapID;
+		sub->drawprio =  tre.drawprio;
 		log(11, "TRE mapID: %d[%08X] draw priority: %d\n", tre.mapID, tre.mapID, tre.drawprio);
 		log(11, "TRE header: len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
 			tre.hsub.length, tre.tre1_offset, tre.tre1_size,
@@ -1008,10 +1022,12 @@ int gar_load_subfiles(struct gimg *g)
 			gar_load_subdivs_data(sub);
 			gar_init_srch(sub, 0);
 			gar_init_srch(sub, 1);
-			if (sub->net)
-				gar_net_parse_sorted(sub);
+			if (debug_level > 10) {
+				if (sub->net)
+					gar_net_parse_sorted(sub);
+			}
 		}
-		list_append(&sub->l, &g->lsubfiles);
+		gar_register_subfile(g, sub);
 		mapsets++;
 	}
 	g->mapsets = mapsets;
@@ -1076,7 +1092,7 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 			gar_rect_log(12, buf, &r);
 		}
 		if (!rect || gar_rects_intersectboth(rect, &r)) {
-			log(5, "Found subfile %d: [%s]\n", idx, sub->mapid);
+			log(5, "Found subfile %d: [%s] prio=%d\n", idx, sub->mapid, sub->drawprio);
 			gar_rect_log(15, "subfile", &r);
 			files->subs[idx] = sub;
 			idx++;
@@ -1088,6 +1104,11 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 	log(2, "Found %d subfiles\n", nf);
 	files->lastsub = idx;
 	return nf;
+}
+
+static int gar_prio_comp(const void *a, const void *b)
+{
+	return (*(struct gar_subfile **)a)->drawprio - (*(struct gar_subfile **)b)->drawprio;
 }
 
 // public api
@@ -1145,6 +1166,11 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect, int flags
 	if (!files->lastsub) {
 		gar_free_gmap(files);
 		return NULL;
+	}
+	if (files->lastsub > 1) {
+		qsort(&files->subs[0], files->lastsub, 
+				sizeof(struct gar_subfile *),
+				gar_prio_comp);
 	}
 	return files;
 }

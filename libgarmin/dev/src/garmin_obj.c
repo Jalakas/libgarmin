@@ -390,8 +390,8 @@ struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 		list_for_entry(sub, &g->lsubfiles, l) {
 			if (sub->id == mapid) {
 				if (!sub->loaded) {
-					// FIXME: error handle
-					gar_load_subfile_data(sub);
+					if (gar_load_subfile_data(sub)<0)
+						return NULL;
 				}
 				go = gar_get_subfile_object_byidx(sub,
 						sdidx, oidx, otype);
@@ -477,6 +477,7 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	int baselevel = 0;
 	int sdcount;
 	int routable = flags&GO_GET_ROUTABLE;
+	int prio = -1;
 
 	gsub = gm->subs[0];
 	if (!gsub)
@@ -500,12 +501,15 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 
 	log(3, "Basemap bits:%d level = %d\n", basebits, baselevel);
 	if (gm->lastsub == 1 && gm->subs[0]->basemap) {
-		// Check for screwed images where no detail is available 
+		// Check for images where no detail is available 
 		if (bits > gsub->maplevels[gsub->nlevels-1]->ml.bits)
 			bits = gsub->maplevels[gsub->nlevels-1]->ml.bits;
 	}
-	for (nsub = 0; nsub < gm->lastsub ; nsub++) {
+	for (nsub = gm->lastsub - 1; nsub >=0  ; nsub--) {
 		gsub = gm->subs[nsub];
+		if (prio != -1  && prio != gsub->drawprio) {
+			break;
+		}
 		if (routable) {
 			if (!gsub->have_net)
 				continue;
@@ -563,6 +567,7 @@ nextlvl:
 						o->next = first;
 					}
 					first = p;
+					prio = gsub->drawprio;
 				}
 			}
 			log(10, "Total objects:%d level: %d\n", objs, lvlobjs);
