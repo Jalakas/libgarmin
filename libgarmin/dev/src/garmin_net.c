@@ -140,12 +140,15 @@ static void print_buf(char *pref, unsigned char *a, int s)
 
 struct nod1_data {
 	u_int8_t	b[12];
+	// pointer to other nod1 data
 } __attribute((packed));
 
-static void * gar_read_nod1(struct gar_subfile *sub, off_t offset)
+static void * gar_read_nod1(struct gar_subfile *sub, off_t offset, int flag)
 {
 	struct gimg *gimg = sub->gimg;
 	struct nod1_data nd;
+	int x,y;
+	int ci= 2;
 	char buf[128];
 	off_t o = sub->net->nod->nodoff + sub->net->nod->nod1_offset + offset;
 	if (glseek(gimg, o, SEEK_SET) != o) {
@@ -156,6 +159,12 @@ static void * gar_read_nod1(struct gar_subfile *sub, off_t offset)
 		return NULL;
 	sprintf(buf, "nod1 %ld", offset);
 	print_buf(buf, (unsigned char *)&nd, sizeof(nd));
+	x = *(u_int32_t *)&nd.b[ci] & 0xffffff;
+	x = SIGN3B(x);
+	y = *(u_int32_t *)&nd.b[ci+3] & 0xffffff;
+	y = SIGN3B(y);
+	log(11, "nod1: %ld x=%d(%f) y=%d(%f)\n", offset,
+		x, GARDEG(x), y, GARDEG(y));
 	return NULL;
 }
 
@@ -164,6 +173,8 @@ static void * gar_read_nod2(struct gar_subfile *sub, off_t offset)
 	struct gimg *gimg = sub->gimg;
 	struct nod_road_data nrd;
 	u_int32_t n1;
+	int flag = 0;
+	int valid = 1;
 	off_t o = sub->net->nod->nodoff + sub->net->nod->nod2_offset + offset;
 	if (glseek(gimg, o, SEEK_SET) != o) {
 		log(1, "NET: Error can not seek to %ld\n", o);
@@ -172,10 +183,42 @@ static void * gar_read_nod2(struct gar_subfile *sub, off_t offset)
 	if (gread(gimg, &nrd, sizeof(struct nod_road_data)) < 0)
 		return NULL;
 	n1 = *(u_int32_t*)nrd.nod1off & 0x00FFFFFF;
-	log(11, "n2: %ld rc %d n1 %d nodes %d b2 [%02X] b3 [%02X]\n",
-		offset, nrd.roadclass, n1, 
-		nrd.nodes, nrd.b2, nrd.b3);
-	gar_read_nod1(sub, n1);
+	log(11, "n2: %ld rc %d:%d 1:%d 7:%d n1 %d nodes %d[%04X] b3 [%02X]\n",
+		offset,
+		SPEEDCLASS(nrd.flags),
+		ROADTYPE(nrd.flags),
+		NODTYPE(nrd.flags),
+		CHARINFO(nrd.flags),
+		n1, 
+		nrd.nodes, nrd.nodes, nrd.b3);
+	/* Some of this is a bool flag passed to read_nod1 
+	 * flag is bit0 in b3
+	 */
+	flag = nrd.b3 & 1;
+	/*
+	 * if (flag)
+	 * 	nod1size = 4 + 4*nrd.b3;
+	 * else
+	 * 	
+	 * 	nod1 elements reference other nod1 elements!
+	 * 	or are chained
+	 * 	read_nod1
+	 * 		read_one
+	 * 			read_nod1
+	 */
+	if (!NODTYPE(nrd.flags)) {
+		log(1, "NOD2: FIXME bit0\n");
+		if (nrd.nodes) {
+			if (nrd.b3) {
+				
+			}
+		}
+	}
+	if (CHARINFO(nrd.flags)) {
+		log(1, "NOD2: FIXME bit7\n");
+		/* Have some more char (?) data before nod1ptr */
+	}
+	gar_read_nod1(sub, n1, flag);
 	return NULL;
 }
 
@@ -360,7 +403,18 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 			if (gread(gimg, &f3[1], size) != size)
 				goto out_err;
 			f3[0] = size;
+		} else if (fl == 2) {
+			if (sub->rcount < 256)
+				size = 1;
+			else
+				size = 2;
+			f3 = malloc(size);
+			if (!f3)
+				goto out_err;
+			if (gread(gimg, f3, size) != size)
+				goto out_err;
 		} else {
+			
 			unsigned char buf[3];
 			log(1, "NET: Error f3 type=%d\n", fl);
 			gread(gimg, buf, 3);
@@ -496,7 +550,7 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	int lblidx = 0;
 	off_t labels[10];
 	char buf[4];
-	u_int32_t segs[100];
+	u_int32_t segs[101];
 	int segidx = 0;
 	int rc;
 	u_int32_t i,j;
@@ -511,6 +565,7 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	u_int8_t hnb = 0;
 	struct street_addr_info *sai = NULL;
 	u_int32_t nodptr = 0;
+
 	o = sub->net->netoff + sub->net->net1_offset + (offset << sub->net->net1_addr_shift);
 	if (glseek(gimg, o, SEEK_SET) != o) {
 		log(1, "NET: Error can not seek to %ld\n", o);
@@ -591,7 +646,7 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 		if (gread(gimg, &tmp, sizeof(u_int8_t)) < 0)
 			return NULL;
 		if (tmp > 2)
-			log(11, "NET: nod info:%d\n", tmp);
+			log(11, "NET: FIXME nod info:%d\n", tmp);
 		if ((tmp & 3) == 1) {
 			tmp = 2;
 		} else if ((tmp & 3) == 2) {
@@ -657,7 +712,7 @@ static struct road_info *gar_parse_road_info(struct gar_subfile *sub, off_t offs
 	rd->sai = sai;
 	rd->nod_offset = nodptr;
 	o1 = glseek(gimg, 0, SEEK_CUR);
-	log(13, "roadptr %ld read %ld\n", offset, o1-o);
+	log(11, "read %ld roadptr %ld\n",  o1-o, offset);
 	return rd;
 }
 
@@ -667,7 +722,7 @@ int gar_net_parse_sorted(struct gar_subfile *sub)
 	int i, rc;
 	unsigned int val;
 	int lblidx, c = 0, p = 0;
-	int roadptr;
+	unsigned int roadptr;
 	struct road_info *ri;
 	off_t o;
 	if (!sub->net->net3_offset) {
@@ -689,7 +744,7 @@ int gar_net_parse_sorted(struct gar_subfile *sub)
 		val = *(unsigned int *)buf;
 		lblidx = val >> 21;
 		lblidx &= 3;
-		roadptr = val & 0x001FFFFF;
+		roadptr = val & 0x003FFFFF;
 		log(11, "lblidx %d roadptr %d\n", lblidx, roadptr);
 		ri = gar_parse_road_info(sub, roadptr);
 		if (ri) {
