@@ -258,8 +258,9 @@ struct hdr_nod_t
 	u_int8_t	b2;
 	u_int8_t	b3;
 	u_int8_t	b4;
-	u_int16_t	unknown3;	// 0x21    Unknown                      2
-	u_int16_t	unknown4;	// 0x23    Unknown                      2
+	u_int8_t	blockalign;	// 0x24 (offset << blockalign + idx) >> blockalign
+	u_int8_t	unknown3;	// 0x25 0x21    Unknown                      2
+	u_int16_t	unknown4;	// 0x26 0x23    Unknown                      2
 	// Road Data
 	u_int32_t	nod2offset;	// 0x25    Road data offset, NOD2       4
 	u_int32_t	nod2length;	// 0x29    Road data length             4

@@ -20,7 +20,9 @@ clean-local:
 ## on every build, record the working copy revision string
 ##
 .svnversion:
-	@svnversion > .svnversion
+	if test -d .svn; then 						\
+	@svnversion > .svnversion					\
+	fi
 
 version.h: .svnversion
 	@echo "Generate version.h";					\

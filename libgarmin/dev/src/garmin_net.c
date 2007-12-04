@@ -15,6 +15,7 @@ struct gar_nod_info {
 	off_t nodoff;
 	u_int32_t nod1_offset;
 	u_int32_t nod1_length;
+	u_int8_t blockalign;
 	u_int32_t nod2_offset;
 	u_int32_t nod2_length;
 	u_int32_t nod3_offset;
@@ -106,6 +107,7 @@ static struct gar_nod_info *gar_init_nod(struct gar_subfile *sub)
 	n->nodoff = off;
 	n->nod1_offset = nod.nod1offset;
 	n->nod1_length = nod.nod1length;
+	n->blockalign = nod.blockalign;
 	n->nod2_offset = nod.nod2offset;
 	n->nod2_length = nod.nod2length;
 	n->nod3_offset = nod.bondoffset;
@@ -116,8 +118,8 @@ static struct gar_nod_info *gar_init_nod(struct gar_subfile *sub)
 			nod.nod1length, nod.nod2length, nod.bondlength);
 	log(11, "off nod1=%d, nod2=%d, nod3=%d\n",
 			nod.nod1offset, nod.nod2offset, nod.bondoffset);
-	log(11, "len b1 %0x b2 %0x 3 %0x 4 %0x, unk3=%0x, unk4=%0x unk5=%0x zterm1=%x\n",
-			nod.b1, nod.b2, nod.b3, nod.b4,nod.unknown3, nod.unknown4,
+	log(11, "hdr al %d b1 %0x b2 %0x 3 %0x 4 %0x, unk3=%0x, unk4=%0x unk5=%0x zterm1=%x\n",
+			nod.blockalign, nod.b1, nod.b2, nod.b3, nod.b4,nod.unknown3, nod.unknown4,
 			nod.unknown5, nod.zeroterm1);
 	if (nod.hsub.length > 63) {
 		log(11, "nod bond2offset=%d len=%d u1off=%d len=%d u2off=%d len=%d\n",
@@ -143,11 +145,41 @@ struct nod1_data {
 	// pointer to other nod1 data
 } __attribute((packed));
 
+struct nod_node {
+	u_int8_t	b1;
+	u_int24_t	c1;
+	u_int24_t	c2;
+	u_int8_t	b2;
+	u_int8_t	b3;
+};
+
+static void *gar_read_nod1node(struct gar_subfile *sub, off_t offset, unsigned char idx)
+{
+	off_t off;
+	struct nod_node n;
+	u_int32_t lng;
+	u_int32_t lat;
+
+	off = 1 + idx + (offset >> sub->net->nod->blockalign);
+	off <<= sub->net->nod->blockalign;
+	if (glseek(sub->gimg, off, SEEK_SET) != off) {
+		log(1, "NET: Error can not seek to %ld\n", off);
+		return NULL;
+	}
+	if (gread(sub->gimg, &n, sizeof(n)) < 0)
+		return NULL;
+	lng = *(u_int32_t *)&n.c1 & 0xffffff;
+	lat = *(u_int32_t *)&n.c2 & 0xffffff;
+	log(11, "nod1 off %ld 1 %x c1 %f[%x] c2 %f[%x] 2 %x 3 %x\n",
+		off, n.b1, GARDEG(lng), lng, GARDEG(lat), lat, n.b2, n.b3);
+	return NULL;
+}
+
 static void * gar_read_nod1(struct gar_subfile *sub, off_t offset, int flag)
 {
 	struct gimg *gimg = sub->gimg;
 	struct nod1_data nd;
-	int x,y;
+	unsigned int x,y;
 	int ci= 2;
 	char buf[128];
 	off_t o = sub->net->nod->nodoff + sub->net->nod->nod1_offset + offset;
@@ -159,12 +191,17 @@ static void * gar_read_nod1(struct gar_subfile *sub, off_t offset, int flag)
 		return NULL;
 	sprintf(buf, "nod1 %ld", offset);
 	print_buf(buf, (unsigned char *)&nd, sizeof(nd));
-	x = *(u_int32_t *)&nd.b[ci] & 0xffffff;
+	x = *(u_int16_t *)&nd.b[ci] & 0xffff;
+	x <<= 16;
+	x >>= 8;
 	x = SIGN3B(x);
-	y = *(u_int32_t *)&nd.b[ci+3] & 0xffffff;
+	y = *(u_int16_t *)&nd.b[ci+2] & 0xffff;
+	y <<= 16;
+	y >>= 8;
 	y = SIGN3B(y);
 	log(11, "nod1: %ld x=%d(%f) y=%d(%f)\n", offset,
 		x, GARDEG(x), y, GARDEG(y));
+	gar_read_nod1node(sub, offset+1, nd.b[0]);
 	return NULL;
 }
 
@@ -194,7 +231,7 @@ static void * gar_read_nod2(struct gar_subfile *sub, off_t offset)
 	/* Some of this is a bool flag passed to read_nod1 
 	 * flag is bit0 in b3
 	 */
-	flag = nrd.b3 & 1;
+	flag = nrd.b3 & 1; // ???
 	/*
 	 * if (flag)
 	 * 	nod1size = 4 + 4*nrd.b3;
@@ -207,7 +244,8 @@ static void * gar_read_nod2(struct gar_subfile *sub, off_t offset)
 	 * 			read_nod1
 	 */
 	if (!NODTYPE(nrd.flags)) {
-		log(1, "NOD2: FIXME bit0\n");
+		valid = 0;
+		log(1, "NOD2: FIXME bit0 restrictions??\n");
 		if (nrd.nodes) {
 			if (nrd.b3) {
 				
@@ -215,7 +253,9 @@ static void * gar_read_nod2(struct gar_subfile *sub, off_t offset)
 		}
 	}
 	if (CHARINFO(nrd.flags)) {
-		log(1, "NOD2: FIXME bit7\n");
+		valid = 0;
+		n1 >>= 8;
+		log(1, "NOD2: FIXME bit7 two byte nod1?\n");
 		/* Have some more char (?) data before nod1ptr */
 	}
 	gar_read_nod1(sub, n1, flag);
