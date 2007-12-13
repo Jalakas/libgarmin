@@ -1075,7 +1075,7 @@ int gar_load_subfiles(struct gimg *g)
 			gar_init_srch(sub, 1);
 			if (debug_level > 10) {
 				if (sub->net) {
-					gar_net_parse_nod3(sub);
+	//				gar_net_parse_nod3(sub);
 					gar_net_parse_sorted(sub);
 				}
 			}
