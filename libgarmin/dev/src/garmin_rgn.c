@@ -1099,6 +1099,27 @@ out_err:
 	return -1;
 }
 
+void gar_subfile_ref(struct gar_subfile *s)
+{
+	s->refcnt ++;
+	// ref img
+}
+
+void gar_subfile_unref(struct gar_subfile *s)
+{
+	s->refcnt --;
+//	if (s->refcnt == 0) {
+//		gar_free_subfile_data(s);
+//	}
+}
+
+void gar_subfile_unload(struct gar_subfile *s)
+{
+	if (s->refcnt == 0 && s->loaded) {
+		gar_free_subfile_data(s);
+	}
+}
+
 static struct gmap *gar_alloc_gmap(void)
 {
 	struct gmap *gm;
@@ -1118,6 +1139,7 @@ void gar_free_gmap(struct gmap *g)
 	struct gar_subfile *sub;
 	for (i=0; i < g->lastsub; i++) {
 		sub = g->subs[i];
+		gar_subfile_unref(sub);
 		gclose(sub->gimg);
 	}
 	g->subs = NULL;
@@ -1153,12 +1175,14 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 		if (!rect || gar_rects_intersectboth(rect, &r)) {
 			log(5, "Found subfile %d: [%s] prio=%d\n", idx, sub->mapid, sub->drawprio);
 			gar_rect_log(15, "subfile", &r);
+			gar_subfile_ref(sub);
 			files->subs[idx] = sub;
 			idx++;
 			nf++;
 			if (idx == files->subfiles )
 				break;
-		}
+		} else
+			gar_subfile_unload(sub);
 	}
 	log(2, "Found %d subfiles\n", nf);
 	files->lastsub = idx;
@@ -1168,6 +1192,14 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 static int gar_prio_comp(const void *a, const void *b)
 {
 	return (*(struct gar_subfile **)a)->drawprio - (*(struct gar_subfile **)b)->drawprio;
+}
+
+static void gar_subfiles_unload(struct gimg *g)
+{
+	struct gar_subfile *sub;
+	list_for_entry(sub, &g->lsubfiles, l) {
+		gar_subfile_unload(sub);
+	}
 }
 
 // public api
@@ -1201,6 +1233,7 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect, int flags
 			r.rllat = g->south;
 			r.rllong = g->east;
 			if (!gar_rects_intersectboth(rect, &r)) {
+				gar_subfiles_unload(g);
 				continue;
 			}
 		}
@@ -1238,16 +1271,3 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect, int flags
 	return files;
 }
 
-void gar_subfile_ref(struct gar_subfile *s)
-{
-	s->refcnt ++;
-	// ref img
-}
-
-void gar_subfile_unref(struct gar_subfile *s)
-{
-	s->refcnt --;
-	if (s->refcnt == 0) {
-		gar_free_subfile_data(s);
-	}
-}
