@@ -876,14 +876,14 @@ static void gar_register_gmp_files(struct gimg *g, char *gmpfile)
 		return;
 	}
 	gar_log_file_date(11, "GMP Created", &gmp.hsub);
-	log(11, "GMP type:[%s] len=%ld vs %d\n", gmp.hsub.type, gmp.hsub.length, sizeof(gmp));
-	log(11, "GMP TRE at %lu\n", gmp.tre_offset);
-	log(11, "GMP RGN at %lu\n", gmp.rgn_offset);
-	log(11, "GMP LBL at %lu\n", gmp.lbl_offset);
-	log(11, "GMP NET at %lu\n", gmp.net_offset);
-	log(11, "GMP NOD at %lu\n", gmp.nod_offset);
-	log(11, "GMP UN1 at %lu\n", gmp.unknown1);
-	log(11, "GMP UN2 at %lu\n", gmp.unknown2);
+	log(11, "GMP type:[%s] len=%d vs %d\n", gmp.hsub.type, gmp.hsub.length, sizeof(gmp));
+	log(11, "GMP TRE at %d\n", gmp.tre_offset);
+	log(11, "GMP RGN at %d\n", gmp.rgn_offset);
+	log(11, "GMP LBL at %d\n", gmp.lbl_offset);
+	log(11, "GMP NET at %d\n", gmp.net_offset);
+	log(11, "GMP NOD at %d\n", gmp.nod_offset);
+	log(11, "GMP UN1 at %d\n", gmp.unknown1);
+	log(11, "GMP UN2 at %d\n", gmp.unknown2);
 	sprintf(buf1, "%s.TRE", buf);
 	gar_fat_add_file(g, buf1, gmp.tre_offset + gmpoff);
 	sprintf(buf1, "%s.RGN", buf);
@@ -959,7 +959,7 @@ int gar_load_subfiles(struct gimg *g)
 			goto out_err;
 		}
 		if (strncmp("GARMIN TRE", tre.hsub.type, 10)) {
-			log(1, "Invalid file type:[%s] at %ld\n", tre.hsub.type, off);
+			log(1, "Invalid file type:[%s] at %d\n", tre.hsub.type, off);
 			goto out_err;
 		}
 		gar_log_file_date(11, "TRE Created", &tre.hsub);
@@ -1074,8 +1074,10 @@ int gar_load_subfiles(struct gimg *g)
 			gar_init_srch(sub, 0);
 			gar_init_srch(sub, 1);
 			if (debug_level > 10) {
-				if (sub->net)
+				if (sub->net) {
+					gar_net_parse_nod3(sub);
 					gar_net_parse_sorted(sub);
+				}
 			}
 		}
 		gar_register_subfile(g, sub);
@@ -1118,8 +1120,14 @@ void gar_free_gmap(struct gmap *g)
 		sub = g->subs[i];
 		gclose(sub->gimg);
 	}
+	g->subs = NULL;
+	g->zoomlevels = 0;
+	g->basebits = 0;
+	g->minlevel = 0;
+	g->maxlevel = 0;
+	g->lastsub = 0;
 	free(g->subs);
-	free(g);
+	//free(g);
 }
 
 static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *rect, int flags)
@@ -1170,9 +1178,13 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect, int flags
 	struct gar_subfile **rsub;
 	int fnd;
 
-	files = gar_alloc_gmap();
-	if (!files)
-		return NULL;
+	files = gar->gmap;
+	if (!files) {
+		files = gar_alloc_gmap();
+		if (!files)
+			return NULL;
+		gar->gmap = files;
+	}
 	if (rect)
 		gar_rect_log(5, "looking for", rect);
 

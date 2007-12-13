@@ -204,6 +204,8 @@ struct gar *gar_init(char *tdb, log_fn l)
 
 void gar_free(struct gar *g)
 {
+	if (g->gmap)
+		free(g->gmap);
 	log(1, "Implement me\n");
 }
 

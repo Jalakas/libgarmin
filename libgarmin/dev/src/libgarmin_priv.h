@@ -47,6 +47,7 @@ struct gar {
 	int	zoomlevels;
 	log_fn	logfn;
 	list_t	limgs;
+	struct gmap *gmap;
 };
 
 struct bspfd;
@@ -112,7 +113,8 @@ struct gpoly {
 		netlbl:1,
 		line:1,
 		extrabit:1,
-		scase:1;
+		scase:1,
+		valid:1;
 	int npoints;
 	struct gcoord *deltas;
 	unsigned char *nodemap;

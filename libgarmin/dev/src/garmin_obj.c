@@ -640,7 +640,9 @@ int gar_get_object_deltas(struct gobject *o)
 	if  (o->type == GO_POINT || o->type == GO_POI)
 		return 0;
 	gp = o->gptr;
-	return gp->npoints;
+	if (gp->valid)
+		return gp->npoints + 1;
+	return 0;
 }
 
 int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
