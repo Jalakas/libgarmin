@@ -316,5 +316,17 @@ struct tdb_block {
 	u_int16_t size;
 } __attribute((packed));
 
+struct hdr_gmp_t
+{
+	struct hdr_subfile_part_t hsub;
+	u_int32_t unknown1;
+	u_int32_t tre_offset;
+	u_int32_t rgn_offset;
+	u_int32_t lbl_offset;
+	u_int32_t net_offset;
+	u_int32_t nod_offset;
+	u_int32_t unknown2;
+}  __attribute((packed));
+
 #endif //GARMINTYPEDEF_H
 

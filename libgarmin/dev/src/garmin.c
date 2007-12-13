@@ -91,6 +91,25 @@ ssize_t gread(struct gimg *g, void *buf, size_t count)
 	return rc;
 }
 
+ssize_t gread_safe(struct gimg *g, void *buf, size_t count)
+{
+	ssize_t rc;
+	int err;
+	off_t osave;
+	gcheckfd(g);
+	osave = lseek(g->fd, 0, SEEK_CUR);
+	rc = read(g->fd, buf, count);
+	if (rc > 0 && g->xor) {
+		ssize_t i;
+		for (i=0; i < rc; i++)
+			((unsigned char *)buf)[i] ^= g->xor;
+	}
+	err = errno;
+	lseek(g->fd, osave, SEEK_SET);
+	errno = err;
+	return rc;
+}
+
 ssize_t gwrite(struct gimg *g, void *buf, size_t count)
 {
 	gcheckfd(g);

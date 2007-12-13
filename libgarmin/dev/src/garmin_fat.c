@@ -31,9 +31,8 @@
  */
 
 
-char **gar_file_get_subfiles(struct gimg *g, int *count)
+char **gar_file_get_subfiles(struct gimg *g, int *count, const char *subext)
 {
-	const static char subext[] = "TRE";
 	struct fat_entry *fe;
 	char *cp;
 	char **ret;
@@ -67,6 +66,17 @@ char **gar_file_get_subfiles(struct gimg *g, int *count)
 		}
 	}
 	return ret;
+}
+
+ssize_t gar_file_offset(struct gimg *g, char *file)
+{
+	struct fat_entry *fe;
+	list_for_entry(fe, &g->lfatfiles, l) {
+		if (!strcmp(fe->filename, file))
+			return fe->offset;
+	}
+
+	return 0;
 }
 
 ssize_t gar_subfile_offset(struct gar_subfile *sub, char *ext)
@@ -108,6 +118,20 @@ struct fat_entry *gar_fat_get_fe_by_name(struct gimg *g, char *name)
 			return fe;
 	}
 	return NULL;
+}
+
+int gar_fat_add_file(struct gimg *g, char *name, off_t offset)
+{
+	struct fat_entry *fe;
+	fe = calloc(1, sizeof(*fe));
+	if (!fe)
+		return -1;
+	strcpy(fe->filename, name);
+	fe->size = 0;	// 
+	fe->offset = offset;
+	log(10, "Creating FAT file:[%s] offset %ld\n", fe->filename, fe->offset);
+	list_append(&fe->l, &g->lfatfiles);
+	return 0;
 }
 
 static int gar_add_fe(struct gimg *g, struct FATblock_t *fent, int blocksize)
