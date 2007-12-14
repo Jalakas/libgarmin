@@ -18,6 +18,7 @@
 
 #include <malloc.h>
 #include <string.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -246,6 +247,64 @@ static int gar_load_img_hdr(struct gimg *g, unsigned int *dataoffset, unsigned i
 	return 1;
 }
 
+static void gar_register_gmp_files(struct gimg *g, char *gmpfile)
+{
+	struct hdr_gmp_t gmp;
+	char buf[20], *cp;
+	char buf1[20];
+	int rc;
+	off_t gmpoff;
+	strcpy(buf, gmpfile);
+	cp = strchr(buf, '.');
+	if (!cp)
+		return;
+	*cp = '\0';
+	gmpoff = gar_file_offset(g, gmpfile);
+	log(10, "GMP %s at %ld\n", buf, gmpoff);
+	glseek(g, gmpoff, SEEK_SET);
+	rc = gread(g, &gmp, sizeof(gmp));
+	if (rc != sizeof(gmp)) {
+		log(1, "Error reading GMP at %ld\n", gmpoff);
+		return;
+	}
+	gar_log_file_date(11, "GMP Created", &gmp.hsub);
+	log(11, "GMP type:[%s] len=%d vs %d\n", gmp.hsub.type, gmp.hsub.length, sizeof(gmp));
+	log(11, "GMP TRE at %d\n", gmp.tre_offset);
+	log(11, "GMP RGN at %d\n", gmp.rgn_offset);
+	log(11, "GMP LBL at %d\n", gmp.lbl_offset);
+	log(11, "GMP NET at %d\n", gmp.net_offset);
+	log(11, "GMP NOD at %d\n", gmp.nod_offset);
+	log(11, "GMP UN1 at %d\n", gmp.unknown1);
+	log(11, "GMP UN2 at %d\n", gmp.unknown2);
+	sprintf(buf1, "%s.TRE", buf);
+	gar_fat_add_file(g, buf1, gmp.tre_offset + gmpoff);
+	sprintf(buf1, "%s.RGN", buf);
+	gar_fat_add_file(g, buf1, gmp.rgn_offset + gmpoff);
+	sprintf(buf1, "%s.LBL", buf);
+	gar_fat_add_file(g, buf1, gmp.lbl_offset + gmpoff);
+	sprintf(buf1, "%s.NET", buf);
+	gar_fat_add_file(g, buf1, gmp.net_offset + gmpoff);
+	sprintf(buf1, "%s.NOD", buf);
+	gar_fat_add_file(g, buf1, gmp.nod_offset + gmpoff);
+}
+
+static void gar_check_nt_map(struct gimg *g)
+{
+	int rc;
+	char **imgs;
+	int nimgs;
+
+	imgs = gar_file_get_subfiles(g, &nimgs, "GMP");
+	if (nimgs) {
+		log(4, "NT Map registering files\n");
+		for (rc = 0; rc < nimgs; rc++) {
+			gar_register_gmp_files(g, imgs[rc]);
+		}
+		free(imgs);
+		g->is_nt = 1;
+	}
+}
+
 int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 		double north, double east, double south, double west)
 {
@@ -280,7 +339,7 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 	rc = gar_load_fat(g, dataoffset, blocksize);
 	if (rc == 0)
 		return -1;
-	
+	gar_check_nt_map(g);
 	if (data) {
 		// FIXME: When we have a TDB we can skip this
 		// but when no TDB must load, we will keep
