@@ -966,8 +966,8 @@ int gar_load_subfiles(struct gimg *g)
 				tre.key[2],
 				tre.key[3],
 				tre.key[4],
-				tre.key[5],
-				tre.key[6]);
+				tre.key[5]
+				);
 			if (!gar_have_extml(sub)) {
 				log(1, "File contains locked / encypted data. Garmin does not\n"
 					"want you to use this file with any other software than\n"
@@ -1034,7 +1034,7 @@ int gar_load_subfiles(struct gimg *g)
 			if (debug_level > 10) {
 				if (sub->net) {
 	//				gar_net_parse_nod3(sub);
-					gar_net_parse_sorted(sub);
+					gar_load_roadnetwork(sub);
 				}
 			}
 		}

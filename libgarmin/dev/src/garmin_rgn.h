@@ -102,3 +102,5 @@ int gar_load_subfiles(struct gimg *g);
 int gar_load_subfile_data(struct gar_subfile *sub);
 void gar_subfile_ref(struct gar_subfile *s);
 void gar_subfile_unref(struct gar_subfile *s);
+void gar_subfile_unload(struct gar_subfile *s);
+
