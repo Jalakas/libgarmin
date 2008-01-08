@@ -562,8 +562,16 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 								if (r->labels[j]) {
 									if (gar_get_lbl(gsub, r->labels[j], L_LBL, buf, sizeof(buf))) {
 										if (gar_match(s->needle, buf, s->match)) {
-											
-											log(1, "Found road: %s\n", buf);
+											log(10, "Found road: %s\n", buf);
+											o = gar_alloc_object(GO_ROAD, r);
+											if (o) {
+												rc++;
+												if (first) {
+													o->next = first;
+													first = o;
+												} else
+													first = o;
+											}
 										}
 									}
 								}
@@ -734,6 +742,9 @@ u_int8_t gar_obj_type(struct gobject *o)
 	case GO_POLYGON:
 		ret = ((struct gpoly *)o->gptr)->type;
 		break;
+	case GO_ROAD:
+		ret = 1;
+		break;
 	default:
 		log(1, "Error unknown object type:%d\n", o->type);
 	}
@@ -773,14 +784,40 @@ int gar_get_object_deltas(struct gobject *o)
 int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 {
 	struct gpoint *gp;
-	struct gpoly *gl;
+	struct gpoly *gl = NULL;
 	if  (o->type == GO_POINT || o->type == GO_POI) {
 		gp = o->gptr;
 		ret->x = gp->c.x;
 		ret->y = gp->c.y;
 		return 1;
+	} else if (o->type == GO_ROAD) {
+		struct gar_road *rd = o->gptr;
+		if (rd->rio_cnt) {
+			struct gar_subdiv *sd;
+			int idx, sdidx;
+			if (!rd->sub->loaded) {
+				if (gar_load_subfile_data(rd->sub) < 0)
+					return 0;
+			}
+			idx = rd->ri[0] & 0xff;
+			sdidx = rd->ri[0] >> 8;
+			sdidx &= 0xFFFF;
+			sd = ga_get_abs(&rd->sub->maplevels[rd->sub->nlevels - 1]->subdivs, sdidx);
+			if (sd) {
+				if (!sd->loaded) {
+					if (gar_load_subdiv_data(rd->sub, sd) < 0)
+						return 0;
+				}
+				gl = ga_get_abs(&sd->polylines, idx);
+			} else {
+				log(1, "Error can not find road idx/sd %d %d in level %d roadid:%d\n", idx, sdidx,rd->rio[0], rd->offset);
+			}
+		}
+	} else {
+		gl = o->gptr;
 	}
-	gl = o->gptr;
+	if (!gl)
+		return 0;
 	ret->x = gl->c.x;
 	ret->y = gl->c.y;
 	return 1;
@@ -819,6 +856,7 @@ char *gar_get_object_lbl(struct gobject *o)
 	struct gar_subfile *gs = NULL;
 	struct gpoint *gp;
 	struct gpoly *gpl;
+	struct gar_road *rd;
 
 	type = L_LBL;
 	switch (o->type) {
@@ -840,6 +878,21 @@ char *gar_get_object_lbl(struct gobject *o)
 		gs = gpl->subdiv->subfile;
 		off = gpl->lbloffset;
 		break;
+	case GO_ROAD: {
+			int i,sz = 0;
+			rd = o->gptr;
+			for (i=0;i < 4; i++) {
+				if (rd->labels[i]) {
+					sz += gar_get_lbl(rd->sub, rd->labels[i], L_LBL,
+					 (unsigned char *)buf+sz, sizeof(buf)-sz);
+					strcat(buf, "/");
+				}
+			}
+			if (sz)
+				return strdup(buf);
+			else
+				return NULL;
+		}
 	default:
 		log(1, "Error unknown object type:%d\n", o->type);
 		return NULL;
@@ -897,6 +950,8 @@ int gar_object_mapid(struct gobject *o)
 	case GO_POLYGON:
 		sd = ((struct gpoly *)o->gptr)->subdiv;
 		break;
+	case GO_ROAD:
+		return ((struct gar_road *)o->gptr)->sub->id;
 	default:
 		log(1, "Error unknown object type:%d\n", o->type);
 	}
@@ -950,6 +1005,8 @@ int gar_object_index(struct gobject *o)
 			}
 			return (p->subdiv->n << 16) | (p->n << 8) | o->type;
 		}
+	case GO_ROAD:
+			return ((struct gar_road *)o->gptr)->offset;
 	default:
 		log(1, "Error unknown object type:%d\n", o->type);
 	}

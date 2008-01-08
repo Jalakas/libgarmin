@@ -323,7 +323,7 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 		/* this is the road on the differnet map levels */
 		o = gar_get_subfile_object_byidx(sub, sdidx, idx, GO_POLYLINE);
 		if (o) {
-			if (i==0) {
+			if (1||i==0) {
 				char *cp = gar_object_debug_str(o);
 				if (cp) {
 					log(11, "%s\n", cp);
@@ -564,6 +564,7 @@ static struct gar_road *gar_parse_road(struct gar_subfile *sub, off_t offset)
 		o1 = glseek(gimg, 0, SEEK_CUR);
 		log(11, "read %ld roadptr %ld\n",  o1-o, offset);
 	}
+	rd->sub = sub;
 	if (flags & RFL_NODINFO)
 		rd->nod = gar_read_nod2(sub,rd->nod_offset);
 	return rd;

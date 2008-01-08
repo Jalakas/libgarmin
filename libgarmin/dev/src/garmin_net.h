@@ -16,8 +16,11 @@ struct gar_net_info {
 	list_t lroads[ROADS_HASH_TAB_SIZE];
 };
 
+struct gar_subfile;
+
 struct gar_road {
 	list_t l;
+	struct gar_subfile *sub;
 	off_t offset;
 	u_int32_t nod_offset;
 	off_t labels[4];
@@ -35,7 +38,6 @@ struct gar_road {
 };
 
 
-struct gar_subfile;
 int gar_init_net(struct gar_subfile *sub);
 void gar_free_net(struct gar_subfile *sub);
 off_t gar_net_get_lbl_offset(struct gar_subfile *sub, off_t offset, int idx);
