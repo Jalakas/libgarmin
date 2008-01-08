@@ -347,35 +347,36 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		log(1,"No LBL file\n");
 		return 0;
 	}
+
 	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %ld\n", off);
-		return -1;
+		goto outerr;
 	}
 	rc = gread(gimg, &lbl, sizeof(struct hdr_lbl_t));
 	if (rc != sizeof(struct hdr_lbl_t)) {
 		log(1, "LBL: Can not read header\n");
-		return -1;
+		goto outerr;
 	}
 	off1 = off;
 	if (what == 0) {
 		nc = lbl.lbl2_length/lbl.lbl2_rec_size;
 		log(1, "%d countries defined\n", nc);
 		if (!nc)
-			return 0;
+			goto out;
 		sub->countries = calloc(nc + 1, sizeof(char *));
 		if (!sub->countries)
-			return -1;
+			goto outerr;
 		idx = 1;
 		rb = malloc(lbl.lbl2_length);
 		if (!rb) {
 			free(sub->countries);
 			sub->countries = NULL;
-			return -1;
+			goto outerr;
 		}
 		off += lbl.lbl2_offset;
 		if (glseek(gimg, off, SEEK_SET) != off) {
 			log(1, "LBL: Error can not seek to %ld\n", off);
-			return -1;
+			goto outerr;
 		}
 		rc = gread(gimg, rb, lbl.lbl2_length);
 		if (rc != lbl.lbl2_length) {
@@ -383,7 +384,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 			free(rb);
 			free(sub->countries);
 			sub->countries = NULL;
-			return -1;
+			goto outerr;
 		}
 		cp = rb;
 		while (cp < rb + lbl.lbl2_length) {
@@ -399,20 +400,21 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		}
 		sub->ccount = idx;
 		free(rb);
-		return idx;
+		//return idx;
+		goto out;
 	}
 	nc = lbl.lbl3_length/lbl.lbl3_rec_size;
 	log(1, "%d regions defined\n", nc);
 	if (!nc)
-		return 0;
+		goto out;
 	sub->regions = calloc(nc + 1, sizeof(struct region_def *));
 	if (!sub->regions)
-		return -1;
+		goto outerr;
 	rb = malloc(lbl.lbl3_length);
 	off = off1 + lbl.lbl3_offset;
 	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %ld\n", off);
-		return -1;
+		goto outerr;
 	}
 	rc = gread(gimg, rb, lbl.lbl3_length);
 	if (rc != lbl.lbl3_length) {
@@ -420,7 +422,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		free(rb);
 		free(sub->regions);
 		sub->regions = NULL;
-		return -1;
+		goto outerr;
 	}
 	cp = rb;
 	idx = 1;
@@ -445,15 +447,15 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 	nc = lbl.lbl4_length/lbl.lbl4_rec_size;
 	log(1, "%d cities defined\n", nc);
 	if (!nc)
-		return 0;
+		goto out;
 	sub->cities = calloc(nc + 1, sizeof(struct city_def *));
 	if (!sub->cities)
-		return -1;
+		goto outerr;
 	rb = malloc(lbl.lbl4_length);
 	off = off1 + lbl.lbl4_offset;
 	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %ld\n", off);
-		return -1;
+		goto outerr;
 	}
 	rc = gread(gimg, rb, lbl.lbl4_length);
 	if (rc != lbl.lbl4_length) {
@@ -461,7 +463,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		free(rb);
 		free(sub->cities);
 		sub->regions = NULL;
-		return -1;
+		goto outerr;
 	}
 	cp = rb;
 	idx = 1;
@@ -503,15 +505,15 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 	nc = lbl.lbl8_length/lbl.lbl8_rec_size;
 	log(1, "%d ZIPs defined\n", nc);
 	if (!nc)
-		return 0;
+		goto out;
 	sub->zips = calloc(nc + 1, sizeof(struct zip_def *));
 	if (!sub->zips)
-		return -1;
+		goto outerr;
 	rb = malloc(lbl.lbl8_length);
 	off = off1 + lbl.lbl8_offset;
 	if (glseek(gimg, off, SEEK_SET) != off) {
 		log(1, "LBL: Error can not seek to %ld\n", off);
-		return -1;
+		goto outerr;
 	}
 	rc = gread(gimg, rb, lbl.lbl8_length);
 	if (rc != lbl.lbl8_length) {
@@ -519,7 +521,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		free(rb);
 		free(sub->zips);
 		sub->zips = NULL;
-		return -1;
+		goto outerr;
 	}
 	cp = rb;
 	idx = 1;
@@ -530,7 +532,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		off = *(u_int32_t *)(cp);
 		off &= 0x00FFFFFF;
 		off <<= lbl.addr_shift;
-		off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
+		off += off1 + lbl.lbl1_offset;
 		gar_get_at(sub, off, buf, sizeof(buf));
 		log(15, "LBL: ZIP[%d] off=%03lX [%s]\n", idx, off, buf);
 		sub->zips[idx]->code = strdup(buf);
@@ -539,8 +541,10 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 	}
 	free(rb);
 	sub->czips = idx;
-
+out:
 	return 0;
+outerr:
+	return -1;
 }
 
 static void gar_free_region_def(struct region_def *rd)
@@ -572,6 +576,9 @@ void gar_free_srch(struct gar_subfile *f)
 			if (f->countries[i])
 				free(f->countries[i]);
 		}
+		f->ccount = 0;
+		free(f->countries);
+		f->countries = NULL;
 	}
 
 	if (f->regions) {
@@ -579,7 +586,9 @@ void gar_free_srch(struct gar_subfile *f)
 			if (f->regions[i])
 				gar_free_region_def(f->regions[i]);
 		}
+		f->rcount = 0;
 		free(f->regions);
+		f->regions = NULL;
 	}
 
 	if (f->cities) {
@@ -587,7 +596,9 @@ void gar_free_srch(struct gar_subfile *f)
 			if (f->cities[i])
 				gar_free_city_def(f->cities[i]);
 		}
+		f->cicount = 0;
 		free(f->cities);
+		f->cities = NULL;
 	}
 
 	if (f->zips) {
@@ -595,6 +606,9 @@ void gar_free_srch(struct gar_subfile *f)
 			if (f->zips[i])
 				gar_free_zip_def(f->zips[i]);
 		}
+		f->czips = 0;
 		free(f->zips);
+		f->zips = NULL;
 	}
 }
+

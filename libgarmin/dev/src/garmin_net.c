@@ -94,6 +94,9 @@ int gar_init_net(struct gar_subfile *sub)
 	ni->net3_length = net.net3_length;
 	ni->nod = gar_init_nod(sub);;
 	sub->net = ni;
+	log(11, "off net1=%d, net2=%d, net3=%d\n",
+		ni->net1_offset, ni->net2_offset,
+		ni->net3_offset);
 	log(11, "len net1=%d, net2=%d, net3=%d\n",
 		ni->net1_length, ni->net2_length,
 		ni->net3_length);

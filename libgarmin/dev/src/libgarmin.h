@@ -33,6 +33,26 @@ struct gcoord {
 	int y;
 };
 
+#define GS_COUNTRY	1
+#define GS_REGION	2
+#define GS_CITY		3
+#define GS_ZIP		4
+#define GS_ROAD		5
+#define GS_INTERSECT	6
+#define GS_HOUSENUMBER	7
+#define GS_POI		8
+
+#define GM_EXACT	0
+#define GM_START	1
+#define GM_ANY		2
+
+struct gar_search {
+	unsigned char type;
+	unsigned char match;
+	char *needle;
+	struct gobject *fromobj;
+};
+
 #define GO_POINT	1
 #define GO_POI 		2
 #define GO_POLYLINE	3
@@ -98,15 +118,16 @@ struct gar *gar_init(char *tbd, log_fn l);
 struct gar *gar_init_cfg(char *tbd, log_fn l, struct gar_config *cfg);
 void gar_free(struct gar *g);
 int gar_img_load(struct gar *gar, char *file, int data);
-struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect, int flags);
+struct gmap *gar_find_subfiles(struct gar *gar, void *select, int flags);
 void gar_free_gmap(struct gmap *g);
 int gar_get_zoomlevels(struct gar_subfile *sub);
 
 #define GO_GET_SORTED	(1<<0)
 #define GO_GET_ROUTABLE	(1<<1)
+#define GO_GET_SEARCH	(1<<2)
 
 struct gobject *gar_get_object(struct gar *gar, void *ptr);
-int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect, 
+int gar_get_objects(struct gmap *gm, int level, void *select, 
 			struct gobject **ret, int flags);
 void gar_free_objects(struct gobject *g);
 u_int8_t gar_obj_type(struct gobject *o);

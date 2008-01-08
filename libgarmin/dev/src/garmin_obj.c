@@ -457,12 +457,113 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr)
 }
 static void gar_debug_objects(struct gobject *o);
 
+static int gar_match(char *needle, char *str, int type)
+{
+	switch (type) {
+		case GM_EXACT:
+			return !strcasecmp(str, needle);
+		case GM_START:
+			return !strncasecmp(str, needle, strlen(needle));
+		case GM_ANY:
+			return !!strstr(str, needle);
+	}
+	return 0;
+}
+
+static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
+					struct gar_search *s)
+{
+	int i, rc = 0;
+	int nsub;
+	struct gar_subfile *gsub;
+	struct gobject *first = NULL, *o = NULL;
+
+	switch (s->type) {
+		case GS_COUNTRY:
+			break;
+		case GS_REGION:
+			log(1, "Region search not implemented\n");
+			return 0;
+			break;
+		case GS_CITY:
+			break;
+		case GS_ZIP:
+			break;
+		case GS_ROAD:
+			log(1, "Road search not implemented\n");
+			return 0;
+			break;
+		case GS_INTERSECT:
+			log(1, "Intersection search not implemented\n");
+			return 0;
+			break;
+		case GS_HOUSENUMBER:
+			log(1, "House Number search not implemented\n");
+			return 0;
+			break;
+		case GS_POI:
+			log(1, "POI search not implemented\n");
+			return 0;
+			break;
+		default:
+			log(1, "Error unknow search type:%d\n", s->type);
+			return 0;
+	}
+	for (nsub = 0; nsub < gm->lastsub; nsub++) {
+		gsub = gm->subs[nsub];
+		if (!gsub->loaded) {
+			// FIXME: error handle
+			// FIXME: Load only the sd-s that are in the selected level
+			// FIXME: Load only if have enough bits
+			gar_load_subfile_data(gsub);
+		}
+
+		gar_init_srch(gsub, 1);
+		switch (s->type) {
+			case GS_CITY:
+				for (i = 1; i < gsub->cicount; i++) {
+					char *lbl = gsub->cities[i]->label;
+					o = NULL;
+					if (!lbl) {
+						o = gar_get_subfile_object_byidx(gsub, 
+								gsub->cities[i]->subdiv_idx,
+								gsub->cities[i]->point_idx, GO_POINT);
+						if (o)
+							lbl = gar_get_object_lbl(o);
+					}
+					log(4, "Match: %s %s\n", s->needle, lbl);
+					if (lbl && gar_match(s->needle, lbl, s->match)) {
+						if (o) {
+							rc ++;
+							if (first) {
+								o->next = first;
+								first = o;
+							} else
+								first = o;
+						} else {
+							// FIXME we have region
+						}
+					} else {
+						if (o)
+							gar_free_objects(o);
+					}
+					if (!gsub->cities[i]->label && lbl)
+						free(lbl);
+				}
+		}
+//		gar_free_srch(gsub);
+	}
+	*ret = first;
+	return rc;
+}
+
+
 /*
  XXX Make gar_get_objects_zoom and gar_get_objects_level
  XXX to work with zoom(bits) and with levels
  */
 
-int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect, 
+int gar_get_objects(struct gmap *gm, int level, void *select, 
 			struct gobject **ret, int flags)
 {
 	struct gobject *first = NULL, *o = NULL, *p;
@@ -477,6 +578,7 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 	int sdcount;
 	int routable = flags&GO_GET_ROUTABLE;
 	int prio = -1;
+	struct gar_rect *rect = select;
 
 	gsub = gm->subs[0];
 	if (!gsub)
@@ -486,6 +588,8 @@ int gar_get_objects(struct gmap *gm, int level, struct gar_rect *rect,
 		log(7, "Looking for roads at last level: %d bits\n",
 		gm->basebits+gm->zoomlevels);
 		rect = NULL;
+	} else if (flags&GO_GET_SEARCH) {
+		return gar_get_search_objects(gm, ret, select);
 	} else {
 		bits = level;
 		log(7, "Level =%d  bits = %d subfiles:%d\n", level, bits, gm->lastsub);

@@ -1161,11 +1161,12 @@ static void gar_subfiles_unload(struct gimg *g)
 }
 
 // public api
-struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect, int flags)
+struct gmap *gar_find_subfiles(struct gar *gar, void *select, int flags)
 {
 	struct gimg *g;
 	struct gmap *files;
 	struct gar_subfile **rsub;
+	struct gar_rect *rect = select;
 	int fnd;
 
 	files = gar->gmap;
@@ -1174,6 +1175,11 @@ struct gmap *gar_find_subfiles(struct gar *gar, struct gar_rect *rect, int flags
 		if (!files)
 			return NULL;
 		gar->gmap = files;
+	}
+	if (flags&GO_GET_SEARCH) {
+		//goto do_search;
+		// FIXME: If we have object use just its subfile
+		rect = NULL;
 	}
 	if (rect)
 		gar_rect_log(5, "looking for", rect);
