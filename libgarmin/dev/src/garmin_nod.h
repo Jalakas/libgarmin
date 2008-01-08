@@ -86,3 +86,5 @@ int gar_update_graph(struct gar_graph *g , int frclass, u_int32_t from);
 struct node* gar_get_node(struct gar_graph *graph, u_int32_t offset);
 int gar_graph2tfmap(struct gar_graph *g, char *filename);
 
+struct gar_road_nod *gar_read_nod2(struct gar_subfile *sub, u_int32_t offset);
+void gar_free_road_nod(struct gar_road_nod *nod);

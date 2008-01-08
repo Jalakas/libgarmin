@@ -24,6 +24,7 @@
 #include "libgarmin_priv.h"
 #include "garmin_rgn.h"
 #include "garmin_lbl.h"
+#include "garmin_net.h"
 #include "garmin_order.h"
 #include "garmin_subdiv.h"
 #include "geoutils.h"
@@ -490,8 +491,6 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 		case GS_ZIP:
 			break;
 		case GS_ROAD:
-			log(1, "Road search not implemented\n");
-			return 0;
 			break;
 		case GS_INTERSECT:
 			log(1, "Intersection search not implemented\n");
@@ -531,7 +530,7 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 						if (o)
 							lbl = gar_get_object_lbl(o);
 					}
-					log(4, "Match: %s %s\n", s->needle, lbl);
+					log(15, "Match: %s %s\n", s->needle, lbl);
 					if (lbl && gar_match(s->needle, lbl, s->match)) {
 						if (o) {
 							rc ++;
@@ -550,6 +549,29 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 					if (!gsub->cities[i]->label && lbl)
 						free(lbl);
 				}
+				break;
+			case GS_ROAD:
+				if (gsub->net) {
+					struct gar_road *r;
+					char buf[256];
+					int i,j;
+					gar_load_roadnetwork(gsub);
+					for (i=0; i < ROADS_HASH_TAB_SIZE; i++) {
+						list_for_entry(r, &gsub->net->lroads[i], l) {
+							for(j = 0; j < 4; j++) {
+								if (r->labels[j]) {
+									if (gar_get_lbl(gsub, r->labels[j], L_LBL, buf, sizeof(buf))) {
+										if (gar_match(s->needle, buf, s->match)) {
+											
+											log(1, "Found road: %s\n", buf);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				break;
 		}
 //		gar_free_srch(gsub);
 	}

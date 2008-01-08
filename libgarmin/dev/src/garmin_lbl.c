@@ -404,7 +404,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		goto out;
 	}
 	nc = lbl.lbl3_length/lbl.lbl3_rec_size;
-	log(1, "%d regions defined\n", nc);
+	log(1, "%d regions defined sz=%d\n", nc,lbl.lbl3_rec_size);
 	if (!nc)
 		goto out;
 	sub->regions = calloc(nc + 1, sizeof(struct region_def *));
@@ -439,13 +439,13 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		sub->regions[idx]->name = strdup(buf);
 		sub->regions[idx]->country = *(short *)cp;
 		idx++;
-		cp += 5;
+		cp += lbl.lbl3_rec_size;
 	}
 	sub->rcount = idx;
 	free(rb);
 	// cities
 	nc = lbl.lbl4_length/lbl.lbl4_rec_size;
-	log(1, "%d cities defined\n", nc);
+	log(1, "%d cities defined sz=%d\n", nc,lbl.lbl4_rec_size);
 	if (!nc)
 		goto out;
 	sub->cities = calloc(nc + 1, sizeof(struct city_def *));
@@ -490,7 +490,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 			sub->cities[idx]->label = strdup(buf);
 		}
 		idx++;
-		cp += 5;
+		cp += lbl.lbl4_rec_size;
 	}
 	free(rb);
 	sub->cicount = idx;
@@ -503,7 +503,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		lbl.lbl7_offset, lbl.lbl7_length,lbl.lbl7_rec_size);
 	// ZIPs
 	nc = lbl.lbl8_length/lbl.lbl8_rec_size;
-	log(1, "%d ZIPs defined\n", nc);
+	log(1, "%d ZIPs defined sz=%d\n", nc,lbl.lbl8_rec_size);
 	if (!nc)
 		goto out;
 	sub->zips = calloc(nc + 1, sizeof(struct zip_def *));

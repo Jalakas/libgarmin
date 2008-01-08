@@ -285,16 +285,8 @@ struct hdr_nod_t
 
 #define SPEEDCLASS(x)	((x>>1)&0x07)
 #define ROADTYPE(x)	(((x)>>4)&0x07)
-#define NODTYPE(x)	((x) & 1)
+#define HAVENODES(x)	((x) & 1)
 #define CHARINFO(x)	((x) & (1<<7))
-
-
-struct nod_road_data {
-	u_int8_t	flags;	// 0
-	u_int24_t	nod1off;	// 1
-	u_int16_t	nodes;		// if bit !NODTYPE(flags)
-	u_int8_t	b3;		// 6
-} __attribute((packed));
 
 struct nod_bond {
 	u_int24_t	east;	//  coord_east    3

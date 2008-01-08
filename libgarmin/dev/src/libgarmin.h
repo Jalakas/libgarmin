@@ -57,6 +57,7 @@ struct gar_search {
 #define GO_POI 		2
 #define GO_POLYLINE	3
 #define GO_POLYGON	4
+#define GO_ROAD		5
 
 struct gar_subfile;
 struct gar_objdraworder;

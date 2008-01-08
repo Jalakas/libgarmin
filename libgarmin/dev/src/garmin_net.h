@@ -31,6 +31,7 @@ struct gar_road {
 	u_int32_t *ri;
 	u_int8_t hnb;
 	struct street_addr_info *sai;
+	struct gar_road_nod *nod;
 };
 
 

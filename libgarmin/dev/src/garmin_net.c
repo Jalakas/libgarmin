@@ -180,11 +180,11 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 			if (gread(gimg, f1, size) != size)
 				goto out_err;
 		} else {
-			unsigned char buf[3];
+//			unsigned char buf[3];
 			log(1, "NET: Error f1 type=1\n");
-			gread(gimg, buf, 3);
-			log(1, "Data: [%02X][%02X]\n",
-				buf[0], buf[1]);
+//			gread(gimg, buf, 3);
+//			log(1, "Data: [%02X][%02X]\n",
+//				buf[0], buf[1]);
 		}
 	}
 	fl = flags >> 4;
@@ -212,8 +212,8 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 		} else if (fl == 1) {
 			log(1, "NET: Error f2 type=1\n");
 			/* Not in the PDF, the guess is that its idx/sdidx */
-			f2 = malloc(3);
-			gread(gimg, f2, 3);
+//			f2 = malloc(3);
+//			gread(gimg, f2, 3);
 		}
 	}
 	fl = flags >> 6;
@@ -239,12 +239,11 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 			if (gread(gimg, f3, size) != size)
 				goto out_err;
 		} else {
-			
-			unsigned char buf[3];
+//			unsigned char buf[3];
 			log(1, "NET: Error f3 type=%d\n", fl);
-			gread(gimg, buf, 3);
-			log(1, "Data: [%02X][%02X][%02X]\n",
-				buf[0], buf[1], buf[2]);
+//			gread(gimg, buf, 3);
+//			log(1, "Data: [%02X][%02X][%02X]\n",
+//				buf[0], buf[1], buf[2]);
 		}
 	}
 	sai = malloc(sizeof(*sai));
@@ -365,6 +364,8 @@ static void gar_free_road(struct gar_road *ri)
 		free(ri->ri);
 	if (ri->sai)
 		gar_free_addr_info(ri->sai);
+	if (ri->nod)
+		gar_free_road_nod(ri->nod);
 	free(ri);
 }
 
@@ -563,6 +564,8 @@ static struct gar_road *gar_parse_road(struct gar_subfile *sub, off_t offset)
 		o1 = glseek(gimg, 0, SEEK_CUR);
 		log(11, "read %ld roadptr %ld\n",  o1-o, offset);
 	}
+	if (flags & RFL_NODINFO)
+		rd->nod = gar_read_nod2(sub,rd->nod_offset);
 	return rd;
 }
 

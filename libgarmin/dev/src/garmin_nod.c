@@ -23,6 +23,7 @@
 #include <string.h>
 #include "libgarmin.h"
 #include "libgarmin_priv.h"
+#include "GarminTypedef.h"
 #include "garmin_fat.h"
 #include "garmin_rgn.h"
 #include "garmin_net.h"
@@ -369,13 +370,31 @@ static void * gar_read_nod1(struct gar_subfile *sub, off_t offset, int flag)
 // and next != 0
 // bit count
 // bitmap which deltas from the sd:idx are covered
-static void * gar_read_nod2(struct gar_subfile *sub, off_t offset)
+
+struct nod_road_data {
+	u_int8_t	flags;
+	u_int24_t	nod1off;
+	u_int16_t	bmlen;
+} __attribute((packed));
+
+struct gar_road_nod {
+	unsigned char flags;
+	u_int32_t nodesoff;
+	unsigned short bmlen;
+	unsigned char bitmap[0];
+};
+
+void gar_free_road_nod(struct gar_road_nod *nod)
+{
+	free(nod);
+}
+
+struct gar_road_nod *gar_read_nod2(struct gar_subfile *sub, u_int32_t offset)
 {
 	struct gimg *gimg = sub->gimg;
 	struct nod_road_data nrd;
-	u_int32_t n1;
-	int flag = 0;
-	int valid = 1;
+	struct gar_road_nod *nr = NULL;
+	u_int32_t n1 = -1;
 	off_t o = sub->net->nod->nodoff + sub->net->nod->nod2_offset + offset;
 	if (glseek(gimg, o, SEEK_SET) != o) {
 		log(1, "NET: Error can not seek to %ld\n", o);
@@ -383,33 +402,32 @@ static void * gar_read_nod2(struct gar_subfile *sub, off_t offset)
 	}
 	if (gread(gimg, &nrd, sizeof(struct nod_road_data)) < 0)
 		return NULL;
-	n1 = *(u_int32_t*)nrd.nod1off & 0x00FFFFFF;
-	log(11, "n2: %ld sc %d rc %d 1:%d 7:%d n1 %d nodes %d[%04X] b3 [%02X]\n",
+	if (HAVENODES(nrd.flags)) {
+		int len = 0;
+		n1 = *(u_int32_t*)nrd.nod1off & 0x00FFFFFF;
+		if (nrd.bmlen)
+			len = (7+nrd.bmlen)/8;
+		nr = calloc(1, sizeof(*nr)+len);
+		if (!nr)
+			return NULL;
+		nr->nodesoff = n1;
+		nr->flags = nrd.flags;
+		gread(gimg, &nr->bitmap[0], len);
+	} else {
+		nr = calloc(1, sizeof(*nr));
+		if (!nr)
+			return NULL;
+		nr->flags = nrd.flags;
+	}
+	log(11, "n2: %d sc %d rc %d havenodes:%d 7:%d nodes at %d bmlen %d bits\n",
 		offset,
 		SPEEDCLASS(nrd.flags),
 		ROADTYPE(nrd.flags),
-		NODTYPE(nrd.flags),
+		HAVENODES(nrd.flags),
 		CHARINFO(nrd.flags),
 		n1, 
-		nrd.nodes, nrd.nodes, nrd.b3);
-	flag = nrd.b3 & 1; // ???
-	if (!NODTYPE(nrd.flags)) {
-		valid = 0;
-		log(1, "NOD2: FIXME bit0 restrictions??\n");
-		if (nrd.nodes) {
-			if (nrd.b3) {
-				
-			}
-		}
-	}
-	if (CHARINFO(nrd.flags)) {
-		valid = 0;
-		n1 >>= 8;
-		log(1, "NOD2: FIXME bit7 two byte nod1?\n");
-		/* Have some more char (?) data before nod1ptr */
-	}
-	gar_read_nod1(sub, n1, flag);
-	return NULL;
+		nrd.bmlen);
+	return nr;
 }
 
 static void gar_enqueue_node(struct gar_graph *graph, struct node *node)
