@@ -377,12 +377,6 @@ struct nod_road_data {
 	u_int16_t	bmlen;
 } __attribute((packed));
 
-struct gar_road_nod {
-	unsigned char flags;
-	u_int32_t nodesoff;
-	unsigned short bmlen;
-	unsigned char bitmap[0];
-};
 
 void gar_free_road_nod(struct gar_road_nod *nod)
 {
@@ -412,6 +406,7 @@ struct gar_road_nod *gar_read_nod2(struct gar_subfile *sub, u_int32_t offset)
 			return NULL;
 		nr->nodesoff = n1;
 		nr->flags = nrd.flags;
+		nr->bmlen = nrd.bmlen;
 		gread(gimg, &nr->bitmap[0], len);
 	} else {
 		nr = calloc(1, sizeof(*nr));

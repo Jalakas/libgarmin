@@ -78,6 +78,13 @@ struct gar_nod_info {
 	u_int8_t nod3_recsize;
 };
 
+struct gar_road_nod {
+	unsigned char flags;
+	u_int32_t nodesoff;
+	unsigned short bmlen;
+	unsigned char bitmap[0];
+};
+
 struct gar_nod_info *gar_init_nod(struct gar_subfile *sub);
 void gar_free_nod(struct gar_nod_info *nod);
 

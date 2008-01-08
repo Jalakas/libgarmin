@@ -349,6 +349,13 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 	}
 	if (ri->road_flags & RFL_NODINFO) {
 		log(11, "NOD info at %d\n",ri->nod_offset);
+		if (ri->nod) {
+			int i, l = (ri->nod->bmlen+7)/8;
+			log(11, "NOD1 at %d bmlen=%d\n", ri->nod->nodesoff, ri->nod->bmlen);
+			for (i = 0; i < l; i++) {
+				log(11, "BITMAP: %x\n", ri->nod->bitmap[i]);
+			}
+		}
 //		gar_read_nod2(sub, ri->nod_offset);
 //		log(11, "nod data at %u\n", ri->nod_offset);
 	}
