@@ -27,6 +27,7 @@ struct gar_graph {
 	// All nodes
 	unsigned int totalnodes;
 	unsigned valid;
+	list_t lcpoints;
 	list_t lnodes[NODE_HASH_TAB_SIZE];
 	list_t lqueue;
 	list_t lnclass[8];
@@ -44,22 +45,21 @@ struct node {
 	list_t lc;
 	unsigned nodeid;
 	u_int32_t offset;
+	struct cpoint *cpoint;
 	struct gcoord c;
-//	u_int32_t centralpoint;
-//	u_int32_t roadptr;
-//	struct nod_node_info ni;
 	u_int8_t complete:1,
 		posreach:1,
 		dstreach:1,
 		class:3;
-	char narcs;
+	u_int8_t roadidx;
+	u_int8_t narcs;
 	struct grapharc *arcs[10];	// FIXME make this allocated
 };
 
 struct grapharc {
 	struct node *dest;
 	unsigned int len;
-	u_int32_t roadptr;	// or struct gar_road *road;
+	unsigned char roadidx;
 	unsigned char roadclass;
 	unsigned char heading;
 	unsigned char curve[2];
@@ -70,7 +70,9 @@ struct gar_nod_info {
 	off_t nodoff;
 	u_int32_t nod1_offset;
 	u_int32_t nod1_length;
-	u_int8_t blockalign;
+	u_int8_t cpalign;
+	u_int8_t roadptrsize;
+	u_int8_t nodbits;
 	u_int32_t nod2_offset;
 	u_int32_t nod2_length;
 	u_int32_t nod3_offset;

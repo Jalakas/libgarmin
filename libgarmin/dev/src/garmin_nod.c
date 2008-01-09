@@ -55,13 +55,14 @@ struct nod_roadptr {
 
 /* central point */
 struct central_point {
-	u_int8_t	b3;
+	u_int8_t	crestr;
 	u_int24_t	lng;
 	u_int24_t	lat;
-	u_int8_t	roads;	// roads count of unknown4=size records
-	u_int8_t	b2;
+	u_int8_t	croads;
+	u_int8_t	cidxs;
 } __attribute((packed));
 
+static void gar_put_cpoint(struct cpoint *p);
 
 #define DEBUGNODES
 // #define DEBUG
@@ -147,14 +148,14 @@ static void nodetrunklog(struct node *node) {}
 #endif
 
 static struct grapharc*
-gar_alloc_grapharc(struct node *dst, u_int32_t roadptr, unsigned char rc, unsigned color)
+gar_alloc_grapharc(struct node *dst, unsigned char ridx, unsigned char rc, unsigned color)
 {
 	struct grapharc *arc;
 	arc = calloc(1, sizeof(*arc));
 	if (!arc)
 		return NULL;
 	arc->dest = dst;
-	arc->roadptr = roadptr;
+	arc->roadidx = ridx;
 	arc->roadclass = rc;
 	arc->islink = 1;
 	arc->color = color;
@@ -235,6 +236,8 @@ gar_free_node(struct node *n)
 	for (i=0; i < n->narcs; i++) {
 		gar_free_grapharc(n->arcs[i]);
 	}
+	if (n->cpoint)
+		gar_put_cpoint(n->cpoint);
 	list_remove_init(&n->l);
 	list_remove_init(&n->lc);
 	free(n);
@@ -278,7 +281,9 @@ struct gar_nod_info *gar_init_nod(struct gar_subfile *sub)
 	n->nodoff = off;
 	n->nod1_offset = nod.nod1offset;
 	n->nod1_length = nod.nod1length;
-	n->blockalign = nod.blockalign;
+	n->cpalign = nod.cpalign;
+	n->roadptrsize = nod.roadptrsize;
+	n->nodbits = nod.nodbits;
 	n->nod2_offset = nod.nod2offset;
 	n->nod2_length = nod.nod2length;
 	n->nod3_offset = nod.bondoffset;
@@ -289,8 +294,9 @@ struct gar_nod_info *gar_init_nod(struct gar_subfile *sub)
 			nod.nod1length, nod.nod2length, nod.bondlength);
 	log(11, "off nod1=%d, nod2=%d, nod3=%d\n",
 			nod.nod1offset, nod.nod2offset, nod.bondoffset);
-	log(11, "hdr al %d b1 %0x b2 %0x 3 %0x 4 %0x, unk3=%0x, unk4=%0x unk5=%0x zterm1=%x\n",
-			nod.blockalign, nod.b1, nod.b2, nod.b3, nod.b4,nod.unknown3, nod.unknown4,
+	log(11, "hdr cpal %d b1 %0x b2 %0x 3 %0x 4 %0x, unk3=%0x, roadptrsize=%0x unk5=%0x zterm1=%x\n",
+			nod.cpalign, nod.nodbits, nod.b2, nod.b3, nod.unknown3,
+			nod.unknown3, nod.roadptrsize,
 			nod.unknown5, nod.zeroterm1);
 	if (nod.hsub.length > 63) {
 		log(11, "nod bond2offset=%d len=%d u1off=%d len=%d u2off=%d len=%d\n",
@@ -321,8 +327,8 @@ static void *gar_read_nod1node(struct gar_subfile *sub, off_t offset, unsigned c
 	u_int32_t lng;
 	u_int32_t lat;
 
-	off = 1 + idx + (offset >> sub->net->nod->blockalign);
-	off <<= sub->net->nod->blockalign;
+	off = 1 + idx + (offset >> sub->net->nod->cpalign);
+	off <<= sub->net->nod->cpalign;
 	if (glseek(sub->gimg, off, SEEK_SET) != off) {
 		log(1, "NET: Error can not seek to %ld\n", off);
 		return NULL;
@@ -557,6 +563,24 @@ done:
 	return connected;
 }
 
+static void gar_free_graph(struct gar_graph *g)
+{
+	int i;
+	struct node *n, *ns;
+	for (i = 0; i < NODE_HASH_TAB_SIZE; i++) {
+		list_for_entry_safe(n, ns,&g->lnodes[i],l) {
+			gar_free_node(n);
+		}
+	}
+	if (!list_empty(&g->lqueue)) {
+		log(1, "NOD error read queue not empty\n");
+	}
+	if (!list_empty(&g->lcpoints)) {
+		log(1, "NOD error still have central points\n");
+	}
+	free(g);
+}
+
 static struct gar_graph *gar_alloc_graph(struct gar_subfile *sub)
 {
 	struct gar_graph *g;
@@ -566,6 +590,8 @@ static struct gar_graph *gar_alloc_graph(struct gar_subfile *sub)
 	if (!g)
 		return g;
 	g->sub = sub;
+	// All central points
+	list_init(&g->lcpoints);
 	// All nodes
 	for (i = 0; i < NODE_HASH_TAB_SIZE; i++)
 		list_init(&g->lnodes[i]);
@@ -604,6 +630,7 @@ int gar_update_graph(struct gar_graph *g , int frclass, u_int32_t from)
 {
 	// TBD
 	// walk all nodes and reset pos/dst reachable
+	// or use grpah version update when visiting
 	// then reload what's needed
 	// move freeing of unused(not pos and not dst reachable) to another function
 	return 0;
@@ -619,8 +646,9 @@ int gar_graph2tfmap(struct gar_graph *g, char *filename)
 		return -1;
 	for (h=0; h < NODE_HASH_TAB_SIZE; h++) {
 		list_for_entry(n, &g->lnodes[h], l) {
+			// FIXME
 			fprintf(tfmap, "garmin:0x%x 0x%x type=rg_point label=\"%d-%d\"\n\n",
-				n->c.x, n->c.y, n->nodeid, n->offset);
+				n->c.x , n->c.y, n->nodeid, n->offset);
 			for (i=0; i < n->narcs; i++) {
 				struct grapharc *arc = n->arcs[i];
 				 if (arc->islink){
@@ -641,4 +669,160 @@ int gar_graph2tfmap(struct gar_graph *g, char *filename)
 	fclose(tfmap);
 	log(1, "NOD Total nodes written: %d\n", j);
 	return j;
+}
+
+struct roadptr {
+	u_int32_t off;
+	// check size when accessing b1/b2
+	u_int8_t b1;
+	u_int8_t b2;
+};
+
+struct cpoint {
+	list_t l;
+	// FIXME need to add sub file if graph is shared 
+	u_int32_t offset;
+	unsigned refcnt;
+	u_int8_t	crestr;
+	u_int32_t	lng;
+	u_int32_t	lat;
+	u_int8_t	croads;	// roads count of unknown4=size records
+	u_int8_t	cidxs;	// indexes ?
+	u_int8_t	rpsize;
+	u_int8_t	*roads;
+	u_int24_t	*idx;
+	u_int8_t	*restr;
+};
+
+static struct cpoint *gar_alloc_cp(void)
+{
+	struct cpoint *p;
+	p = calloc(1, sizeof(*p));
+	if (!p)
+		return NULL;
+	list_init(&p->l);
+	return p;
+}
+
+static void gar_free_cpoint(struct cpoint *p)
+{
+	list_remove(&p->l);
+	if (p->roads)
+		free(p->roads);
+	if (p->idx)
+		free(p->idx);
+	if (p->restr)
+		free(p->restr);
+	free(p);
+}
+
+static struct cpoint *gar_read_cp(struct gar_graph *graph, u_int32_t offset)
+{
+	struct gimg *gimg = graph->sub->gimg;
+	struct cpoint *p;
+	struct central_point n;
+	int i,rc;
+
+	glseek(gimg, offset, SEEK_SET);
+	rc = gread(gimg, &n, sizeof(struct central_point));
+	if (rc != sizeof(struct nod_node)) {
+		log(1, "NOD: Error reading cpoint\n");
+		return NULL;
+	}
+	p = gar_alloc_cp();
+	if (!p)
+		return NULL;
+	if (n.croads) {
+		i = n.croads*graph->sub->net->nod->roadptrsize;
+		p->roads = malloc(i);
+		if (!p->roads)
+			goto out_err;
+		p->rpsize = graph->sub->net->nod->roadptrsize;
+		p->croads = n.croads;
+		rc = gread(gimg, p->roads,i);
+		if (rc != i)
+			goto out_err;
+		i = n.cidxs * 3;
+		p->cidxs = n.cidxs;
+		if (i) {
+			p->idx = malloc(i);
+			if (!p->idx)
+				goto out_err;
+			rc = gread(gimg, p->idx,i);
+			if (rc != i)
+				goto out_err;
+		}
+	}
+	p->crestr = n.crestr;
+	if (p->crestr) {
+		p->restr = malloc(p->crestr);
+		if (!p->restr)
+			goto out_err;
+		rc = gread(gimg, p->restr,p->crestr);
+		if (rc != p->crestr)
+			goto out_err;
+	}
+	return p;
+out_err:
+	gar_free_cpoint(p);
+	return NULL;
+}
+
+static struct cpoint *gar_lookup_cpoint(struct gar_graph *graph, u_int32_t offset)
+{
+	struct cpoint *p;
+	list_for_entry(p, &graph->lcpoints, l) {
+		if (p->offset == offset)
+			return p;
+	}
+	return NULL;
+}
+
+static struct cpoint *gar_get_cpoint(struct gar_graph *graph, u_int32_t offset, int idx)
+{
+	struct cpoint *p;
+	u_int32_t off = 1 + idx + (offset >> graph->sub->net->nod->cpalign);
+	off <<= graph->sub->net->nod->cpalign;
+	p = gar_lookup_cpoint(graph, off);
+	if (!p) {
+		p = gar_read_cp(graph, off);
+		if (!p)
+			return NULL;
+	}
+	p->refcnt++;
+	return p;
+}
+
+static void gar_put_cpoint(struct cpoint *p)
+{
+	p->refcnt --;
+	if (p->refcnt == 0) {
+		gar_free_cpoint(p);
+	}
+}
+
+static u_int32_t gar_cp_idx2off(struct cpoint *p, u_int8_t idx)
+{
+	u_int32_t i;
+#ifdef DEBUG
+	if (idx >= p->cidxs) {
+		log(1, "NOD Error idx %d not valid max %d\n",
+				idx, p->cidxs);
+	}
+#endif
+	i = *(u_int32_t*)p->idx[idx];
+	return i & 0xFFFFFF;
+}
+
+static struct roadptr *gar_cp_idx2road(struct cpoint *p, u_int8_t idx)
+{
+	int i;
+	i = idx*p->rpsize;
+#ifdef DEBUG
+	if (i > p->croads*p->rpsize) {
+		log(1, "NOD Error roadidx %d not valid max %d\n",
+				idx, p->croads*p->rpsize);
+	}
+#endif
+	return (struct roadptr *)&p->roads[idx*p->rpsize];
 }

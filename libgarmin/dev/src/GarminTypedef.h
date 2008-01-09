@@ -253,18 +253,17 @@ struct hdr_nod_t
 	// Unknown
 	u_int32_t	nod1offset;	// 0x15    Offset for section NOD1      4
 	u_int32_t	nod1length;	// 0x19    Length of section NOD1       4
-//	u_int32_t	nod1recsize;
-	u_int8_t	b1;
+	u_int8_t	nodbits;
 	u_int8_t	b2;
 	u_int8_t	b3;
 	u_int8_t	b4;
-	u_int8_t	blockalign;	// 0x24 (offset << blockalign + idx) >> blockalign
+	u_int8_t	cpalign;	// 0x24 
 	u_int8_t	unknown3;	// 0x25 0x21    Unknown                      2
-	u_int16_t	unknown4;	// 0x26 0x23    Unknown                      2
+	u_int16_t	roadptrsize;	// 0x26 0x23    Unknown                      2
 	// Road Data
 	u_int32_t	nod2offset;	// 0x25    Road data offset, NOD2       4
 	u_int32_t	nod2length;	// 0x29    Road data length             4
-	u_int32_t	unknown5;	// addres shift? 0x2d    0x00000000 ???               4
+	u_int32_t	unknown5;	// 
 	// Boundary Nodes
 	u_int32_t	bondoffset;	//  0x31    Boundary nodes offset, NOD3  4
 	u_int32_t	bondlength;	//  0x35    Boundary nodes length        4
