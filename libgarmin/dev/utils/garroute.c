@@ -72,7 +72,10 @@ int main(int argc, char **argv)
 	gm = gar_find_subfiles(gar, NULL, GO_GET_ROUTABLE);
 	for (i=0; i < gm->subfiles; i++) {
 		sub = gm->subs[i];
-		g = gar_read_graph(sub, 0, from,  0, to);
+		if (to != -1)
+			g = gar_read_graph(sub, 0, from,  0, to);
+		else
+			g = gar_read_graph(sub, 0, from,  1000, to);
 		if (g) {
 			char buf[512];
 			sprintf(buf,"/tmp/%d-graph.txt", from);

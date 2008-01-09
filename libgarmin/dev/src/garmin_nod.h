@@ -53,7 +53,7 @@ struct node {
 		class:3;
 	u_int8_t roadidx;
 	u_int8_t narcs;
-	struct grapharc *arcs[10];	// FIXME make this allocated
+	struct grapharc *arcs;
 };
 
 struct grapharc {
