@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
+#define __USE_GNU
 #include <fcntl.h>
 #include <string.h>
 #include "libgarmin.h"
@@ -59,7 +60,7 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 	int td4bm = 0;
 	float north, south, east, west;
 	char imgname[128];
-	fd = open(file, O_RDONLY);
+	fd = open(file, O_RDONLY|O_NOATIME);
 	if (fd <0) {
 		log(1, "Can not open:[%s] errno=%d(%s)\n",
 				file, errno, strerror(errno));

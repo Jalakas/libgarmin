@@ -4,6 +4,9 @@
 #define __USE_GNU
 #include <math.h>
 
+#ifndef O_NOATIME
+#define O_NOATIME 0
+#endif
 extern log_fn glogfn;
 extern int debug_level;
 // #define glog(g, l, x ...)	g->logfn(__FILE__, __LINE__, l, ## x)

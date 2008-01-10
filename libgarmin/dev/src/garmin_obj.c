@@ -368,6 +368,11 @@ out:
 			log(1, "Can not find idx:%d sdidx:%d, have maxidx:%d\n",
 						oidx, sdidx, size);
 		}
+		if (otype == GO_POI) {
+			int size = ga_get_count(&sd->pois);
+			log(1, "Can not find idx:%d sdidx:%d, have maxidx:%d\n",
+						oidx, sdidx, size);
+		}
 	}
 	return NULL;
 }

@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#define __USE_GNU
 #include <fcntl.h>
 #include "libgarmin.h"
 #include "libgarmin_priv.h"
@@ -508,7 +509,7 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 		if (!cp)
 			return -1;
 		sprintf(cp+1, "%s.MLD", sub->mapid);
-		efd = open(buf, O_RDONLY);
+		efd = open(buf, O_RDONLY|O_NOATIME);
 		if (efd < 0)
 			return -1;
 	}

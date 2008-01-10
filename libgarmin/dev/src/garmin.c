@@ -24,6 +24,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
+#define __USE_GNU
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -49,7 +50,7 @@ void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h)
 static void inline gcheckfd(struct gimg *g)
 {
 	if (g->fd == -1) {
-		g->fd = open(g->file, O_RDONLY);
+		g->fd = open(g->file, O_RDONLY|O_NOATIME);
 		if (g->fd < 0) {
 			log(1, "Error can not open:[%s] errno=%d(%s)\n",
 				g->file, errno, strerror(errno));

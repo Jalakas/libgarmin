@@ -178,7 +178,7 @@ static u_int32_t gar_lbl_offset(struct gar_subfile *sub ,u_int32_t offlbl, int t
 				struct gimg *gimg = sub->gimg;
 				char b[3];
 				int rc;
-				off = sub->lbl->offset + sub->lbl->lbl6off +  offlbl; // << sub->lbl->addrshiftpoi);
+				off = sub->lbl->offset + sub->lbl->lbl6off +  offlbl; 
 				if (glseek(gimg, off, SEEK_SET) != off) {
 					log(1, "LBL: Error can not seek to %zd\n", off);
 					return 0xFFFFFFFF;
@@ -498,9 +498,80 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 	// lbl5 = index of POIS sorted by types and names
 	log(1,"lbl5 off=%04X size=%d, recsize=%d\n",
 		lbl.lbl5_offset, lbl.lbl5_length,lbl.lbl5_rec_size);
+	off = off1 + lbl.lbl5_offset;
+	if (glseek(gimg, off, SEEK_SET) != off) {
+		log(1, "LBL: Error can not seek to %ld\n", off);
+		goto outerr;
+	}
+	if (0) {
+		char l[512];
+		unsigned char rec[lbl.lbl5_rec_size];
+		int of,si,id;
+		struct gobject *o;
+		idx = 0;
+		while (idx < lbl.lbl5_length) {
+			off = off1 + lbl.lbl5_offset + idx;
+			if (glseek(gimg, off, SEEK_SET) != off) {
+				log(1, "LBL: Error can not seek to %ld\n", off);
+				goto outerr;
+			}
+			gread(gimg, rec, lbl.lbl5_rec_size);
+			of = *(int*)(rec) & 0xffffff;
+			si = of >> 8;
+			id = of & 0xff;
+			log(11, "%d: type:%d sdidx:%d idx:%d %x\n", idx, *(u_int8_t *)(rec+3),si,id, *(int *)rec);
+			o = gar_get_subfile_object_byidx(sub, si, id, GO_POI);
+			if (o) {
+				char *cp = gar_object_debug_str(o);
+				if (cp) {
+					log(11, "poi:%s\n", cp);
+					free(cp);
+					cp = gar_get_object_lbl(o);
+					if (cp) {
+						log(11, "poi:%s\n", cp);
+						free(cp);
+					}
+				}
+				gar_free_objects(o);
+			} else {
+				o = gar_get_subfile_object_byidx(sub, si, id, GO_POINT);
+				if (o) {
+					char *cp = gar_object_debug_str(o);
+					if (cp) {
+						log(11, "point:%s\n", cp);
+						free(cp);
+						cp = gar_get_object_lbl(o);
+						if (cp) {
+							log(11, "point:%s\n", cp);
+							free(cp);
+						}
+					}
+					gar_free_objects(o);
+				} else
+					log(11, "not found\n");
+			}
+			idx+=lbl.lbl5_rec_size;
+		}
+	}
+
 	// lbl7 = index of POI types
 	log(1,"lbl7 off=%04X size=%d, recsize=%d\n",
 		lbl.lbl7_offset, lbl.lbl7_length,lbl.lbl7_rec_size);
+	off = off1 + lbl.lbl7_offset;
+	if (glseek(gimg, off, SEEK_SET) != off) {
+		log(1, "LBL: Error can not seek to %ld\n", off);
+		goto outerr;
+	}
+	if (1) {
+		unsigned char rec[lbl.lbl7_rec_size];
+		idx = 0;
+		while (idx < lbl.lbl7_length) {
+			gread(gimg, rec, lbl.lbl7_rec_size);
+			log(11, "%d: %x\n", idx, *(int *)rec);
+			idx+=lbl.lbl7_rec_size;
+		}
+	}
+
 	// ZIPs
 	nc = lbl.lbl8_length/lbl.lbl8_rec_size;
 	log(1, "%d ZIPs defined sz=%d\n", nc,lbl.lbl8_rec_size);
