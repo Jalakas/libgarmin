@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <time.h>
+#define __USE_BSD
+#include <sys/time.h>
 #include "libgarmin.h"
 #include "list.h"
 #include "garmin_nod.h"
@@ -50,6 +53,7 @@ int main(int argc, char **argv)
 	int from = -1, to = -1;
 	char *file = argv[1];
 	struct gmap *gm;
+	struct timeval tv1, tv2,tv3;
 	int i;
 	if (argc < 2) {
 		return usage(argv[0]);
@@ -72,15 +76,21 @@ int main(int argc, char **argv)
 	gm = gar_find_subfiles(gar, NULL, GO_GET_ROUTABLE);
 	for (i=0; i < gm->subfiles; i++) {
 		sub = gm->subs[i];
+		gettimeofday(&tv1, NULL);
 		if (to != -1)
 			g = gar_read_graph(sub, 0, from,  0, to);
 		else
 			g = gar_read_graph(sub, 0, from,  1000, to);
+		gettimeofday(&tv2, NULL);
 		if (g) {
 			char buf[512];
 			sprintf(buf,"/tmp/%d-graph.txt", from);
 			gar_graph2tfmap(g, buf);
+			timersub(&tv2,&tv1,&tv3);
+			printf("Read %d in %d.%d sec\n", g->totalnodes, tv3.tv_sec,tv3.tv_usec);
+			gar_free_graph(g);
 		}
+		break;
 	}
 
 	gar_free(gar);

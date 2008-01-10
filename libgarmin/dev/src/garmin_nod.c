@@ -225,10 +225,12 @@ gar_get_node(struct gar_graph *graph, u_int32_t offset)
 	struct node *node;
 	node = gar_find_node(graph, offset);
 	if (node) {
-		log(11, "NOD Already read: %d\n", offset);
+//		log(11, "NOD Already read: %d\n", offset);
 		return node;
 	}
 	node = gar_alloc_node(offset);
+	if (node)
+		gar_graph_add_node(graph, node);
 	return node;
 }
 
@@ -236,9 +238,8 @@ static void
 gar_free_node(struct node *n)
 {
 	int i;
-	for (i=0; i < n->narcs; i++) {
-		gar_free_grapharc(&n->arcs[i]);
-	}
+	if (n->arcs)
+		free(n->arcs);
 	if (n->cpoint)
 		gar_put_cpoint(n->cpoint);
 	list_remove_init(&n->l);
@@ -436,7 +437,7 @@ struct gar_road_nod *gar_read_nod2(struct gar_subfile *sub, u_int32_t offset)
 
 static void gar_enqueue_node(struct gar_graph *graph, struct node *node)
 {
-	log(12, "NOD enqueue:%d\n", node->offset);
+	log(12, "NOD enqueue:%d %d\n", node->offset, node->complete);
 	list_remove_init(&node->lc);
 	list_append(&node->lc, &graph->lqueue);
 }
@@ -529,18 +530,24 @@ static int gar_load_next_class(struct gar_graph *graph)
 	if (graph->dest) {
 		if (pos->class < dest->class) {
 			curclass = pos->class;
-			while(curclass < dest->class)
+			while(curclass < dest->class) {
 				connected = gar_load_pos_class(graph, curclass);
 				if (connected)
 					goto done;
 				curclass++;
+				if (curclass > 7)
+					break;
+			}
 		} else if (pos->class > dest->class) {
 			curclass = dest->class;
-			while(curclass < pos->class)
+			while(curclass < pos->class) {
 				connected = gar_load_dest_class(graph, curclass);
 				if (connected)
 					goto done;
 				curclass++;
+				if (curclass > 7)
+					break;
+			}
 		} 
 	}
 
@@ -554,6 +561,8 @@ static int gar_load_next_class(struct gar_graph *graph)
 				goto done;
 		}
 		curclass++;
+		if (curclass > 7)
+			break;
 	}
 	connected = 0;
 done:
@@ -563,7 +572,7 @@ done:
 	return connected;
 }
 
-static void gar_free_graph(struct gar_graph *g)
+void gar_free_graph(struct gar_graph *g)
 {
 	int i;
 	struct node *n, *ns;
@@ -647,20 +656,21 @@ int gar_graph2tfmap(struct gar_graph *g, char *filename)
 	for (h=0; h < NODE_HASH_TAB_SIZE; h++) {
 		list_for_entry(n, &g->lnodes[h], l) {
 			// FIXME
-			fprintf(tfmap, "garmin:0x%x 0x%x type=rg_point label=\"%d-%d\"\n\n",
-				n->c.x , n->c.y, n->nodeid, n->offset);
+			fprintf(tfmap, "garmin:0x%x 0x%x type=rg_point debug=\"%d arcs\" label=\"%d-%d\"\n\n",
+				n->c.x , n->c.y, n->narcs, n->nodeid, n->offset);
 			for (i=0; i < n->narcs; i++) {
 				struct grapharc *arc = &n->arcs[i];
 				 if (arc->islink){
-					 log(11, "NOD link to %d\n", arc->dest->offset);
+					 log(15, "NOD link to %d\n", arc->dest->offset);
 					 continue;
 				}
-				fprintf(tfmap, "type=grapharc lenght=%d label=\"%d->%d\"\n", 
-					arc->len, n->offset, arc->dest->offset);
+				fprintf(tfmap, "type=grapharc lenght=%d  head=%d label=\"%d->%d\"\n", 
+					arc->len, arc->heading, n->offset, arc->dest->offset);
 				fprintf(tfmap, "garmin:0x%x 0x%x\n",
 					n->c.x, n->c.y);
 				fprintf(tfmap, "garmin:0x%x 0x%x\n",
 					arc->dest->c.x, arc->dest->c.y);
+				fprintf(tfmap, "\n");
 			}
 			fprintf(tfmap, "\n");
 			j++;
@@ -690,7 +700,7 @@ struct cpoint {
 	u_int8_t	cidxs;	// indexes ?
 	u_int8_t	rpsize;
 	u_int8_t	*roads;
-	u_int24_t	*idx;
+	u_int8_t	*idx;
 	u_int8_t	*restr;
 };
 
@@ -761,8 +771,8 @@ static struct cpoint *gar_read_cp(struct gar_graph *graph, u_int32_t offset)
 		if (rc != p->crestr)
 			goto out_err;
 	}
-	p->lng = *(int *) n.lng & 0xffffff;
-	p->lat = *(int *) n.lat & 0xffffff;
+	p->lng = *(u_int32_t *) n.lng & 0xffffff;
+	p->lat = *(u_int32_t *) n.lat & 0xffffff;
 	p->offset = offset;
 	log(11, "CPNT: %d at %f/%f\n", p->offset, GARDEG(p->lng), GARDEG(p->lat));
 	return p;
@@ -793,8 +803,9 @@ static struct cpoint *gar_get_cpoint(struct gar_graph *graph, u_int32_t offset,
 		p = gar_read_cp(graph, off);
 		if (!p)
 			return NULL;
+		list_append(&p->l, &graph->lcpoints);
 	}
-	log(11, "CPNT:%d\n", p->offset);
+	log(15, "CPNT:%d\n", p->offset);
 	p->refcnt++;
 	return p;
 }
@@ -816,7 +827,7 @@ static u_int32_t gar_cp_idx2off(struct cpoint *p, u_int8_t idx)
 				idx, p->cidxs);
 	}
 #endif
-	i = *(u_int32_t*)p->idx[idx];
+	i = *(u_int32_t*)(p->idx+3*idx);
 	return i & 0xFFFFFF;
 }
 
