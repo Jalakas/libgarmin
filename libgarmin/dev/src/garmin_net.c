@@ -148,6 +148,43 @@ static void gar_free_addr_info(struct street_addr_info *sai)
 	free(sai);
 }
 
+static void gar_log_sai(struct gar_subfile *sub, struct street_addr_info *sai)
+{
+	unsigned short i;
+	u_int8_t fl = sai->flags;
+	fl >>=2;
+	if ((fl&3)!=3 && sai->field1) {
+		if ((fl&3)==0)
+			log(11, "Number: size=%d\n", *sai->field1);
+		else {
+			i = *(unsigned short*)sai->field1;
+			if (i < sub->czips)
+				log(11, "ZIP: %d[%s]\n", i, sub->zips[i]->code); 
+			else
+				log(11, "ZIP: %d[invalid]\n", i); 
+		}
+	}
+	fl >>= 2;
+	if ((fl&3)!=3 && sai->field2) {
+		if ((fl&3)==0)
+			log(11, "Number: size=%d\n", *sai->field2);
+		else {
+			i = *(unsigned short*)sai->field2;
+			if (i < sub->cicount)
+				log(11, "City: %d[%s]\n", i, sub->cities[i]->label);
+			else
+				log(11, "City: %d[invalid]\n", i);
+		}
+	}
+	fl >>= 2;
+	if ((fl&3)!=3 && sai->field3) {
+		if ((fl&3)==0)
+			log(11, "Number: size=%d\n", *sai->field3);
+		else
+			log(11, "Region: %d\n", *(unsigned short*)sai->field3); 
+	}
+}
+
 static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 {
 	u_int8_t flags, size;
@@ -174,7 +211,7 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 				size = 1;
 			else
 				size = 2;
-			f1 = malloc(size);
+			f1 = calloc(1,2);
 			if (!f1)
 				goto out_err;
 			if (gread(gimg, f1, size) != size)
@@ -204,7 +241,7 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 				size = 1;
 			else
 				size = 2;
-			f2 = malloc(size);
+			f2 = calloc(1,2);
 			if (!f2)
 				goto out_err;
 			if (gread(gimg, f2, size) != size)
@@ -233,7 +270,7 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 				size = 1;
 			else
 				size = 2;
-			f3 = malloc(size);
+			f3 = calloc(1,2);
 			if (!f3)
 				goto out_err;
 			if (gread(gimg, f3, size) != size)
@@ -344,8 +381,8 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 	}
 	log(11, "segments:%s\n", buf);
 	if (ri->sai) {
-		log(11, "Have street address info\n");
-		// gar_log_sai(ri->sai);
+		log(11, "Have street address info:%x\n", ri->sai->flags);
+		gar_log_sai(sub, ri->sai);
 	}
 	if (ri->road_flags & RFL_NODINFO) {
 		log(11, "NOD info at %d\n",ri->nod_offset);

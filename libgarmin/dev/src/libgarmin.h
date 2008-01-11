@@ -167,6 +167,15 @@ int gar_object_flags(struct gobject *o);
 #define DEGGAR(x) ((x) * (1/(360.0/(1<<24))))
 #define FEET2METER(x) ((x)/3.28084)
 
+#define POI_STREET_NUM		(1<<0)
+#define POI_STREET		(1<<1)
+#define POI_CITY		(1<<2)
+#define POI_ZIP			(1<<3)
+#define POI_PHONE		(1<<4)
+#define POI_EXIT		(1<<5)
+#define POI_TIDE_PREDICT	(1<<6)
+#define POI_UNKNOW		(1<<7)
+
 
 #ifdef __cplusplus
 }

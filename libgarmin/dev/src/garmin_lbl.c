@@ -302,6 +302,7 @@ int gar_init_lbl(struct gar_subfile *sub)
 	l->lbl6size = lbl.lbl6_length;
 	l->addrshift = lbl.addr_shift;
 	l->addrshiftpoi = lbl.lbl6_addr_shift;
+	l->lbl6_glob_mask = lbl.lbl6_glob_mask;
 	sub->lbl = l;
 	return 0;
 }
@@ -494,65 +495,6 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 	}
 	free(rb);
 	sub->cicount = idx;
-	// Parse POIs
-	// lbl5 = index of POIS sorted by types and names
-	log(1,"lbl5 off=%04X size=%d, recsize=%d\n",
-		lbl.lbl5_offset, lbl.lbl5_length,lbl.lbl5_rec_size);
-	off = off1 + lbl.lbl5_offset;
-	if (glseek(gimg, off, SEEK_SET) != off) {
-		log(1, "LBL: Error can not seek to %ld\n", off);
-		goto outerr;
-	}
-	if (0) {
-		char l[512];
-		unsigned char rec[lbl.lbl5_rec_size];
-		int of,si,id;
-		struct gobject *o;
-		idx = 0;
-		while (idx < lbl.lbl5_length) {
-			off = off1 + lbl.lbl5_offset + idx;
-			if (glseek(gimg, off, SEEK_SET) != off) {
-				log(1, "LBL: Error can not seek to %ld\n", off);
-				goto outerr;
-			}
-			gread(gimg, rec, lbl.lbl5_rec_size);
-			of = *(int*)(rec) & 0xffffff;
-			si = of >> 8;
-			id = of & 0xff;
-			log(11, "%d: type:%d sdidx:%d idx:%d %x\n", idx, *(u_int8_t *)(rec+3),si,id, *(int *)rec);
-			o = gar_get_subfile_object_byidx(sub, si, id, GO_POI);
-			if (o) {
-				char *cp = gar_object_debug_str(o);
-				if (cp) {
-					log(11, "poi:%s\n", cp);
-					free(cp);
-					cp = gar_get_object_lbl(o);
-					if (cp) {
-						log(11, "poi:%s\n", cp);
-						free(cp);
-					}
-				}
-				gar_free_objects(o);
-			} else {
-				o = gar_get_subfile_object_byidx(sub, si, id, GO_POINT);
-				if (o) {
-					char *cp = gar_object_debug_str(o);
-					if (cp) {
-						log(11, "point:%s\n", cp);
-						free(cp);
-						cp = gar_get_object_lbl(o);
-						if (cp) {
-							log(11, "point:%s\n", cp);
-							free(cp);
-						}
-					}
-					gar_free_objects(o);
-				} else
-					log(11, "not found\n");
-			}
-			idx+=lbl.lbl5_rec_size;
-		}
-	}
 
 	// lbl7 = index of POI types
 	log(1,"lbl7 off=%04X size=%d, recsize=%d\n",
@@ -562,7 +504,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		goto outerr;
 	}
-	if (1) {
+	if (0) {
 		unsigned char rec[lbl.lbl7_rec_size];
 		idx = 0;
 		while (idx < lbl.lbl7_length) {
@@ -576,7 +518,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 	nc = lbl.lbl8_length/lbl.lbl8_rec_size;
 	log(1, "%d ZIPs defined sz=%d\n", nc,lbl.lbl8_rec_size);
 	if (!nc)
-		goto out;
+		goto pois;
 	sub->zips = calloc(nc + 1, sizeof(struct zip_def *));
 	if (!sub->zips)
 		goto outerr;
@@ -612,6 +554,72 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 	}
 	free(rb);
 	sub->czips = idx;
+pois:
+	// Parse POIs
+	// lbl5 = index of POIS sorted by types and names
+	log(1,"lbl5 off=%04X size=%d, recsize=%d\n",
+		lbl.lbl5_offset, lbl.lbl5_length,lbl.lbl5_rec_size);
+	off = off1 + lbl.lbl5_offset;
+	if (glseek(gimg, off, SEEK_SET) != off) {
+		log(1, "LBL: Error can not seek to %ld\n", off);
+		goto outerr;
+	}
+	if (1) {
+		struct gar_poi_properties *pr;
+		unsigned char rec[lbl.lbl5_rec_size];
+		int of,si,id;
+		struct gobject *o;
+		idx = 0;
+		while (idx < lbl.lbl5_length) {
+			off = off1 + lbl.lbl5_offset + idx;
+			if (glseek(gimg, off, SEEK_SET) != off) {
+				log(1, "LBL: Error can not seek to %ld\n", off);
+				goto outerr;
+			}
+			gread(gimg, rec, lbl.lbl5_rec_size);
+			of = *(int*)(rec) & 0xffffff;
+			si = of >> 8;
+			id = of & 0xff;
+			log(11, "%d: type:%d sdidx:%d idx:%d %x\n", idx, *(u_int8_t *)(rec+3),si,id, *(int *)rec);
+			o = gar_get_subfile_object_byidx(sub, si, id, GO_POI);
+			if (o) {
+				char *cp = gar_object_debug_str(o);
+				if (cp) {
+					log(11, "poi:%s\n", cp);
+					free(cp);
+					cp = gar_get_object_lbl(o);
+					if (cp) {
+						log(11, "poi:%s\n", cp);
+						free(cp);
+					}
+				}
+				pr = gar_get_poi_properties(o->gptr);
+				if (pr) {
+					gar_log_poi_properties(sub, pr);
+					gar_free_poi_properties(pr);
+				}
+				gar_free_objects(o);
+			} else {
+				o = gar_get_subfile_object_byidx(sub, si, id, GO_POINT);
+				if (o) {
+					char *cp = gar_object_debug_str(o);
+					if (cp) {
+						log(11, "point:%s\n", cp);
+						free(cp);
+						cp = gar_get_object_lbl(o);
+						if (cp) {
+							log(11, "point:%s\n", cp);
+							free(cp);
+						}
+					}
+					gar_free_objects(o);
+				} else
+					log(11, "not found\n");
+			}
+			idx+=lbl.lbl5_rec_size;
+		}
+	}
+
 out:
 	return 0;
 outerr:
@@ -682,4 +690,213 @@ void gar_free_srch(struct gar_subfile *f)
 		f->zips = NULL;
 	}
 }
+
+#define POI_STREET_NUM		(1<<0)
+#define POI_STREET		(1<<1)
+#define POI_CITY		(1<<2)
+#define POI_ZIP			(1<<3)
+#define POI_PHONE		(1<<4)
+#define POI_EXIT		(1<<5)
+#define POI_TIDE_PREDICT	(1<<6)
+#define POI_UNKNOW		(1<<7)
+
+struct gar_poi_properties {
+	u_int8_t	flags;
+	u_int32_t	lbloff;
+	char		*number;
+	u_int32_t	streetoff;
+	unsigned short	cityidx;
+	unsigned short	zipidx;
+	char		*phone;
+	u_int32_t	exitoff;
+	u_int32_t	tideoff;
+};
+
+void gar_log_poi_properties(struct gar_subfile *sub, struct gar_poi_properties *p)
+{
+	char buf[1024];
+	log(11, "POI: flags:%x, lblat:%d, number=%s,city=%d,zip=%d,phone=%s\n",
+		p->flags, p->lbloff, p->number?:"", p->cityidx,
+		p->zipidx, p->phone?:"");
+	if (p->flags&POI_CITY) {
+		if (p->cityidx < sub->cicount)
+			log(11, "POI: city=%s\n", sub->cities[p->cityidx]->label);
+		else
+			log(11, "POI: invalid cityidx\n");
+	}
+	if (p->flags&POI_ZIP) {
+		if (p->zipidx < sub->czips)
+			log(11, "POI: zip=%s\n", sub->zips[p->zipidx]->code);
+		else
+			log(11, "POI: invalid zipidx\n");
+	}
+	gar_get_lbl(sub, p->lbloff, L_LBL, buf, sizeof(buf));
+	log(11, "POI: label=%s\n", buf);
+	if (p->flags&POI_STREET) {
+		gar_get_lbl(sub, p->streetoff, L_LBL, buf, sizeof(buf));
+		log(11, "POI: street=%s\n", buf);
+	}
+}
+
+void gar_free_poi_properties(struct gar_poi_properties *p)
+{
+	if (p->number)
+		free(p->number);
+	if (p->phone)
+		free(p->phone);
+	free(p);
+}
+
+static int gar_decode_base11(unsigned char *cp, char *out, int l)
+{
+	int sz = 0;
+	int a, b;
+	int done = 0;
+	int rb = 0;
+	*cp &= 0x7f;
+	do {
+		done = (*cp) & 0x80;
+		*cp &= 0x7f;
+		a = (*(cp+rb))/11;
+		b = (*(cp+rb))%11;
+		if (a!=10&&b!=10) {
+			sz += sprintf(out+sz, "%d%d", a, b);
+		} else {
+			if (a!=10)
+				sz += sprintf(out+sz, "%d ", a);
+			else if (b!=10)
+				sz += sprintf(out+sz, " %d", b);
+			else
+				sz += sprintf(out+sz, "  ");
+		}
+		if (sz >= l-3)
+			break;
+		rb++;
+		cp++;
+	} while (!done);
+	return rb;
+}
+static unsigned char gar_get_setbit(unsigned char b, int bit)
+{
+	int set=0;
+	int i;
+	for (i=0; i < 8; i++) {
+		if (b&(1<<i)) {
+			if (set==bit)
+				return i;
+			set++;
+		}
+	}
+	return 8;
+}
+
+static unsigned char gar_mask_properties(unsigned char glob,unsigned char mask)
+{
+	int bits=0,i;
+	unsigned char ret = glob;
+	for (i=0; i < 8; i++) {
+		if (glob&(1<<i))
+			bits++;
+	}
+	mask &= 0xFF >> (8-bits);
+	for (i=0; i < bits; i++) {
+		if (!(mask&(1<<i))) {
+			ret &= ~(1<<gar_get_setbit(glob, i));
+		}
+	}
+	return ret;
+}
+
+struct gar_poi_properties *gar_get_poi_properties(struct gpoint *poi)
+{
+	struct gimg *gimg = poi->subdiv->subfile->gimg;
+	struct gar_poi_properties *p;
+	u_int32_t off;
+	u_int8_t fl;
+	int tmp;
+	char buf[256];
+	char l[1024];
+	unsigned char *cp = buf;
+	if (!poi->is_poi)
+		return NULL;
+	off = poi->subdiv->subfile->lbl->offset + poi->subdiv->subfile->lbl->lbl6off + poi->lbloffset;
+	if (glseek(gimg, off, SEEK_SET) != off) {
+		log(1, "LBL: Error can not seek to %zd\n", off);
+		return NULL;
+	}
+	fl = poi->subdiv->subfile->lbl->lbl6_glob_mask;
+	log(12, "POI global properties: %x\n", fl);
+	tmp = gread(gimg, buf, sizeof(buf));
+	if (tmp < 0) {
+		log(1, "LBL: Error reading poi properties\n");
+		return NULL;
+	}
+	p = calloc(1, sizeof(*p));
+	if (!p)
+		return NULL;
+	tmp = *(int *)cp&0xFFFFFF;
+	cp+=3;
+	p->lbloff = tmp & 0x3fffff;
+	if (tmp & (1<<23)) {
+		log(12, "Partial properties: %x\n", *cp);
+//		p->flags = fl-*(signed char *)cp++;//gar_mask_properties(fl, *cp++);
+		fl = p->flags = gar_mask_properties(fl, *cp++);
+		log(12, "Partial properties: %x\n", p->flags);
+	} else
+		p->flags = fl;
+	if (fl & POI_STREET_NUM) {
+		if (*cp&0x80) {
+			// base11
+			cp += gar_decode_base11(cp, l, sizeof(l));
+			p->number = strdup(l);
+		} else {
+			// ptr to lbl
+			tmp = *(int *)cp&0x3FFFFF;
+			if (gar_get_lbl(poi->subdiv->subfile, L_LBL, tmp, (unsigned char*)l, sizeof(l)))
+				p->number = strdup(l); 
+			cp+=3;
+		}
+	}
+
+	if (fl & POI_STREET) {
+		// 3 bytes ptr to lbl1
+		p->streetoff = *(int *)cp & 0x3fffff;
+		cp+=3;
+	}
+
+	if (fl & POI_CITY) {
+		if (poi->subdiv->subfile->cicount < 256)
+			p->cityidx = *cp++;
+		else {
+			p->cityidx = *(u_int16_t*)cp;
+			cp+=2;
+		}
+	}
+
+	if (fl & POI_ZIP) {
+		if (poi->subdiv->subfile->czips < 256)
+			p->zipidx = *cp++;
+		else {
+			p->zipidx = *(u_int16_t*)cp;
+			cp+=2;
+		}
+	}
+
+	if (fl & POI_PHONE) {
+		cp += gar_decode_base11(cp, l, sizeof(l));
+		p->phone = strdup(l);
+	}
+	if (fl & POI_EXIT) {
+		// ptr to lblX exits
+		p->exitoff = *(int *)cp & 0xffffff;
+		cp+=3;
+	}
+	if (fl & POI_TIDE_PREDICT) {
+		// ptr to lblX tide
+		p->tideoff = *(int *)cp & 0xffffff;
+		cp+=3;
+	}
+	return p;
+}
+
 

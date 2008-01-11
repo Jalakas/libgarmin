@@ -63,6 +63,7 @@ struct gar_lbl_t {
 	u_int32_t offset;
 	u_int32_t lbl1off;
 	u_int32_t lbl1size;
+	u_int8_t  lbl6_glob_mask;
 	u_int32_t lbl6off;
 	u_int32_t lbl6size;
 	u_int32_t addrshift;
