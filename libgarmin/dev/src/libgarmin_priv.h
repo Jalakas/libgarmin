@@ -1,8 +1,13 @@
 #include <sys/types.h>
+typedef unsigned char u_int8_t;
+typedef unsigned short int u_int16_t;
+typedef unsigned int u_int32_t;
 #include "list.h"
 #include "GarminTypedef.h"
 #define __USE_GNU
 #include <math.h>
+
+
 
 #ifndef O_NOATIME
 #define O_NOATIME 0
