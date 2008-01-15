@@ -115,7 +115,7 @@ float gar_heading(struct gcoord *from, struct gcoord *to)
 	dy = to->y - from->y;
 	a = atan2(dx,dy)*180/M_PI;
 	if (a < 0) {
-		a = 180 + -(a);
+		a = a+360;
 	}
 	return a;
 }

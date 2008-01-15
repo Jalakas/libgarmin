@@ -40,6 +40,20 @@
 log_fn glogfn;
 int gar_debug_level = 1;
 
+#ifdef DEBUG
+void gar_print_buf(char *pref, unsigned char *a, int s)
+{
+	char buf[4096];
+	int i,sz = 0;
+	for (i=0; i < s; i++) {
+		sz += sprintf(buf+sz, "%02X ",a[i]);
+	}
+	log(11, "%s :%s\n", pref, buf);
+}
+#else
+void gar_print_buf(char *pref, unsigned char *a, int s) {}
+#endif
+
 void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h)
 {
 	log(l, "%s: %04d-%02d-%02d %02d:%02d:%02d\n",

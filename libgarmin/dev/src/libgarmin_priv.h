@@ -149,3 +149,4 @@ int gopen(struct gimg *g);
 int gclose(struct gimg *g);
 struct gobject *gar_get_subfile_object_byidx(struct gar_subfile *sub,
 				int sdidx, int oidx, int otype);
+void gar_print_buf(char *pref, unsigned char *a, int s);
