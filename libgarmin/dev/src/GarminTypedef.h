@@ -1,6 +1,7 @@
 /**********************************************************************************************
     Copyright (C) 2006, 2007 Oliver Eichler oliver.eichler@gmx.de
-
+    Copyright (C) 2008 Alexander Atanasov <aatanasov@gmail.com>
+    
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -74,8 +75,24 @@ struct hdr_subfile_part_t
 struct hdr_rgn_t
 {
 	struct hdr_subfile_part_t hsub;
-	u_int32_t offset;             ///< 0x00000015 .. 0x00000018
-	u_int32_t length;             ///< 0x00000019 .. 0x0000000C
+	u_int32_t offset;
+	u_int32_t length;
+	u_int32_t offset2;
+	u_int32_t length2;
+	u_int8_t  unknown2[8];
+	u_int8_t  unknown3[8];
+	u_int32_t unknown4;
+	u_int32_t offset3;
+	u_int32_t length3;
+	u_int8_t  unknown5[16];
+	u_int32_t unknown6;
+	u_int32_t offset4;
+	u_int32_t length4;
+	u_int8_t  unknown7[16];
+	u_int32_t unknown8;
+	u_int32_t offset5;
+	u_int32_t length5;
+	u_int32_t unknown9;
 } __attribute((packed));
 
 typedef u_int8_t u_int24_t[3];
