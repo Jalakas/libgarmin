@@ -874,7 +874,7 @@ int gar_load_subfiles(struct gimg *g)
 	log(4, "Have %d mapsets\n", nimgs);
 	if (!imgs)
 		return -1;
-	if (debug_level >= 7) {
+	if (gar_debug_level >= 7) {
 		for (rc = 0; rc < nimgs; rc++) {
 			strcpy(buf, imgs[rc]);
 			cp = strchr(buf, '.');
@@ -1032,7 +1032,7 @@ int gar_load_subfiles(struct gimg *g)
 			gar_load_subdivs_data(sub);
 			gar_init_srch(sub, 0);
 			gar_init_srch(sub, 1);
-			if (debug_level > 10) {
+			if (gar_debug_level > 10) {
 				if (sub->net) {
 	//				gar_net_parse_nod3(sub);
 					gar_load_roadnetwork(sub);

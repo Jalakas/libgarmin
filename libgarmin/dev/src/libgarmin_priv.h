@@ -8,10 +8,10 @@
 #define O_NOATIME 0
 #endif
 extern log_fn glogfn;
-extern int debug_level;
+extern int gar_debug_level;
 // #define glog(g, l, x ...)	g->logfn(__FILE__, __LINE__, l, ## x)
 #define log(l, x ...)	do {							\
-				if (l <= debug_level)				\
+				if (l <= gar_debug_level)				\
 					glogfn(__FILE__, __LINE__, l, ## x);	\
 			} while(0)
 

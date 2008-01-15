@@ -38,7 +38,7 @@
 #include "garmin_tdb.h"
 
 log_fn glogfn;
-int debug_level = 1;
+int gar_debug_level = 1;
 
 void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h)
 {
@@ -174,7 +174,7 @@ struct gar *gar_init_cfg(char *tbd, log_fn l, struct gar_config *cfg)
 		strcpy(modename, "Parser");
 	else if (gar->cfg.opm == OPM_DUMP)
 		strcpy(modename, "Data dumper");
-	debug_level = cfg->debuglevel;
+	gar_debug_level = cfg->debuglevel;
 	log(1, "%s initializing as %s\n", LIBVERSION, modename);
 	list_init(&gar->limgs);
 #if 0

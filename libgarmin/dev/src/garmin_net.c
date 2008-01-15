@@ -604,7 +604,7 @@ static struct gar_road *gar_parse_road(struct gar_subfile *sub, off_t offset)
 	rd->hnb = hnb;
 	rd->sai = sai;
 	rd->nod_offset = nodptr;
-	if (debug_level > 10) {
+	if (gar_debug_level > 10) {
 		o1 = glseek(gimg, 0, SEEK_CUR);
 		log(11, "read %ld roadptr %ld\n",  o1-o, offset);
 	}
@@ -646,7 +646,7 @@ int gar_load_roadnetwork(struct gar_subfile *sub)
 		log(11, "lblidx %d roadptr %d\n", lblidx, roadptr);
 		ri = gar_parse_road(sub, roadptr);
 		if (ri) {
-			if (debug_level > 10) 
+			if (gar_debug_level > 10) 
 				gar_log_road_info(sub, ri);
 			gar_add_road(sub->net, ri);
 			p++;
