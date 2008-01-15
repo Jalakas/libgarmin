@@ -50,7 +50,7 @@ void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h)
 static void inline gcheckfd(struct gimg *g)
 {
 	if (g->fd == -1) {
-		g->fd = open(g->file, O_RDONLY|O_NOATIME);
+		g->fd = open(g->file, OPENFLAGS);
 		if (g->fd < 0) {
 			log(1, "Error can not open:[%s] errno=%d(%s)\n",
 				g->file, errno, strerror(errno));
@@ -61,7 +61,7 @@ static void inline gcheckfd(struct gimg *g)
 int gopen(struct gimg *g)
 {
 	if (g->fd == -1)
-		g->fd = open(g->file, O_RDONLY);
+		g->fd = open(g->file, OPENFLAGS);
 	return g->fd;
 }
 
@@ -321,7 +321,7 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 
 	g->tdbbasemap = tdbbase;
 	g->file = strdup(file);
-	g->fd = open(file, O_RDONLY);
+	g->fd = open(file, OPENFLAGS);
 	if (g->fd < 0) {
 		log(1, "Can not open file: [%s] errno=%d(%s)\n", 
 				g->file, errno, strerror(errno));
@@ -364,7 +364,7 @@ static int gar_is_gmapsupp(char *file)
 	struct hdr_img_t hdr;
 	unsigned char xor;
 	unsigned char *cp;
-	fd = open(file, O_RDONLY);
+	fd = open(file, OPENFLAGS);
 	if (fd < 0)
 		return -1;
 	rc = read(fd, &hdr, sizeof(struct hdr_img_t));

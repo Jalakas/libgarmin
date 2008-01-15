@@ -7,6 +7,11 @@
 #ifndef O_NOATIME
 #define O_NOATIME 0
 #endif
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+#define OPENFLAGS (O_RDONLY|O_NOATIME|O_BINARY)
+
 extern log_fn glogfn;
 extern int gar_debug_level;
 // #define glog(g, l, x ...)	g->logfn(__FILE__, __LINE__, l, ## x)

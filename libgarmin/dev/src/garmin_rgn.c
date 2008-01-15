@@ -509,7 +509,7 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 		if (!cp)
 			return -1;
 		sprintf(cp+1, "%s.MLD", sub->mapid);
-		efd = open(buf, O_RDONLY|O_NOATIME);
+		efd = open(buf, OPENFLAGS);
 		if (efd < 0)
 			return -1;
 	}
