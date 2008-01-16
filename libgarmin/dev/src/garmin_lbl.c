@@ -159,6 +159,60 @@ static int gar_lbl_decode10(struct bspfd *bp, u_int8_t *out, ssize_t len)
 	return gar_lbl_decode8(bp, out, len);
 }
 
+static int gar_lbl_decode16(struct bspfd *bp, u_int8_t *out, ssize_t len)
+{
+	int c, sz = 0;
+	unsigned char *cp = out;
+	char d[64];
+	int i;
+//	*(cp+sz) = '\0';
+//	return sz;
+
+	while ((c = bsp_fd_get_bits(bp,8)) > -1) {
+#if 0
+		if (c == 0x1A) {
+			*cp++ = '$';
+			sz++;
+		} else if (c == 0x1B) {
+			*cp++ = '#';
+			sz++;
+		} else if (c == 0x1C) {
+			*cp++ = '~';
+			sz++;
+		} else if (c == 0x1D) {	// delimiter for formal name
+			*cp++ = '|';
+			sz++;
+		} else if (c == 0x1E) {
+			*cp++ = '_';	// hide previous symbols
+			sz++;
+		} else if (c == 0x1F) {
+			*cp++ = '^';	// hide next symbols
+			sz++;
+		} else if (c>= 0x01 && c<=0x06) {
+			*cp++ = '@';
+			sz++;
+		} else {
+			*cp++ = c;
+			sz ++;
+		}
+#endif
+/*		*cp++ = c>>8;
+		sz++;
+		if (sz >=len-1)
+			break;
+		*cp++ = c&0xff;
+		sz++;
+		*/
+		sz += snprintf(cp+sz, len-sz, "%02x", c);
+		if (sz >=len-1 || sz > 64)
+			break;
+		if (c == 1)
+			break;
+	}
+	*(cp+sz) = '\0';
+	return sz;
+}
+
 static struct gar_lbl_t *gar_alloc_lbl(void)
 {
 	return calloc(1, sizeof(struct gar_lbl_t));
@@ -282,6 +336,11 @@ int gar_init_lbl(struct gar_subfile *sub)
 			l->decode = gar_lbl_decode10;
 			l->bits = 0x0a;
 			break;
+		case 0x0B:
+			log(11,"LBL: Uses ???0bbit coding\n");
+			l->decode = gar_lbl_decode16;
+			l->bits = 0x0b;
+			break;
 		default:
 			log(1,"LBL: %02X unknown coding\n",lbl.coding);
 			break;
@@ -295,7 +354,7 @@ int gar_init_lbl(struct gar_subfile *sub)
 			sprintf(l->codepage,"ascii");
 		log(11,"LBL: Uses %s encoding:%d\n", l->codepage,lbl.codepage);
 	}
-	l->offset = off;
+	l->offset = gar_subfile_baseoffset(sub, "LBL");//off;
 	l->lbl1off = lbl.lbl1_offset;
 	l->lbl1size = lbl.lbl1_length;
 	l->lbl6off = lbl.lbl6_offset;
@@ -358,10 +417,12 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		log(1, "LBL: Can not read header\n");
 		goto outerr;
 	}
+
+	off = gar_subfile_baseoffset(sub, "LBL");
 	off1 = off;
 	if (what == 0) {
 		nc = lbl.lbl2_length/lbl.lbl2_rec_size;
-		log(1, "%d countries defined\n", nc);
+		log(1, "%d countries defined %d\n", nc,lbl.lbl2_length);
 		if (!nc)
 			goto out;
 		sub->countries = calloc(nc + 1, sizeof(char *));
@@ -397,7 +458,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 			log(15, "LBL: CNT[%d] off=%03lX [%s]\n", idx, off, buf);
 			sub->countries[idx] = strdup(buf);
 			idx++;
-			cp += 3;
+			cp += lbl.lbl2_rec_size;
 		}
 		sub->ccount = idx;
 		free(rb);

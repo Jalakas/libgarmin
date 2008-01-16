@@ -14,3 +14,4 @@ char **gar_file_get_subfiles(struct gimg *g, int *count, const char *subext);
 struct fat_entry *gar_fat_get_fe_by_name(struct gimg *g, char *name);
 ssize_t gar_file_offset(struct gimg *g, char *file);
 int gar_fat_add_file(struct gimg *g, char *name, off_t offset);
+ssize_t gar_subfile_baseoffset(struct gar_subfile *sub, char *ext);
