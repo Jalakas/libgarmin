@@ -603,7 +603,6 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 			gp->c.x += gsub->icenterlng;
 			gp->c.y += gsub->icenterlat;
 			gp->n = pi++;
-			j = 1;
 			if (gp->c.x < gsub->west || gp->c.x > gsub->east) {
 				log(10, "Point[%d] out of bonds: %f, west=%f, east=%f\n",
 					gp->n,
@@ -618,6 +617,7 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 					GARDEG(gsub->north));
 				j = 0;
 			}
+			j = 1;
 			if (j) {
 				gp->subdiv = gsub;
 				ga_append(&gsub->pois, gp);
@@ -639,7 +639,6 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 			gp->c.x += gsub->icenterlng;
 			gp->c.y += gsub->icenterlat;
 			gp->n = poii++;
-			j = 1;
 			if (gp->c.x < gsub->west || gp->c.x > gsub->east) {
 				log(1, "Poi[%d] out of bonds: %f, west=%f, east=%f\n",
 				gp->n,
@@ -654,6 +653,7 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 					GARDEG(gsub->north));
 				j = 0;
 			}
+			j = 1;
 			if (j) {
 				gp->subdiv = gsub;
 				ga_append(&gsub->points, gp);
