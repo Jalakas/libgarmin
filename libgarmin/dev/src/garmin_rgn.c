@@ -48,7 +48,7 @@ static int gar_load_points_overview(struct gar_subfile *sub, struct hdr_tre_t *t
 		log(11, "No polygon overview records\n");
 		return 0;
 	}
-	off = gar_subfile_offset(sub, "TRE");
+	off = gar_subfile_baseoffset(sub, "TRE");
 	off += tre->tre6_offset;
 	if (glseek(g, off, SEEK_SET) != off) {
 		log(1, "Error can not seek to %zd\n", off);
@@ -105,7 +105,7 @@ static int gar_load_polygons_overview(struct gar_subfile *sub, struct hdr_tre_t 
 		log(11, "No polygon overview records\n");
 		return 0;
 	}
-	off = gar_subfile_offset(sub, "TRE");
+	off = gar_subfile_baseoffset(sub, "TRE");
 	off += tre->tre5_offset;
 	if (glseek(g, off, SEEK_SET) != off) {
 		log(1, "Error can not seek to %zd\n", off);
@@ -162,10 +162,10 @@ static int gar_load_polylines_overview(struct gar_subfile *sub, struct hdr_tre_t
 		log(11, "No polylines overview records\n");
 		return 0;
 	}
-	off = gar_subfile_offset(sub, "TRE");
+	off = gar_subfile_baseoffset(sub, "TRE");
 	off += tre->tre4_offset;
 	if (glseek(g, off, SEEK_SET) != off) {
-		log(1, "Error can not seek to %zd\n", off);
+		log(1, "Error can not seek to %zd off=%d size=%d\n", off, tre->tre4_offset, tre->tre4_size);
 		return -1;
 	}
 	rc = tre->tre4_size/tre->tre4_rec_size;
@@ -337,7 +337,11 @@ static ssize_t gar_get_rgnoff(struct gar_subfile *sub, ssize_t *l)
 			return 0;
 		}
 		*l = rgnhdr.length;
-		log(11, "rgn header len: %d\n",rgnhdr.hsub.length);
+		log(11, "rgn header len: %d s=%d\n",rgnhdr.hsub.length - sizeof(rgnhdr.hsub),  sizeof(rgnhdr)- sizeof(rgnhdr.hsub));
+		log(11, "o2:%x %x\n",rgnhdr.offset2, rgnhdr.length2);
+		log(11, "o3:%x %x\n",rgnhdr.offset3, rgnhdr.length3);
+		log(11, "o4:%x %x\n",rgnhdr.offset4, rgnhdr.length4);
+		log(11, "o5:%x %x\n",rgnhdr.offset5, rgnhdr.length5);
 		return rgnoff+rgnhdr.offset;
 	}
 	return 0;
@@ -434,7 +438,7 @@ static int gar_load_subdivs(struct gar_subfile *sub, struct hdr_tre_t *tre)
 	int last = 0;
 	struct gimg *g = sub->gimg;
 
-	off = gar_subfile_offset(sub, "TRE");
+	off = gar_subfile_baseoffset(sub, "TRE");
 	off += tre->tre2_offset;
 	if (glseek(g, off, SEEK_SET) != off) {
 		log(1, "Error can not seek to %zd\n", off);

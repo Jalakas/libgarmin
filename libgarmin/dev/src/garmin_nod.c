@@ -282,7 +282,7 @@ struct gar_nod_info *gar_init_nod(struct gar_subfile *sub)
 	n = malloc(sizeof(*n));
 	if (!n)
 		return n;
-	n->nodoff = off;
+	n->nodoff = gar_subfile_baseoffset(sub, "NOD");//off;
 	n->nod1_offset = nod.nod1offset;
 	n->nod1_length = nod.nod1length;
 	n->cpalign = nod.cpalign;

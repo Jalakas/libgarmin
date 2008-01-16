@@ -83,7 +83,7 @@ int gar_init_net(struct gar_subfile *sub)
 	ni = malloc(sizeof(*ni));
 	if (!ni)
 		return -1;
-	ni->netoff = off;
+	ni->netoff = gar_subfile_baseoffset(sub, "NET");//off;
 	ni->net1_offset = net.net1_offset;
 	ni->net1_length = net.net1_length;
 	ni->net1_addr_shift = net.net1_addr_shift;
