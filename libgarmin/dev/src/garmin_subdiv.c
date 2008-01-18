@@ -404,7 +404,7 @@ static void gar_free_point(struct gpoint *gp)
 	free(gp);
 }
 
-static int gar_parse_point(u_int8_t *dp, struct gpoint **ret, int forcest)
+static int gar_parse_point(u_int8_t *dp, struct gpoint **ret)
 {
 	struct gpoint *gp;
 	u_int32_t i;
@@ -417,9 +417,7 @@ static int gar_parse_point(u_int8_t *dp, struct gpoint **ret, int forcest)
 	dp++;
 	i = *(u_int32_t *)dp;
 	i &= 0x00FFFFFF;
-	if (1||forcest) {
-		gp->has_subtype = !!(i & 0x800000);
-	}
+	gp->has_subtype = !!(i & 0x800000);
 	gp->is_poi = !!(i & 0x400000);
 	gp->lbloffset = i & 0x3FFFFF;
 	dp+=3;
@@ -431,9 +429,6 @@ static int gar_parse_point(u_int8_t *dp, struct gpoint **ret, int forcest)
 	gp->c.y = SIGN2B(gp->c.y);
 	if (gp->has_subtype) {
 		gp->subtype = *dp;
-		if (!forcest && gp->has_subtype)
-			log(1, "Point w/ type:%02X subtype:%02X?!?!\n",gp->type,gp->subtype);
-
 		*ret = gp;
 		return 9;
 	}
@@ -468,13 +463,6 @@ void gar_free_subdiv_data(struct gar_subdiv *gsd)
 	struct gpoint *gp;
 	struct gpoly  *gl;
 
-	cnt = ga_get_count(&gsd->pois);
-	for (i=0; i < cnt; i++) {
-		gp = ga_get(&gsd->pois, i);
-		if  (gp)
-			gar_free_point(gp);
-	}
-	ga_empty(&gsd->pois);
 	cnt = ga_get_count(&gsd->points);
 	for (i=0; i < cnt; i++) {
 		gp = ga_get(&gsd->points, i);
@@ -510,7 +498,7 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 	u_int32_t opnt = 0, oidx = 0, opline = 0, opgon = 0;
 	struct gimg *g = sub->gimg;
 	struct gpoint *gp;
-	u_int32_t pgi = 1, pli = 1, pi = 1, poii = 1;
+	u_int32_t pgi = 1, pli = 1, pi = 1;
 
 	// FIXME: Index for an empty subdiv?
 	if (gsub->rgn_start == gsub->rgn_end)
@@ -549,7 +537,15 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 		return -1;
 	}
 #endif
-	// FIXME: Rename the variables opnt<->oindx
+	/*
+	 * JM's doc is wrong about points / indexed points.
+	 * There are two blocks of points, where each point can have subtype.
+	 * Why? Alignment? Allow only first 255 to be accessed from indeces?
+	 * To be investigated.
+	 * But in the maps i have to get the indexes right
+	 * they should be in one array.
+	 */
+
 	if (gsub->haspoints) {
 		opnt = (objcnt - 1) * sizeof(u_int16_t);
 	}
@@ -597,7 +593,7 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 		i = 0;
 		while (d < e) {
 			// decode one pnt
-			rc = gar_parse_point(d, &gp, 1);
+			rc = gar_parse_point(d, &gp);
 			gp->c.x <<= gsub->shift;
 			gp->c.y <<= gsub->shift;
 			gp->c.x += gsub->icenterlng;
@@ -620,7 +616,7 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 			j = 1;
 			if (j) {
 				gp->subdiv = gsub;
-				ga_append(&gsub->pois, gp);
+				ga_append(&gsub->points, gp);
 				dmp_lbl(sub, gp->lbloffset, L_LBL);
 			} else {
 				free(gp);
@@ -633,12 +629,12 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 		e = data + (opline ? opline : opgon ? opgon : rsize);
 		i = 0;
 		while (d < e) {
-			rc = gar_parse_point(d, &gp, 1);
+			rc = gar_parse_point(d, &gp);
 			gp->c.x <<= gsub->shift;
 			gp->c.y <<= gsub->shift;
 			gp->c.x += gsub->icenterlng;
 			gp->c.y += gsub->icenterlat;
-			gp->n = poii++;
+			gp->n = pi++;
 			if (gp->c.x < gsub->west || gp->c.x > gsub->east) {
 				log(1, "Poi[%d] out of bonds: %f, west=%f, east=%f\n",
 				gp->n,
@@ -717,9 +713,19 @@ out:
 	free(data);
 	gsub->loaded = 1;
 	ga_trim(&gsub->points);
-	ga_trim(&gsub->pois);
 	ga_trim(&gsub->polylines);
 	ga_trim(&gsub->polygons);
+#if 0
+	if (gar_debug_level > 10) {
+		int size;
+		size = ga_get_count(&gsub->points);
+		log(1, "points:%d\n", size);
+		size = ga_get_count(&gsub->polylines);
+		log(1, "lines:%d\n", size);
+		size = ga_get_count(&gsub->polygons);
+		log(1, "polys:%d\n", size);
+	}
+#endif
 	return objcnt;
 }
 

@@ -38,7 +38,6 @@ static void gar_ref_subdiv(struct gobject *o)
 
 	switch (o->type) {
 		case GO_POINT:
-		case GO_POI:
 			gp = o->gptr;
 			sd = gp->subdiv;
 			break;
@@ -62,7 +61,6 @@ static void gar_unref_subdiv(struct gobject *o)
 
 	switch (o->type) {
 		case GO_POINT:
-		case GO_POI:
 			gp = o->gptr;
 			sd = gp->subdiv;
 			break;
@@ -240,21 +238,6 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 					o = first = p;
 				objs++;
 			}
-			cnt = ga_get_count(&gsd->pois);
-			for (i=0; i < cnt; i++) {
-				gp = ga_get(&gsd->pois, i);
-				if (!gar_is_point_visible(gsub, level, gp))
-					continue;
-				p = gar_alloc_object(GO_POI, gp);
-				if (!p)
-					goto out_err;
-				if (first) {
-					o->next = p;
-					o = p; 
-				} else
-					o = first = p;
-				objs++;
-			}
 		}
 	}
 
@@ -338,9 +321,6 @@ struct gobject *gar_get_subfile_object_byidx(struct gar_subfile *sub,
 			case GO_POINT:
 				obj = ga_get_abs(&sd->points, oidx);
 				goto out;
-			case GO_POI:
-				obj = ga_get_abs(&sd->pois, oidx);
-				goto out;
 			case GO_POLYLINE:
 				obj = ga_get_abs(&sd->polylines, oidx);
 				goto out;
@@ -368,8 +348,8 @@ out:
 			log(1, "Can not find idx:%d sdidx:%d, have maxidx:%d\n",
 						oidx, sdidx, size);
 		}
-		if (otype == GO_POI) {
-			int size = ga_get_count(&sd->pois);
+		if (otype == GO_POINT) {
+			int size = ga_get_count(&sd->points);
 			log(1, "Can not find idx:%d sdidx:%d, have maxidx:%d\n",
 						oidx, sdidx, size);
 		}
@@ -446,13 +426,6 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr)
 						gp = ga_get(&gsd->points, k);
 						if (gp == ptr) {
 							return gar_alloc_object(GO_POINT, gp);
-						}
-					}
-					cnt = ga_get_count(&gsd->pois);
-					for (k=0; k < cnt; k++) {
-						gp = ga_get(&gsd->pois, k);
-						if (gp == ptr) {
-							return gar_alloc_object(GO_POI, gp);
 						}
 					}
 				}
@@ -735,13 +708,18 @@ nextlvl:
 	return objs;
 }
 
-u_int8_t gar_obj_type(struct gobject *o)
+u_int16_t gar_obj_type(struct gobject *o)
 {
-	u_int8_t ret = 0;
+	u_int16_t ret = 0;
 	switch (o->type) {
 	case GO_POINT:
-	case GO_POI:
-		ret = ((struct gpoint *)o->gptr)->type;
+		{
+		struct gpoint *point;
+		point = o->gptr;
+		if (point->has_subtype)
+			ret |= point->subtype;
+		ret |= point->type << 8;
+		}
 		break;
 	case GO_POLYLINE:
 	case GO_POLYGON:
@@ -760,7 +738,6 @@ int gar_get_object_position(struct gobject *o, struct gcoord *ret)
 {
 	switch (o->type) {
 	case GO_POINT:
-	case GO_POI:
 		ret->x = ((struct gpoint *)o->gptr)->c.x;
 		ret->y = ((struct gpoint *)o->gptr)->c.y;
 		return 1;
@@ -778,7 +755,7 @@ int gar_get_object_position(struct gobject *o, struct gcoord *ret)
 int gar_get_object_deltas(struct gobject *o)
 {
 	struct gpoly *gp;
-	if  (o->type == GO_POINT || o->type == GO_POI)
+	if  (o->type == GO_POINT)
 		return 0;
 	gp = o->gptr;
 	if (gp->valid)
@@ -790,7 +767,7 @@ int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 {
 	struct gpoint *gp;
 	struct gpoly *gl = NULL;
-	if  (o->type == GO_POINT || o->type == GO_POI) {
+	if  (o->type == GO_POINT) {
 		gp = o->gptr;
 		ret->x = gp->c.x;
 		ret->y = gp->c.y;
@@ -831,7 +808,7 @@ int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 int gar_get_object_dcoord(struct gmap *gm, struct gobject *o, int ndelta, struct gcoord *ret)
 {
 	struct gpoly *gp;
-	if  (o->type == GO_POINT || o->type == GO_POI)
+	if  (o->type == GO_POINT)
 		return 0;
 	gp = o->gptr;
 	if (ndelta < gp->npoints) {
@@ -844,7 +821,7 @@ int gar_get_object_dcoord(struct gmap *gm, struct gobject *o, int ndelta, struct
 int gar_is_object_dcoord_node(struct gmap *gm, struct gobject *o, int ndelta)
 {
 	struct gpoly *gp;
-	if  (o->type == GO_POINT || o->type == GO_POI)
+	if  (o->type == GO_POINT)
 		return 0;
 	gp = o->gptr;
 	if (gp->nodemap && ndelta < gp->npoints) {
@@ -865,7 +842,6 @@ char *gar_get_object_lbl(struct gobject *o)
 
 	type = L_LBL;
 	switch (o->type) {
-	case GO_POI:
 	case GO_POINT:
 		gp = o->gptr;
 		if (gp->is_poi)
@@ -929,7 +905,6 @@ int gar_object_subtype(struct gobject *o)
 	u_int8_t ret = 0;
 	switch (o->type) {
 	case GO_POINT:
-	case GO_POI:
 		poi = o->gptr;
 		if (poi->has_subtype)
 			ret = poi->subtype;
@@ -948,7 +923,6 @@ int gar_object_mapid(struct gobject *o)
 	struct gar_subdiv *sd = NULL;
 	switch (o->type) {
 	case GO_POINT:
-	case GO_POI:
 		sd = ((struct gpoint *)o->gptr)->subdiv;
 		break;
 	case GO_POLYLINE:
@@ -971,7 +945,6 @@ int gar_object_flags(struct gobject *o)
 	struct gpoly *gp;
 	switch (o->type) {
 	case GO_POINT:
-	case GO_POI:
 	case GO_POLYGON:
 		break;
 	case GO_POLYLINE:
@@ -991,7 +964,6 @@ int gar_object_index(struct gobject *o)
 {
 	switch (o->type) {
 	case GO_POINT:
-	case GO_POI:
 		{
 			struct gpoint *pt;
 			pt = o->gptr;
@@ -1043,7 +1015,6 @@ char *gar_object_debug_str(struct gobject *o)
 	*extra = '\0';
 	switch (o->type) {
 	case GO_POINT:
-	case GO_POI:
 		gp = o->gptr;
 		type = gp->type << 8 | gp->subtype;
 		c = gp->c;

@@ -216,9 +216,8 @@ static int gar_load_ml_subdata(struct gar_subfile *sub, struct gar_maplevel *ml)
 		gsub = ga_get(&ml->subdivs, c);
 		if (gar_load_subdiv_data(sub, gsub)<0)
 			return -1;
-		log(13, "Points: %d POIs: %d Lines:%d Polys:%d\n",
+		log(13, "Points: %d Lines:%d Polys:%d\n",
 			ga_get_count(&gsub->points),
-			ga_get_count(&gsub->pois),
 			ga_get_count(&gsub->polylines),
 			ga_get_count(&gsub->polygons));
 		if (sub->gimg->gar->cfg.opm == OPM_PARSE) {
@@ -293,10 +292,9 @@ static struct gar_subdiv *gar_subdiv_alloc(struct gar_subfile *subf)
 {
 	struct gar_subdiv *gsub = calloc(1, sizeof(*gsub));
 	if (gsub) {
-		ga_init(&gsub->points, 1, 128);
-		ga_init(&gsub->pois, 1, 128);
-		ga_init(&gsub->polylines, 1, 128);
-		ga_init(&gsub->polygons, 1, 128);
+		ga_init(&gsub->points, 1, 32);
+		ga_init(&gsub->polylines, 1, 32);
+		ga_init(&gsub->polygons, 1, 32);
 		gsub->subfile = subf;
 	}
 	return gsub;
@@ -313,7 +311,6 @@ static void gar_subdiv_free(struct gar_subdiv *sd)
 		gar_free_subdiv_data(sd);
 	}
 	ga_free(&sd->points);
-	ga_free(&sd->pois);
 	ga_free(&sd->polylines);
 	ga_free(&sd->polygons);
 	free(sd);

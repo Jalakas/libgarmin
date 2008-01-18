@@ -642,7 +642,7 @@ pois:
 			si = of >> 8;
 			id = of & 0xff;
 			log(11, "%d: type:%d sdidx:%d idx:%d %x\n", idx, *(u_int8_t *)(rec+3),si,id, *(int *)rec);
-			o = gar_get_subfile_object_byidx(sub, si, id, GO_POI);
+			o = gar_get_subfile_object_byidx(sub, si, id, GO_POINT);
 			if (o) {
 				char *cp = gar_object_debug_str(o);
 				if (cp) {
@@ -661,20 +661,6 @@ pois:
 				}
 				gar_free_objects(o);
 			} else {
-				o = gar_get_subfile_object_byidx(sub, si, id, GO_POINT);
-				if (o) {
-					char *cp = gar_object_debug_str(o);
-					if (cp) {
-						log(11, "point:%s\n", cp);
-						free(cp);
-						cp = gar_get_object_lbl(o);
-						if (cp) {
-							log(11, "point:%s\n", cp);
-							free(cp);
-						}
-					}
-					gar_free_objects(o);
-				} else
 					log(11, "not found\n");
 			}
 			idx+=lbl.lbl5_rec_size;
@@ -780,9 +766,26 @@ void gar_log_poi_properties(struct gar_subfile *sub, struct gar_poi_properties *
 		p->flags, p->lbloff, p->number?:"", p->cityidx,
 		p->zipidx, p->phone?:"");
 	if (p->flags&POI_CITY) {
-		if (p->cityidx < sub->cicount)
-			log(11, "POI: city=%s\n", sub->cities[p->cityidx]->label);
-		else
+		if (p->cityidx < sub->cicount) {
+			if (sub->cities[p->cityidx]->label) {
+				log(11, "POI: city=%s\n", sub->cities[p->cityidx]->label);
+			} else {
+				struct gobject *o;
+				o = gar_get_subfile_object_byidx(sub,
+				sub->cities[p->cityidx]->subdiv_idx, 
+				sub->cities[p->cityidx]->point_idx, 
+				GO_POINT);
+				if (o) {
+					char *l;
+					l = gar_get_object_lbl(o);
+					if (l) {
+						log(11, "POI: city=%s\n", l);
+						free(l);
+					}
+					gar_free_objects(o);
+				}
+			}
+		} else
 			log(11, "POI: invalid cityidx\n");
 	}
 	if (p->flags&POI_ZIP) {
@@ -828,7 +831,7 @@ static int gar_decode_base11(unsigned char *cp, char *out, int l)
 			else if (b!=10)
 				sz += sprintf(out+sz, " %d", b);
 			else
-				sz += sprintf(out+sz, "  ");
+				sz += sprintf(out+sz, " ");
 		}
 		if (sz >= l-3)
 			break;

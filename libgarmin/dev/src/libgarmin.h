@@ -59,7 +59,8 @@ struct gar_search {
 };
 
 #define GO_POINT	1
-#define GO_POI 		2
+// GO_POI is now unused leave for compat
+#define GO_POI 		1
 #define GO_POLYLINE	3
 #define GO_POLYGON	4
 #define GO_ROAD		5
@@ -136,7 +137,7 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr);
 int gar_get_objects(struct gmap *gm, int level, void *select, 
 			struct gobject **ret, int flags);
 void gar_free_objects(struct gobject *g);
-u_int8_t gar_obj_type(struct gobject *o);
+u_int16_t gar_obj_type(struct gobject *o);
 int gar_get_object_position(struct gobject *o, struct gcoord *ret);
 int gar_object_subtype(struct gobject *o);
 int gar_get_object_dcoord(struct gmap *gm, struct gobject *o, int ndelta, struct gcoord *ret);

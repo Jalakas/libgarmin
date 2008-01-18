@@ -122,7 +122,6 @@ static int inline gar_get_obj_prio(struct gobject *o, struct gar_objdraworder *o
 	int objid = -1;
 	switch (o->type) {
 		case GO_POINT:
-		case GO_POI:
 			objid = ((struct gpoint *)o->gptr)->type;
 			break;
 		case GO_POLYLINE:
