@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include "libgarmin.h"
 #include "libgarmin_priv.h"
+#include "garmin_fat.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -11,9 +12,13 @@
 struct hdr_mdr_t
 {
 	struct hdr_subfile_part_t hsub;
-	u_int32_t offset1;	// some kind of header
-	u_int32_t length1;
+	u_int32_t hdr1;	// some kind of header
+	u_int32_t hdr2;
 	////////////////////
+	u_int32_t offset1;
+	u_int32_t length1;
+	u_int16_t unknown11;
+	u_int32_t unknown12;
 	u_int32_t offset2;
 	u_int32_t length2;
 	u_int16_t unknown21;
@@ -48,45 +53,42 @@ struct hdr_mdr_t
 	u_int32_t unknown92;
 	u_int32_t offset10;
 	u_int32_t length10;
-	u_int16_t unknown101;
-	u_int32_t unknown102;
+
+	u_int32_t unknown101;
+
 	u_int32_t offset11;
 	u_int32_t length11;
-	u_int32_t unknown111;
+	u_int16_t unknown111;
+	u_int32_t unknown112;
+
 	u_int32_t offset12;
 	u_int32_t length12;
-	u_int32_t unknown121;
-	u_int16_t unknown122;
+	u_int16_t unknown121;
+	u_int32_t unknown122;
+
 	u_int32_t offset13;
 	u_int32_t length13;
-	u_int32_t unknown131;
-	u_int16_t unknown132;
+	u_int16_t unknown131;
+	u_int32_t unknown132;
+	
 	u_int32_t offset14;
 	u_int32_t length14;
-	u_int32_t unknown141;
-	u_int16_t unknown142;
+	u_int16_t unknown141;
+	u_int32_t unknown142;
+
 	u_int32_t offset15;
 	u_int32_t length15;
-	u_int32_t unknown151;
-	u_int16_t unknown152;
+	u_int8_t unknown151;
+
 	u_int32_t offset16;
 	u_int32_t length16;
-//	u_int32_t unknown161;
-//	u_int16_t unknown162;
-	///////////////
-//	u_int8_t unknownbl1[8];
-/* 4	u_int32_t offset17;
-   4	u_int32_t length17;
-   4	u_int32_t unknown171;
-   2	u_int16_t unknown172; */
-	u_int32_t offset18;
-	u_int32_t length18;
-	u_int32_t unknown181;
-	u_int8_t unknown182;
-	u_int32_t offset19;
-	u_int32_t length19;
-	u_int32_t unknown191;
-	u_int16_t unknown192;
+	u_int16_t unknown161;
+	u_int32_t unknown162;
+
+	u_int32_t offset17;
+	u_int32_t length17;
+	u_int16_t unknown171;
+	u_int32_t unknown172;
 	u_int32_t offset20;
 	u_int32_t length20;
 	u_int32_t unknown201;
@@ -117,28 +119,28 @@ struct hdr_mdr_t
 	u_int16_t unknown262;
 	u_int32_t offset27;
 	u_int32_t length27;
-	u_int32_t unknown271;
-	u_int16_t unknown272;
+	u_int16_t unknown271;
+	u_int32_t unknown272;
 	u_int32_t offset28;
 	u_int32_t length28;
-	u_int32_t unknown281;
-	u_int16_t unknown282;
+	u_int16_t unknown281;
+	u_int32_t unknown282;
 	u_int32_t offset29;
 	u_int32_t length29;
-	u_int32_t unknown291;
-	u_int16_t unknown292;
+	u_int16_t unknown291;
+	u_int32_t unknown292;
 	u_int32_t offset30;
 	u_int32_t length30;
-	u_int32_t unknown301;
-	u_int16_t unknown302;
+	u_int16_t unknown301;
+	u_int32_t unknown302;
 	u_int32_t offset31;
 	u_int32_t length31;
-	u_int32_t unknown311;
-	u_int16_t unknown312;
+	u_int16_t unknown311;
+	u_int32_t unknown312;
 	u_int32_t offset32;
 	u_int32_t length32;
-	u_int32_t unknown321;
-	u_int16_t unknown322;
+	u_int16_t unknown321;
+	u_int32_t unknown322;
 //	u_int8_t unknownbl21[8];
 	u_int32_t offset33;
 	u_int32_t length33;
@@ -151,39 +153,104 @@ struct hdr_mdr_t
 	u_int16_t unknown342; */
 	u_int32_t offset35;
 	u_int32_t length35;
-	u_int32_t unknown351;
-	u_int16_t unknown352;
+	u_int16_t unknown351;
+	u_int32_t unknown352;
 	u_int32_t offset36;
 	u_int32_t length36;
 	u_int32_t offset37;
 	u_int32_t length37;
-	u_int32_t unknown371;
-	u_int16_t unknown372;
+	u_int16_t unknown371;
+	u_int32_t unknown372;
 	u_int32_t offset38;
 	u_int32_t length38;
-	u_int32_t unknown381;
-	u_int16_t unknown382;
+	u_int16_t unknown381;
+	u_int32_t unknown382;
 	u_int32_t offset39;
 	u_int32_t length39;
-	u_int32_t unknown391;
-	u_int16_t unknown392;
+	u_int16_t unknown391;
+	u_int32_t unknown392;
 	u_int32_t offset40;
 	u_int32_t length40;
-	u_int32_t unknown401;
-	u_int16_t unknown402;
+	u_int16_t unknown401;
+	u_int32_t unknown402;
 	u_int32_t offset41;
 	u_int32_t length41;
-	u_int32_t unknown411;
-	u_int16_t unknown412;
+	u_int16_t unknown411;
+	u_int32_t unknown412;
 	// len = 568
-	
 } __attribute((packed));
+
+static void print_buf(char *pref, unsigned char *a, int s)
+{
+	char buf[4096];
+	int i,sz = 0;
+	for (i=0; i < s; i++) {
+		sz += sprintf(buf+sz, "%02X ",a[i]);
+	}
+	log(1, "%s :%s\n", pref, buf);
+}
+
+static int gar_log_cstrings(struct gimg *g, u_int32_t base, u_int32_t offset, u_int32_t len)
+{
+	int i = 0, rc, sz = 0, bp = 0;
+	off_t off = base+offset;
+	unsigned char buf[1024];
+	int dl = gar_debug_level;
+	char pref[10];
+	if (glseek(g, off, SEEK_SET) != off) {
+		log(1, "Error seeking to %zd\n", off);
+		return -1;
+	}
+	sprintf(pref, "lbl");
+	do {
+		rc = gread(g, buf + bp, sizeof(buf) - bp);
+		print_buf(pref, buf, rc);
+//		log(1, "STR:[%s] len:[%d]\n", buf, strlen(buf));
+//		memmove(buf, buf + strlen(buf) + 1, strlen(buf));
+//		bp = 
+		i++;
+		sz += rc;
+	} while (sz < len);
+	log(1, "Done %d len:%d rs:%d\n",i);
+	return i;
+	
+}
+
+static int gar_log_recs(struct gimg *g, u_int32_t base, u_int32_t offset,
+		u_int32_t len, u_int16_t recsize)
+{
+	int i,rc;
+	off_t off = base+offset;
+	unsigned char buf[recsize];
+	int dl = gar_debug_level;
+	char pref[10];
+	if (!len)
+		return;
+	gar_debug_level = 13;
+	if (glseek(g, off, SEEK_SET) != off) {
+		log(1, "Error seeking to %zd\n", off);
+		return -1;
+	}
+	for (i=0; i < len/recsize; i++) {
+		rc = gread(g, buf, recsize);
+		if (rc != recsize) {
+			log(1, "Error reading record %d\n", i);
+		}
+		sprintf(pref, "%d", i);
+		print_buf(pref, buf, recsize);
+	}
+	gar_debug_level = dl;
+	log(1, "Done %d len:%d rs:%d\n",i, len, recsize);
+	return i;
+	
+}
 
 static int gar_read_mdr(struct gimg *g, char *file)
 {
 	int rc;
 	struct hdr_mdr_t mdr;
 	ssize_t off = gar_file_offset(g, file);
+
 	if (glseek(g, off, SEEK_SET) != off) {
 		log(1, "Error seeking to %zd\n", off);
 		return -1;
@@ -193,26 +260,58 @@ static int gar_read_mdr(struct gimg *g, char *file)
 		log(1, "Error reading MDR header\n");
 		return -1;
 	}
+
 	log(1, "HDR len =%d our=%d\n", mdr.hsub.length, sizeof(mdr));
-	log(1, "o1: %x %d\n", mdr.offset1, mdr.length1);
+	log(1, "hdr: %x %x\n", mdr.hdr1, mdr.hdr2);
+	log(1, "o1: %d %d %d %d\n", mdr.offset1, mdr.length1, mdr.unknown11, mdr.unknown12);
+//	recsz ok
+//	gar_log_recs(g, off, mdr.offset1, mdr.length1, mdr.unknown11);
+	
 	log(1, "o2: %d %d %d %d\n", mdr.offset2, mdr.length2, mdr.unknown21, mdr.unknown22);
+
+	gar_log_recs(g, off, mdr.offset2, mdr.length2, mdr.unknown21);
+
 	log(1, "o3: %d %d %d %d\n", mdr.offset3, mdr.length3, mdr.unknown31, mdr.unknown32);
+	gar_log_recs(g, off, mdr.offset3, mdr.length3, mdr.unknown31);
+	
 	log(1, "o4: %d %d %d %d\n", mdr.offset4, mdr.length4, mdr.unknown41, mdr.unknown42);
+//	lots of ok
+///	gar_log_recs(g, off, mdr.offset4, mdr.length4, mdr.unknown41);
+
 	log(1, "o5: %d %d %d %d\n", mdr.offset5, mdr.length5, mdr.unknown51, mdr.unknown52);
+//	size = 13 ok
+//	gar_log_recs(g, off, mdr.offset5, mdr.length5, mdr.unknown51);
+
 	log(1, "o6: %d %d %d %d\n", mdr.offset6, mdr.length6, mdr.unknown61, mdr.unknown62);
+//	ok sz = 7
+//	gar_log_recs(g, off, mdr.offset6, mdr.length6, mdr.unknown61);
+
 	log(1, "o7: %d %d %d %d\n", mdr.offset7, mdr.length7, mdr.unknown71, mdr.unknown72);
+//	size  ok = 10
+//	gar_log_recs(g, off, mdr.offset7, mdr.length7, mdr.unknown71);
+
 	log(1, "o8: %d %d %d %d\n", mdr.offset8, mdr.length8, mdr.unknown81, mdr.unknown82);
+	gar_log_recs(g, off, mdr.offset8, mdr.length8, mdr.unknown81);
+
 	log(1, "o9: %d %d %d %d\n", mdr.offset9, mdr.length9, mdr.unknown91, mdr.unknown92);
-	log(1, "o10: %d %d %d %d\n", mdr.offset10, mdr.length10, mdr.unknown101, mdr.unknown102);
-	log(1, "o11: %d %d %d %d\n", mdr.offset11, mdr.length11, mdr.unknown111,mdr.unknown111);
-	log(1, "o12: %d %d\n", mdr.offset12, mdr.length12/*, mdr.unknown121, mdr.unknown122*/);
+//	ok sz 4
+//	gar_log_recs(g, off, mdr.offset9, mdr.length9, mdr.unknown91);
+
+	log(1, "o10: %d %d %d %d\n", mdr.offset10, mdr.length10, mdr.unknown101,mdr.unknown101);
+	log(1, "o11: %d %d %d %d\n", mdr.offset11, mdr.length11, mdr.unknown111, mdr.unknown112);
+//	size = 19 ??
+//	gar_log_recs(g, off, mdr.offset11, mdr.length11, mdr.unknown111);
+	log(1, "o12: %d %d %d %d\n", mdr.offset12, mdr.length12, mdr.unknown121, mdr.unknown122);
 	log(1, "o13: %d %d %d %d\n", mdr.offset13, mdr.length13, mdr.unknown131, mdr.unknown132);
 	log(1, "o14: %d %d %d %d\n", mdr.offset14, mdr.length14, mdr.unknown141, mdr.unknown142);
-	log(1, "o15: %d %d %d %d\n", mdr.offset15, mdr.length15, mdr.unknown151, mdr.unknown152);
-	log(1, "o16: %d %d\n", mdr.offset16, mdr.length16/*, mdr.unknown161, mdr.unknown162*/);
+//	size ok = 6
+//	gar_log_recs(g, off, mdr.offset14, mdr.length14, mdr.unknown141);
+	log(1, "o15: %d %d %d\n", mdr.offset15, mdr.length15, mdr.unknown151/*, mdr.unknown162*/);
+	gar_log_cstrings(g, off, mdr.offset15, mdr.length15);
+
 //	log(1, "o17: %x %x\n", mdr.offset17, mdr.length17);
-	log(1, "o18: %d %d %d %d\n", mdr.offset18, mdr.length18, mdr.unknown181, mdr.unknown182);
-	log(1, "o19: %d %d %d %d\n", mdr.offset19, mdr.length19, mdr.unknown191, mdr.unknown192);
+	log(1, "o16: %d %d %d %d\n", mdr.offset16, mdr.length16, mdr.unknown161, mdr.unknown162);
+	log(1, "o17: %d %d %d %d\n", mdr.offset17, mdr.length17, mdr.unknown171, mdr.unknown172);
 	log(1, "o20: %d %d %d %d\n", mdr.offset20, mdr.length20, mdr.unknown201, mdr.unknown202);
 	log(1, "o21: %d %d %d %d\n", mdr.offset21, mdr.length21, mdr.unknown211, mdr.unknown212);
 	log(1, "o22: %d %d %d %d\n", mdr.offset22, mdr.length22, mdr.unknown221, mdr.unknown222);

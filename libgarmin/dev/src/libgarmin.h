@@ -31,6 +31,7 @@ enum {
 	L_LBL,
 	L_NET,
 	L_POI,
+	L_MDR,
 };
 
 struct gcoord {

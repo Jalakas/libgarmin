@@ -79,6 +79,26 @@ ssize_t gar_file_offset(struct gimg *g, char *file)
 	return 0;
 }
 
+ssize_t gar_file_baseoffset(struct gimg *g, char *file)
+{
+	struct fat_entry *fe;
+
+	if (g->is_nt) {
+		list_for_entry(fe, &g->lfatfiles, l) {
+			if (strstr(fe->filename, "GMP"))
+				return fe->offset;
+		}
+		log(1, "Error no GMP\n");
+	}
+
+	list_for_entry(fe, &g->lfatfiles, l) {
+		if (!strcmp(fe->filename, file))
+			return fe->offset;
+	}
+
+	return 0;
+}
+
 ssize_t gar_subfile_offset(struct gar_subfile *sub, char *ext)
 {
 	struct fat_entry *fe;
