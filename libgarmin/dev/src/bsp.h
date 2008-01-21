@@ -19,6 +19,7 @@ struct bsp {
 void bsp_init(struct bsp *bp, u_int8_t *data, u_int32_t len);
 void bsp_fd_init(struct bspfd *bp, struct gimg *g);
 int bsp_fd_get_bits(struct bspfd *bp, int bits);
+int bsp_fd_get_bitsmsb(struct bspfd *bp, int bits);
 
 // LSB to MSB
 static int inline bsp_get_bits(struct bsp *bp, int bits)

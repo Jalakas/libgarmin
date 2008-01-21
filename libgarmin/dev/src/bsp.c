@@ -105,3 +105,53 @@ int bsp_fd_get_bits(struct bspfd *bp, int bits)
 	}
 	return ret;
 }
+
+//  LSB to msb FIXME
+int bsp_fd_get_bitsmsb(struct bspfd *bp, int bits)
+{
+	u_int32_t ret = 0;
+	int i;
+
+	if (!bp->datalen) {
+		if (bsp_fd_read(bp) < 0)
+			return -1;
+	}
+	if (bits > 32) {
+		log(1, "BSP: Error can not handle more than 32bits\n");
+		return -1;
+	}
+	if (!bp->datalen)
+		return -1;
+
+	if (bp->cb == bp->ep)
+		if (bsp_fd_read(bp) < 0)
+			return -1;
+	if (!bp->datalen)
+		return -1;
+	if (bits == 8 && bp->cbit == 7) {
+		ret = *bp->cb;
+		bp->cb++;
+		if (bp->cb == bp->ep) {
+			if (bsp_fd_read(bp) < 0)
+				return -1;
+			if (!bp->datalen)
+				return -1;
+		}
+		return ret;
+	}
+	for (i=0; i < bits; i++) {
+		if (bp->cbit < 0) {
+			bp->cbit = 7;
+			bp->cb++;
+		}
+		if (bp->cb == bp->ep) {
+			if (bsp_fd_read(bp) < 0)
+				return -1;
+			if (!bp->datalen)
+				return -1;
+		}
+		ret |= (!!(*bp->cb & (1<<bp->cbit))) << (bits - i - 1);
+		bp->cbit --;
+	}
+	return ret;
+}
