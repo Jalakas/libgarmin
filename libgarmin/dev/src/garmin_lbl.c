@@ -337,7 +337,7 @@ int gar_init_lbl(struct gar_subfile *sub)
 			l->bits = 0x0a;
 			break;
 		case 0x0B:
-			log(11,"LBL: Uses ???0bbit coding\n");
+			log(11,"LBL: Unknown Uses 0x0b bit coding\n");
 			l->decode = gar_lbl_decode16;
 			l->bits = 0x0b;
 			break;
@@ -354,7 +354,7 @@ int gar_init_lbl(struct gar_subfile *sub)
 			sprintf(l->codepage,"ascii");
 		log(11,"LBL: Uses %s encoding:%d\n", l->codepage,lbl.codepage);
 	}
-	l->offset = gar_subfile_baseoffset(sub, "LBL");//off;
+	l->offset = gar_subfile_baseoffset(sub, "LBL");
 	l->lbl1off = lbl.lbl1_offset;
 	l->lbl1size = lbl.lbl1_length;
 	l->lbl6off = lbl.lbl6_offset;
