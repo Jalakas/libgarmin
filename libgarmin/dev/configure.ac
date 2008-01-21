@@ -44,6 +44,14 @@ if eval "test x$GCC = xyes"; then
         CFLAGS="$CFLAGS -DDEBUG"
 fi
 
+extras=false
+if test -f "src/extras.c";
+then
+	extras=true
+	CFLAGS="$CFLAGS -DEXTRAS"
+fi
+AM_CONDITIONAL([HAVEEXTRAS], [test x$extras = xtrue])
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  data/Makefile
