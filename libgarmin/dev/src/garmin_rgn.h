@@ -67,6 +67,15 @@ struct gar_subfile {
 	unsigned char drawprio;
 	ssize_t rgnoffset;
 	ssize_t rgnlen;
+	ssize_t rgnbase;
+	ssize_t rgnoffset2;
+	ssize_t rgnlen2;
+	ssize_t rgnoffset3;
+	ssize_t rgnlen3;
+	ssize_t rgnoffset4;
+	ssize_t rgnlen4;
+	ssize_t rgnoffset5;
+	ssize_t rgnlen5;
 	unsigned transparent:1,
 	    basemap:1,
 	    have_net:1,

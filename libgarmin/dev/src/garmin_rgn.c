@@ -35,6 +35,7 @@
 #include "garmin_order.h"
 #include "geoutils.h"
 #include "array.h"
+#include "extras.h"
 
 static int gar_load_points_overview(struct gar_subfile *sub, struct hdr_tre_t *tre)
 {
@@ -253,7 +254,7 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 
 	gsub->terminate = sub->terminate;
 	gsub->rgn_start    = (*(u_int32_t*)(sub->rgn_offset)) & 0x00FFFFFF;
-	log(15, "rgn_start: %04X terminate=%d\n", gsub->rgn_start, gsub->terminate);
+	log(14, "rgn_start: %04X terminate=%d elements=%x\n", gsub->rgn_start, gsub->terminate,sub->elements);
 	/* In the imgformat points and POIs are swapped*/
 	gsub->haspoints  = !!(sub->elements & 0x10);
 	gsub->hasidxpoints = !!(sub->elements & 0x20);
@@ -334,11 +335,24 @@ static ssize_t gar_get_rgnoff(struct gar_subfile *sub, ssize_t *l)
 			return 0;
 		}
 		*l = rgnhdr.length;
-		log(11, "rgn header len: %d s=%d\n",rgnhdr.hsub.length - sizeof(rgnhdr.hsub),  sizeof(rgnhdr)- sizeof(rgnhdr.hsub));
-		log(11, "o2:%x %x\n",rgnhdr.offset2, rgnhdr.length2);
-		log(11, "o3:%x %x\n",rgnhdr.offset3, rgnhdr.length3);
-		log(11, "o4:%x %x\n",rgnhdr.offset4, rgnhdr.length4);
-		log(11, "o5:%x %x\n",rgnhdr.offset5, rgnhdr.length5);
+		log(11, "rgn header len: %d offset:%d\n",rgnhdr.hsub.length, rgnhdr.offset);
+		rgnoff = gar_subfile_baseoffset(sub, "RGN");
+		sub->rgnbase = rgnoff;
+		if (rgnhdr.hsub.length > 8) {
+			sub->rgnoffset2 = rgnhdr.offset2;
+			sub->rgnlen2    = rgnhdr.length2;
+			sub->rgnoffset3 = rgnhdr.offset3;
+			sub->rgnlen3	= rgnhdr.length3;
+			sub->rgnoffset4 = rgnhdr.offset4;
+			sub->rgnlen4	= rgnhdr.length4;
+			sub->rgnoffset5 = rgnhdr.offset5;
+			sub->rgnlen5	= rgnhdr.length5;
+			log(11, "o1:%x %x\n",rgnhdr.offset, rgnhdr.length);
+			log(11, "o2:%x %x\n",rgnhdr.offset2, rgnhdr.length2);
+			log(11, "o3:%x %x\n",rgnhdr.offset3, rgnhdr.length3);
+			log(11, "o4:%x %x\n",rgnhdr.offset4, rgnhdr.length4);
+			log(11, "o5:%x %x\n",rgnhdr.offset5, rgnhdr.length5);
+		}
 		return rgnoff+rgnhdr.offset;
 	}
 	return 0;
@@ -469,19 +483,6 @@ static struct gar_maplevel *gar_alloc_maplevel(int base)
 	return ml;
 }
 
-static int gar_have_extml(struct gar_subfile *sub)
-{
-	char buf[2048];
-	char *cp;
-	struct stat st;
-	sprintf(buf, "%s", sub->gimg->file);
-	cp = strrchr(buf, '/');
-	if (!cp)
-		return 0;
-	sprintf(cp+1, "%s.MLD", sub->mapid);
-	return !stat(buf, &st);
-}
-
 static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 {
 	ssize_t off;
@@ -490,29 +491,25 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 	u_int32_t nlevels;
 	struct gimg *g = sub->gimg;
 	int i;
+	unsigned char buf[tre->tre1_size];
+	unsigned char *cp = buf;
 	int totalsubdivs = 0;
 	int base = 1;
-	int extlevels = tre->hsub.flag & 0x80;
-	int efd = -1;
 
-	if (!extlevels) {
-		off = gar_subfile_offset(sub, "TRE");
-		off += tre->tre1_offset;
-		if (glseek(g, off, SEEK_SET) != off) {
-			log(1, "Error can not seek to %zd\n", off);
-			return -1;
-		}
-	} else {
-		char buf[2048];
-		char *cp;
-		sprintf(buf, "%s", sub->gimg->file);
-		cp = strrchr(buf, '/');
-		if (!cp)
-			return -1;
-		sprintf(cp+1, "%s.MLD", sub->mapid);
-		efd = open(buf, OPENFLAGS);
-		if (efd < 0)
-			return -1;
+	off = gar_subfile_baseoffset(sub, "TRE");
+	off += tre->tre1_offset;
+	if (glseek(g, off, SEEK_SET) != off) {
+		log(1, "Error can not seek to %zd\n", off);
+		return -1;
+	}
+	if (gread(g, buf, tre->tre1_size) != tre->tre1_size) {
+		log(1, "Error reading map levels\n");
+		return -1;
+	}
+	fixup_tre(tre, buf);
+	if (tre->hsub.flag & 0x80) {
+		log(1, "Sorry, map contains locked / encypted data. And probably its license do NOT allow you to use it with any compatible software, only Garmin's\n");
+		return -1;
 	}
 	nlevels = tre->tre1_size / s;
 	log(10, "Have %d levels\n", nlevels);
@@ -528,18 +525,8 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 			log(1, "Error can not allocate map level!\n");
 			return -1;
 		}
-		if (!extlevels) {
-			if (gread(g, &ml->ml, s) != s) {
-				log(1, "Error reading map level %d\n", i);
-				return -1;
-			}
-		} else {
-			if (read(efd, &ml->ml, s) != s) {
-				log(1, "Error reading map level %d\n", i);
-				close(efd);
-				return -1;
-			}
-		}
+		memcpy(&ml->ml, cp, s);
+		cp+=s;
 		log(10, "ML[%d] level=%d inherited=%d bits:%d nsubdiv=%d unkn=[%d %d %d]\n",
 			i, ml->ml.level, ml->ml.inherited, ml->ml.bits, ml->ml.nsubdiv,
 			ml->ml.bit4,ml->ml.bit5,ml->ml.bit6); 
@@ -554,10 +541,9 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 		totalsubdivs += ml->ml.nsubdiv;
 		base += ml->ml.nsubdiv;
 	}
-	if (extlevels)
-		close(efd);
 	return totalsubdivs;
 }
+
 
 static struct gar_subfile *gar_alloc_subfile(struct gimg *g, char *mapid)
 {
@@ -775,11 +761,7 @@ static int gar_check_basemap(struct gar_subfile *sub)
 	}
 	return 0;
 }
-/*
- * Is it OKAY to have more than one basemap? 
- * may be if they do not overlap 
- * it's not required to have X bits to be a basemap
- */
+/* this is uneeded */
 static int gar_select_basemaps(struct gimg *g)
 {
 	struct gar_subfile *sub;
@@ -857,6 +839,61 @@ static void gar_register_subfile(struct gimg *g, struct gar_subfile *sub)
 	list_append(&sub->l, &g->lsubfiles);
 }
 
+static int gar_parse_rgn2(struct gar_subfile *sub)
+{
+	struct gimg *g = sub->gimg;
+	ssize_t off;
+	int rc;
+	unsigned char buf[512];
+	if (sub->rgnlen2) {
+		off = sub->rgnbase + sub->rgnoffset2;
+		if (glseek(g, off, SEEK_SET) != off) {
+			log(1, "Error can not seek to %zd\n", off);
+			goto out_err;
+		}
+		rc = gread(g, buf, sizeof(buf));
+		if (rc < 0)
+			goto out_err;
+		gar_print_buf("RGN2-Polygones", buf, rc);
+	}
+	if (sub->rgnlen3) {
+		off = sub->rgnbase + sub->rgnoffset3;
+		if (glseek(g, off, SEEK_SET) != off) {
+			log(1, "Error can not seek to %zd\n", off);
+			goto out_err;
+		}
+		rc = gread(g, buf, sizeof(buf));
+		if (rc < 0)
+			goto out_err;
+		gar_print_buf("RGN3-Lines", buf, rc);
+	}
+	if (sub->rgnlen4) {
+		off = sub->rgnbase + sub->rgnoffset4;
+		if (glseek(g, off, SEEK_SET) != off) {
+			log(1, "Error can not seek to %zd\n", off);
+			goto out_err;
+		}
+		rc = gread(g, buf, sizeof(buf));
+		if (rc < 0)
+			goto out_err;
+		log(11, "RGN4 points: %d\n", sub->rgnlen4/9);
+		gar_print_buf("RGN4-Points", buf, rc);
+	}
+	if (sub->rgnlen5) {
+		off = sub->rgnbase + sub->rgnoffset5;
+		if (glseek(g, off, SEEK_SET) != off) {
+			log(1, "Error can not seek to %zd\n", off);
+			goto out_err;
+		}
+		rc = gread(g, buf, sizeof(buf));
+		if (rc < 0)
+			goto out_err;
+		gar_print_buf("RGN5=RGN1DATA", buf, rc);
+	}
+
+out_err:
+	return -1;
+}
 
 int gar_load_subfiles(struct gimg *g)
 {
@@ -970,12 +1007,6 @@ int gar_load_subfiles(struct gimg *g)
 				tre.key[4],
 				tre.key[5]
 				);
-			if (!gar_have_extml(sub)) {
-				log(1, "File contains locked / encypted data. Garmin does not\n"
-					"want you to use this file with any other software than\n"
-					"the one supplied by Garmin.\n");
-				goto out_err;
-			}
 		}
 		
 		log(10, "POI_flags=%04X\n",tre.POI_flags);
@@ -1037,6 +1068,9 @@ int gar_load_subfiles(struct gimg *g)
 				if (sub->net) {
 	//				gar_net_parse_nod3(sub);
 					gar_load_roadnetwork(sub);
+				}
+				if (sub->rgnlen2) {
+					gar_parse_rgn2(sub);
 				}
 			}
 		}
