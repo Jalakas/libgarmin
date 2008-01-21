@@ -34,16 +34,16 @@
 #define NF_16BITDELTAS		0x20		// 16 bit coordinate deltas
 #define NF_RESTRICTIONS		0x10		// have restrictions
 #define NF_BOUND		0x08		// bound/exit node
-/* Last 3 bits unknown  */
-#define	NF_UNK1			0x04
-#define NF_UNK2			0x02
-#define NF_UNK3			0x01
+/* Last 3 bits - coding?   */
+#define	NF_C1			0x04
+#define NF_C2			0x02
+#define NF_C3			0x01
 
 /* Arcs/Links flags */
 #define LF_END			0x8000
 #define LF_IDXPTR		0x4000
 #define LF_NEWROAD		0x0080
-#define LF_COLOR		0x0040
+#define LF_FLAG			0x0040
 #define LF_CURVE		0x0020
 #define LF_RC_MASK		0x0007		// road class
 
@@ -151,7 +151,7 @@ static void nodetrunklog(struct node *node) {}
 #endif
 
 static struct grapharc*
-gar_alloc_grapharc(struct node *dst, unsigned char ridx, unsigned char rc, unsigned color)
+gar_alloc_grapharc(struct node *dst, unsigned char ridx, unsigned char rc)
 {
 	struct grapharc *arc;
 	arc = calloc(1, sizeof(*arc));
@@ -161,17 +161,16 @@ gar_alloc_grapharc(struct node *dst, unsigned char ridx, unsigned char rc, unsig
 	arc->roadidx = ridx;
 	arc->roadclass = rc;
 	arc->islink = 1;
-	arc->color = color;
 	return arc;
 }
 
 static void
-gar_update_grapharc(struct grapharc *arc, unsigned link, unsigned len, unsigned heading, char c1, char c2)
+gar_update_grapharc(struct grapharc *arc, unsigned link, unsigned len, unsigned heading, char curve, char headout)
 {
 	arc->len = len;
 	arc->heading = heading;
-	arc->curve[0] = c1;
-	arc->curve[1] = c2;
+	arc->curve = curve;
+	arc->headout = headout;
 	arc->islink = link;
 }
 
@@ -190,6 +189,7 @@ gar_alloc_node(u_int32_t offset)
 	list_init(&n->l);
 	list_init(&n->lc);
 	n->offset = offset;
+	n->value = ~0;
 	nodetrunklog(n);
 	return n;
 }
@@ -237,7 +237,6 @@ gar_get_node(struct gar_graph *graph, u_int32_t offset)
 static void 
 gar_free_node(struct node *n)
 {
-	int i;
 	if (n->arcs)
 		free(n->arcs);
 	if (n->cpoint)
@@ -442,11 +441,19 @@ static void gar_enqueue_node(struct gar_graph *graph, struct node *node)
 	list_append(&node->lc, &graph->lqueue);
 }
 
-static int gar_read_node(struct gar_graph *graph, struct node *from, struct node *node, int class)
+#ifndef EXTRAS
+static int gar_do_read_node(struct gar_graph *graph, struct node *from, struct node *node)
+{
+	// This will be filled soon i hope
+	return 0;
+}
+#endif
+
+int gar_read_node(struct gar_graph *graph, struct node *from, struct node *node)
 {
 	if (node->complete)
 		return 1;
-	return 0;
+	return gar_do_read_node(graph, from, node);
 }
 
 static int gar_process_queue(struct gar_graph *graph, int pos, int class)
@@ -458,7 +465,7 @@ static int gar_process_queue(struct gar_graph *graph, int pos, int class)
 		n = list_entry(graph->lqueue.n, struct node, lc);
 		list_remove_init(&n->lc);
 		if (n->class == class) {
-			if (gar_read_node(graph, NULL, n, class) < 0) {
+			if (gar_read_node(graph, NULL, n) < 0) {
 				// error
 				log(1, "NOD Error reading node %d\n", n->offset);
 				return -1;
@@ -590,7 +597,7 @@ void gar_free_graph(struct gar_graph *g)
 	free(g);
 }
 
-static struct gar_graph *gar_alloc_graph(struct gar_subfile *sub)
+struct gar_graph *gar_alloc_graph(struct gar_subfile *sub)
 {
 	struct gar_graph *g;
 	int i;
@@ -656,6 +663,8 @@ int gar_graph2tfmap(struct gar_graph *g, char *filename)
 	for (h=0; h < NODE_HASH_TAB_SIZE; h++) {
 		list_for_entry(n, &g->lnodes[h], l) {
 			// FIXME
+			if (!n->complete)
+				continue;
 			fprintf(tfmap, "garmin:0x%x 0x%x type=rg_point debug=\"%d arcs\" label=\"%d-%d\"\n\n",
 				n->c.x , n->c.y, n->narcs, n->nodeid, n->offset);
 			for (i=0; i < n->narcs; i++) {
@@ -664,8 +673,10 @@ int gar_graph2tfmap(struct gar_graph *g, char *filename)
 					 log(15, "NOD link to %d\n", arc->dest->offset);
 					 continue;
 				}
-				fprintf(tfmap, "type=grapharc lenght=%d  head=%d label=\"%d->%d\"\n", 
-					arc->len, arc->heading, n->offset, arc->dest->offset);
+				if (!arc->dest->complete)
+					continue;
+				fprintf(tfmap, "type=grapharc debug=\"l=%d  h=%.2f %.2f %.2f \"  label=\"%d->%d\"\n", 
+					arc->len, arc->heading*1.4173228, arc->curve*1.4173228, arc->headout*1.4173228, n->offset, arc->dest->offset);
 				fprintf(tfmap, "garmin:0x%x 0x%x\n",
 					n->c.x, n->c.y);
 				fprintf(tfmap, "garmin:0x%x 0x%x\n",
@@ -688,21 +699,6 @@ struct roadptr {
 	u_int8_t b2;
 };
 
-struct cpoint {
-	list_t l;
-	// FIXME need to add sub file if graph is shared 
-	u_int32_t offset;
-	unsigned refcnt;
-	u_int8_t	crestr;
-	u_int32_t	lng;
-	u_int32_t	lat;
-	u_int8_t	croads;	// roads count of unknown4=size records
-	u_int8_t	cidxs;	// indexes ?
-	u_int8_t	rpsize;
-	u_int8_t	*roads;
-	u_int8_t	*idx;
-	u_int8_t	*restr;
-};
 
 static struct cpoint *gar_alloc_cp(void)
 {
@@ -791,7 +787,7 @@ static struct cpoint *gar_lookup_cpoint(struct gar_graph *graph, u_int32_t offse
 	return NULL;
 }
 
-static struct cpoint *gar_get_cpoint(struct gar_graph *graph, u_int32_t offset,
+struct cpoint *gar_get_cpoint(struct gar_graph *graph, u_int32_t offset,
 		 int8_t idx)
 {
 	struct cpoint *p;
@@ -818,7 +814,7 @@ static void gar_put_cpoint(struct cpoint *p)
 	}
 }
 
-static u_int32_t gar_cp_idx2off(struct cpoint *p, u_int8_t idx)
+u_int32_t gar_cp_idx2off(struct cpoint *p, u_int8_t idx)
 {
 	u_int32_t i;
 #ifdef DEBUG
@@ -831,7 +827,7 @@ static u_int32_t gar_cp_idx2off(struct cpoint *p, u_int8_t idx)
 	return i & 0xFFFFFF;
 }
 
-static struct roadptr *gar_cp_idx2road(struct cpoint *p, u_int8_t idx)
+struct roadptr *gar_cp_idx2road(struct cpoint *p, u_int8_t idx)
 {
 	int i;
 	i = idx*p->rpsize;

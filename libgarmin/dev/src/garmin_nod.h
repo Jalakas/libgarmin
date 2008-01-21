@@ -43,6 +43,8 @@ struct grapharc;
 struct node {
 	list_t l;
 	list_t lc;
+	struct node *from;
+	unsigned int value;
 	unsigned nodeid;
 	u_int32_t offset;
 	struct cpoint *cpoint;
@@ -62,8 +64,9 @@ struct grapharc {
 	unsigned char roadidx;
 	unsigned char roadclass;
 	unsigned char heading;
-	unsigned char curve[2];
-	unsigned islink:1, color:1, have_curve:1;
+	unsigned char curve;	// ??
+	unsigned char headout;
+	unsigned islink:1, have_curve:1;
 };
 
 struct gar_nod_info {
@@ -87,6 +90,23 @@ struct gar_road_nod {
 	unsigned char bitmap[0];
 };
 
+struct cpoint {
+	list_t l;
+	// FIXME need to add sub file if graph is shared
+	u_int32_t offset;
+	unsigned refcnt;
+	u_int8_t	crestr;
+	u_int32_t	lng;
+	u_int32_t	lat;
+	u_int8_t	croads; // roads count of unknown4=size records
+	u_int8_t	cidxs;	// indexes ?
+	u_int8_t	rpsize;
+	u_int8_t	*roads;
+	u_int8_t	*idx;
+	u_int8_t	*restr;
+};
+
+
 struct gar_nod_info *gar_init_nod(struct gar_subfile *sub);
 void gar_free_nod(struct gar_nod_info *nod);
 
@@ -97,3 +117,11 @@ int gar_graph2tfmap(struct gar_graph *g, char *filename);
 
 struct gar_road_nod *gar_read_nod2(struct gar_subfile *sub, u_int32_t offset);
 void gar_free_road_nod(struct gar_road_nod *nod);
+struct gar_graph *gar_alloc_graph(struct gar_subfile *sub);
+void gar_free_graph(struct gar_graph *g);
+
+struct cpoint *gar_get_cpoint(struct gar_graph *graph, u_int32_t offset, int8_t idx);
+u_int32_t gar_cp_idx2off(struct cpoint *p, u_int8_t idx);
+struct roadptr *gar_cp_idx2road(struct cpoint *p, u_int8_t idx);
+int gar_read_node(struct gar_graph *graph, struct node *from, struct node *node);
+
