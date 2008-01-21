@@ -537,6 +537,9 @@ int gar_load_subdiv_data(struct gar_subfile *sub, struct gar_subdiv *gsub)
 		return -1;
 	}
 #endif
+	if (g->is_nt && gar_debug_level > 10) {
+		gar_print_buf("D", data, rsize);
+	}
 	/*
 	 * JM's doc is wrong about points / indexed points.
 	 * There are two blocks of points, where each point can have subtype.
