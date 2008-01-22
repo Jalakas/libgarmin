@@ -15,6 +15,7 @@ struct hdr_mdr_t
 	u_int32_t hdr1;	// some kind of header
 	u_int32_t hdr2;
 	////////////////////
+	// images
 	u_int32_t offset1;
 	u_int32_t length1;
 	u_int16_t unknown11;
@@ -218,6 +219,34 @@ static int gar_log_cstrings(struct gimg *g, u_int32_t base, u_int32_t offset, u_
 	
 }
 
+static int gar_log_imgs(struct gimg *g, u_int32_t base, u_int32_t offset,
+		u_int32_t len, u_int16_t recsize)
+{
+	int i,rc;
+	off_t off = base+offset;
+	unsigned char buf[recsize];
+	int dl = gar_debug_level;
+	char pref[10];
+	if (!len)
+		return;
+	gar_debug_level = 13;
+	if (glseek(g, off, SEEK_SET) != off) {
+		log(1, "Error seeking to %zd\n", off);
+		return -1;
+	}
+	for (i=0; i < len/recsize; i++) {
+		rc = gread(g, buf, recsize);
+		if (rc != recsize) {
+			log(1, "Error reading record %d\n", i);
+		}
+		log(1, "IMG: %d/I%08X\n", *(u_int32_t*)buf,*(u_int32_t*)buf);
+	}
+	gar_debug_level = dl;
+	log(1, "Done %d len:%d rs:%d\n",i, len, recsize);
+	return i;
+	
+}
+
 static int gar_log_recs(struct gimg *g, u_int32_t base, u_int32_t offset,
 		u_int32_t len, u_int16_t recsize)
 {
@@ -266,31 +295,33 @@ static int gar_read_mdr(struct gimg *g, char *file)
 	log(1, "HDR len =%d our=%d\n", mdr.hsub.length, sizeof(mdr));
 	log(1, "hdr: %x %x\n", mdr.hdr1, mdr.hdr2);
 	log(1, "o1: %d %d %d %d\n", mdr.offset1, mdr.length1, mdr.unknown11, mdr.unknown12);
-//	recsz ok
-	gar_log_recs(g, off, mdr.offset1, mdr.length1, mdr.unknown11);
+//	recsz ok if more than 256 images 2b img idx
+//	gar_log_recs(g, off, mdr.offset1, mdr.length1, mdr.unknown11);
+	gar_log_imgs(g, off, mdr.offset1, mdr.length1, mdr.unknown11);
 	
 	log(1, "o2: %d %d %d %d\n", mdr.offset2, mdr.length2, mdr.unknown21, mdr.unknown22);
 
 	gar_log_recs(g, off, mdr.offset2, mdr.length2, mdr.unknown21);
 
 	log(1, "o3: %d %d %d %d\n", mdr.offset3, mdr.length3, mdr.unknown31, mdr.unknown32);
-	gar_log_recs(g, off, mdr.offset3, mdr.length3, mdr.unknown31);
+	// 
+//	gar_log_recs(g, off, mdr.offset3, mdr.length3, mdr.unknown31);
 	
-	log(1, "o4: %d %d %d %d\n", mdr.offset4, mdr.length4, mdr.unknown41, mdr.unknown42);
-//	lots of ok
-	gar_log_recs(g, off, mdr.offset4, mdr.length4, mdr.unknown41);
+//	log(1, "o4: %d %d %d %d\n", mdr.offset4, mdr.length4, mdr.unknown41, mdr.unknown42);
+//	lots of ok 3 bytes - indexed by ... ?
+//	gar_log_recs(g, off, mdr.offset4, mdr.length4, mdr.unknown41);
 
 	log(1, "o5: %d %d %d %d\n", mdr.offset5, mdr.length5, mdr.unknown51, mdr.unknown52);
-//	size = 13 ok
-	gar_log_recs(g, off, mdr.offset5, mdr.length5, mdr.unknown51);
+//	size = 8 ok cities 1b map 1/2b idx 8A 08 80 00 00
+//	gar_log_recs(g, off, mdr.offset5, mdr.length5, mdr.unknown51);
 
 	log(1, "o6: %d %d %d %d\n", mdr.offset6, mdr.length6, mdr.unknown61, mdr.unknown62);
-//	ok sz = 7
+//	ok sz 
 	gar_log_recs(g, off, mdr.offset6, mdr.length6, mdr.unknown61);
 
 	log(1, "o7: %d %d %d %d\n", mdr.offset7, mdr.length7, mdr.unknown71, mdr.unknown72);
-//	size  ok = 10
-	gar_log_recs(g, off, mdr.offset7, mdr.length7, mdr.unknown71);
+//	size  ok = 7 streets: 1b map 3b roadptr ?? ?? ??
+//	gar_log_recs(g, off, mdr.offset7, mdr.length7, mdr.unknown71);
 
 	log(1, "o8: %d %d %d %d\n", mdr.offset8, mdr.length8, mdr.unknown81, mdr.unknown82);
 	gar_log_recs(g, off, mdr.offset8, mdr.length8, mdr.unknown81);
@@ -301,15 +332,17 @@ static int gar_read_mdr(struct gimg *g, char *file)
 
 	log(1, "o10: %d %d %d %d\n", mdr.offset10, mdr.length10, mdr.unknown101,mdr.unknown101);
 	log(1, "o11: %d %d %d %d\n", mdr.offset11, mdr.length11, mdr.unknown111, mdr.unknown112);
-//	size = 19 ??
-	gar_log_recs(g, off, mdr.offset11, mdr.length11, mdr.unknown111);
+//	size = 9 ??
+//	gar_log_recs(g, off, mdr.offset11, mdr.length11, mdr.unknown111);
 	log(1, "o12: %d %d %d %d\n", mdr.offset12, mdr.length12, mdr.unknown121, mdr.unknown122);
+//	size = 9 ??
+	gar_log_recs(g, off, mdr.offset12, mdr.length12, mdr.unknown121);
 	log(1, "o13: %d %d %d %d\n", mdr.offset13, mdr.length13, mdr.unknown131, mdr.unknown132);
 	log(1, "o14: %d %d %d %d\n", mdr.offset14, mdr.length14, mdr.unknown141, mdr.unknown142);
-//	size ok = 6
-	gar_log_recs(g, off, mdr.offset14, mdr.length14, mdr.unknown141);
+//	size ok = 6/8 ??? 1/2b map idx
+//	gar_log_recs(g, off, mdr.offset14, mdr.length14, mdr.unknown141);
 	log(1, "o15: %d %d %d\n", mdr.offset15, mdr.length15, mdr.unknown151/*, mdr.unknown162*/);
-	gar_log_cstrings(g, off, mdr.offset15, mdr.length15);
+//	gar_log_cstrings(g, off, mdr.offset15, mdr.length15);
 
 //	log(1, "o17: %x %x\n", mdr.offset17, mdr.length17);
 	log(1, "o16: %d %d %d %d\n", mdr.offset16, mdr.length16, mdr.unknown161, mdr.unknown162);
