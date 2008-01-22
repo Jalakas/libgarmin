@@ -180,11 +180,6 @@ static int gar_add_fe(struct gimg *g, struct FATblock_t *fent, int blocksize)
 	struct fat_entry *fe, *fe1;
 	char *cp;
 
-	if(!strncmp(fent->name,"MAPSOURC",8) || !strncmp(fent->name,"SENDMAP2", 8)) {
-		log(17, "Skipping MAPSOURCE or SENDMAP file\n");
-		return 0;
-	}
-
 	fe = calloc(1, sizeof(*fe));
 	if (!fe)
 		return -1;
