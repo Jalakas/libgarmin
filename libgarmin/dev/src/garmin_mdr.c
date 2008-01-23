@@ -86,22 +86,28 @@ struct hdr_mdr_t
 	u_int16_t unknown161;
 	u_int32_t unknown162;
 
+	// second block?
 	u_int32_t offset17;
 	u_int32_t length17;
-	u_int16_t unknown171;
-	u_int32_t unknown172;
+	u_int32_t unknown171;
+
+	u_int32_t offset18;
+	u_int32_t length18;
+	u_int16_t unknown181;
+	u_int32_t unknown182;
+
 	u_int32_t offset20;
 	u_int32_t length20;
-	u_int32_t unknown201;
-	u_int16_t unknown202;
+	u_int16_t unknown201;
+	u_int32_t unknown202;
 	u_int32_t offset21;
 	u_int32_t length21;
-	u_int32_t unknown211;
-	u_int16_t unknown212;
+	u_int16_t unknown211;
+	u_int32_t unknown212;
 	u_int32_t offset22;
 	u_int32_t length22;
-	u_int32_t unknown221;
-	u_int16_t unknown222;
+	u_int16_t unknown221;
+	u_int32_t unknown222;
 	u_int32_t offset23;
 	u_int32_t length23;
 	u_int32_t unknown231;
@@ -293,7 +299,7 @@ static int gar_read_mdr(struct gimg *g, char *file)
 	}
 
 	log(1, "HDR len =%d our=%d\n", mdr.hsub.length, sizeof(mdr));
-	log(1, "hdr: %x %x\n", mdr.hdr1, mdr.hdr2);
+	log(1, "hdr: %08X %08X\n", mdr.hdr1, mdr.hdr2);
 	log(1, "o1: %d %d %d %d\n", mdr.offset1, mdr.length1, mdr.unknown11, mdr.unknown12);
 //	recsz ok if more than 256 images 2b img idx
 //	gar_log_recs(g, off, mdr.offset1, mdr.length1, mdr.unknown11);
@@ -345,8 +351,10 @@ static int gar_read_mdr(struct gimg *g, char *file)
 //	gar_log_cstrings(g, off, mdr.offset15, mdr.length15);
 
 //	log(1, "o17: %x %x\n", mdr.offset17, mdr.length17);
-	log(1, "o16: %d %d %d %d\n", mdr.offset16, mdr.length16, mdr.unknown161, mdr.unknown162);
-	log(1, "o17: %d %d %d %d\n", mdr.offset17, mdr.length17, mdr.unknown171, mdr.unknown172);
+	log(1, "o16: %d %d %d %d\n", mdr.offset16, mdr.length16, mdr.unknown161 /*, mdr.unknown162*/);
+	log(1, "o17: %d %d %d \n", mdr.offset17, mdr.length17, mdr.unknown171/*, mdr.unknown172*/);
+	// strings : 
+	gar_log_cstrings(g, off, mdr.offset17, mdr.length17);
 	log(1, "o20: %d %d %d %d\n", mdr.offset20, mdr.length20, mdr.unknown201, mdr.unknown202);
 	log(1, "o21: %d %d %d %d\n", mdr.offset21, mdr.length21, mdr.unknown211, mdr.unknown212);
 	log(1, "o22: %d %d %d %d\n", mdr.offset22, mdr.length22, mdr.unknown221, mdr.unknown222);
@@ -356,7 +364,7 @@ static int gar_read_mdr(struct gimg *g, char *file)
 	log(1, "o26: %d %d %d %d\n", mdr.offset26, mdr.length26, mdr.unknown261, mdr.unknown262);
 	log(1, "o27: %d %d %d %d\n", mdr.offset27, mdr.length27, mdr.unknown271, mdr.unknown272);
 	log(1, "o28: %d %d %d %d\n", mdr.offset28, mdr.length28, mdr.unknown281, mdr.unknown282);
-	log(1, "o29: %d %d\n", mdr.offset29, mdr.length29);
+	log(1, "o29: %d %d %d\n", mdr.offset29, mdr.length29, mdr.unknown291);
 	log(1, "o30: %d %d %d %d\n", mdr.offset30, mdr.length30, mdr.unknown301, mdr.unknown302);
 	log(1, "o31: %d %d %d %d\n", mdr.offset31, mdr.length31, mdr.unknown311, mdr.unknown312);
 	log(1, "o32: %d %d\n", mdr.offset32, mdr.length32);
@@ -371,6 +379,7 @@ static int gar_read_mdr(struct gimg *g, char *file)
 	log(1, "o41: %d %d\n", mdr.offset41, mdr.length41);
 //	log(1, "o42: %d %d\n", mdr.offset42, mdr.length42);
 //	log(1, "o43: %d %d\n", mdr.offset43, mdr.length43);
+
 }
 
 static int debug = 10;
