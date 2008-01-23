@@ -197,6 +197,66 @@ static void print_buf(char *pref, unsigned char *a, int s)
 	log(1, "%s :%s\n", pref, buf);
 }
 
+static void print_bufa(char *pref, unsigned char *a, int s)
+{
+	char buf[4096];
+	int i,sz = 0;
+	int inasc = 0;
+	for (i=0; i < s; i++) {
+		if (isprint(a[i])) {
+			sz += sprintf(buf+sz, "%s%c", inasc ? "" : "[", a[i]);
+			inasc = 1;
+		} else {
+			sz += sprintf(buf+sz, "%s%02X ", inasc ? "]" : "",a[i]);
+			inasc = 0;
+		}
+	}
+	log(1, "%s :%s\n", pref, buf);
+}
+
+struct shead {
+//	unsigned char b1;
+	unsigned char head[6];
+} __attribute((packed));
+
+struct search_entry {
+	unsigned char text[3];
+	u_int8_t b1;
+	u_int8_t b2;
+	u_int8_t b3;
+} __attribute((packed));
+
+static int gar_log_o17(struct gimg *g, u_int32_t base, u_int32_t offset, u_int32_t len)
+{
+	int i = 0, rc, sz = 0, bp = 0;
+	off_t off = base+offset;
+	unsigned char buf[1024];
+	int dl = gar_debug_level;
+	char pref[10];
+	struct shead head;
+	struct search_entry ent;
+
+	if (!len)
+		return 0;
+	if (glseek(g, off, SEEK_SET) != off) {
+		log(1, "Error seeking to %zd\n", off);
+		return -1;
+	}
+	gread(g, &head, sizeof(head));
+	sprintf(pref, "header");
+	print_buf(pref, (char *)&head, sizeof(head));
+	sz = sizeof(head);
+	while (sz < len) {
+		rc = gread(g, &ent, sizeof(ent));
+		if ( rc < 0)
+			break;
+		log(1, "%x %02X %02X %02X [%.3s]\n", sz, ent.b1, ent.b2,ent.b3,ent.text);
+		sz += rc;
+		i++;
+	}
+	log(1, "Done %d len:%d sz=%d\n",i, len, sz);
+}
+
 static int gar_log_cstrings(struct gimg *g, u_int32_t base, u_int32_t offset, u_int32_t len)
 {
 	int i = 0, rc, sz = 0, bp = 0;
@@ -337,24 +397,26 @@ static int gar_read_mdr(struct gimg *g, char *file)
 	gar_log_recs(g, off, mdr.offset9, mdr.length9, mdr.unknown91);
 
 	log(1, "o10: %d %d %d %d\n", mdr.offset10, mdr.length10, mdr.unknown101,mdr.unknown101);
+	gar_log_cstrings(g, off, mdr.offset10, mdr.length10);
 	log(1, "o11: %d %d %d %d\n", mdr.offset11, mdr.length11, mdr.unknown111, mdr.unknown112);
 //	size = 9 ??
 //	gar_log_recs(g, off, mdr.offset11, mdr.length11, mdr.unknown111);
 	log(1, "o12: %d %d %d %d\n", mdr.offset12, mdr.length12, mdr.unknown121, mdr.unknown122);
 //	size = 9 ??
-	gar_log_recs(g, off, mdr.offset12, mdr.length12, mdr.unknown121);
+//	gar_log_recs(g, off, mdr.offset12, mdr.length12, mdr.unknown121);
 	log(1, "o13: %d %d %d %d\n", mdr.offset13, mdr.length13, mdr.unknown131, mdr.unknown132);
 	log(1, "o14: %d %d %d %d\n", mdr.offset14, mdr.length14, mdr.unknown141, mdr.unknown142);
 //	size ok = 6/8 ??? 1/2b map idx
 //	gar_log_recs(g, off, mdr.offset14, mdr.length14, mdr.unknown141);
 	log(1, "o15: %d %d %d\n", mdr.offset15, mdr.length15, mdr.unknown151/*, mdr.unknown162*/);
-//	gar_log_cstrings(g, off, mdr.offset15, mdr.length15);
+	gar_log_cstrings(g, off, mdr.offset15, mdr.length15);
 
 //	log(1, "o17: %x %x\n", mdr.offset17, mdr.length17);
 	log(1, "o16: %d %d %d %d\n", mdr.offset16, mdr.length16, mdr.unknown161 /*, mdr.unknown162*/);
 	log(1, "o17: %d %d %d \n", mdr.offset17, mdr.length17, mdr.unknown171/*, mdr.unknown172*/);
 	// strings : 
-	gar_log_cstrings(g, off, mdr.offset17, mdr.length17);
+	gar_log_o17(g, off, mdr.offset17, mdr.length17);
+//	gar_log_cstrings(g, off, mdr.offset17, mdr.length17);
 	log(1, "o20: %d %d %d %d\n", mdr.offset20, mdr.length20, mdr.unknown201, mdr.unknown202);
 	log(1, "o21: %d %d %d %d\n", mdr.offset21, mdr.length21, mdr.unknown211, mdr.unknown212);
 	log(1, "o22: %d %d %d %d\n", mdr.offset22, mdr.length22, mdr.unknown221, mdr.unknown222);
