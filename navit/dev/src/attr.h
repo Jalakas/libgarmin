@@ -63,7 +63,7 @@ struct attr_group *attr_group_alloc(unsigned int count);
 struct attr_group *attr_group_alloc_types(unsigned int count, enum attr_type *types);
 struct attr *attr_group_get(struct attr_group *ag, int idx);
 struct attr *attr_group_gettype(struct attr_group *ag, enum attr_type type);
-int attr_group_get_data(struct item *it, struct attr_group *ag);
+int attr_group_get_data(void *data, struct item *it, struct attr_group *ag);
 void attr_group_free(struct attr_group *ag);
 void attr_group_reset(struct attr_group *ag);
 struct map;

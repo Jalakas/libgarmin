@@ -25,6 +25,7 @@ struct item_methods {
 	int (*item_coord_get)(void *priv_data, struct coord *c, int count);
 	void (*item_attr_rewind)(void *priv_data);
 	int (*item_attr_get)(void *priv_data, enum attr_type attr_type, struct attr *attr);
+	int (*item_attr_getgroup)(void *priv_data, struct item *it, struct attr_group *group);
 	int (*item_coord_is_segment)(void *priv_data);
 };
 

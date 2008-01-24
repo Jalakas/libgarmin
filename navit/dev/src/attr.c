@@ -285,7 +285,7 @@ attr_group_gettype(struct attr_group *ag, enum attr_type type)
 }
 
 int
-attr_group_get_data(struct item *it, struct attr_group *ag)
+attr_group_get_data(void *priv, struct item *it, struct attr_group *ag)
 {
 	int i;
 	int rc = 0;

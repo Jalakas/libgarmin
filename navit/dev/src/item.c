@@ -44,6 +44,7 @@ item_attr_rewind(struct item *it)
 {
 	it->meth->item_attr_rewind(it->priv_data);
 }
+
 int
 item_attr_get(struct item *it, enum attr_type attr_type, struct attr *attr)
 {
@@ -53,12 +54,12 @@ item_attr_get(struct item *it, enum attr_type attr_type, struct attr *attr)
 int
 item_attr_getgroup(struct item *it, struct attr_group *group)
 {
-#if 0
 	if (it->meth->item_attr_getgroup)
-		return it->meth->item_attr_getgroup(it, group);
-#endif
-	// get them one by one
-	return attr_group_get_data(it, group);
+		return it->meth->item_attr_getgroup(it->priv_data, it, group);
+	return 0;
+// get them one by one
+//	
+//	return attr_group_get_data(it, group);
 }
 
 struct item * item_new(char *type, int zoom)
