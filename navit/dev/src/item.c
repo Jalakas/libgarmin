@@ -3,6 +3,7 @@
 #include "coord.h"
 #include "debug.h"
 #include "item.h"
+#include "attr.h"
 
 struct item_name {
         enum item_type item;
@@ -47,6 +48,17 @@ int
 item_attr_get(struct item *it, enum attr_type attr_type, struct attr *attr)
 {
 	return it->meth->item_attr_get(it->priv_data, attr_type, attr);
+}
+
+int
+item_attr_getgroup(struct item *it, struct attr_group *group)
+{
+#if 0
+	if (it->meth->item_attr_getgroup)
+		return it->meth->item_attr_getgroup(it, group);
+#endif
+	// get them one by one
+	return attr_group_get_data(it, group);
 }
 
 struct item * item_new(char *type, int zoom)

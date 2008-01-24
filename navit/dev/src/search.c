@@ -111,6 +111,8 @@ search_list_country_new(struct item *item)
 		ret->iso3=g_strdup(attr.u.str);
 	if (item_attr_get(item, attr_country_name, &attr))
 		ret->name=g_strdup(attr.u.str);
+	if (item_attr_get(item, attr_country_id, &attr))
+		ret->id=attr.u.num;
 	return ret;
 }
 
@@ -148,6 +150,8 @@ search_list_town_new(struct item *item)
 		ret->c->y=c.y;
 		ret->c->pro = map_projection(item->map);
 	}
+	if (item_attr_get(item, attr_town_id, &attr))
+		ret->id=attr.u.num;
 	return ret;
 }
 
@@ -236,7 +240,7 @@ static int
 search_add_result(struct search_list_level *le, void *p)
 {
 	if (! g_hash_table_lookup(le->hash, p)) {
-		g_hash_table_insert(le->hash, p, (void *)1);	
+		g_hash_table_insert(le->hash, p, (void *)1);
 		le->list=g_list_append(le->list, p);
 		return 1;
 	}

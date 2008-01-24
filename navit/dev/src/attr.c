@@ -182,12 +182,118 @@ attr_data_set(struct attr *attr, void *data)
 	}
 }
 
-void
-attr_free(struct attr *attr)
+static void
+attr_free_data(struct attr *attr)
 {
 	if (attr->type == attr_position_coord_geo)
 		g_free(attr->u.coord_geo);
 	if (attr->type >= attr_type_color_begin && attr->type <= attr_type_color_end) 
 		g_free(attr->u.color);
+}
+
+void
+attr_free(struct attr *attr)
+{
+	attr_free_data(attr);
 	g_free(attr);
+}
+
+void
+attr_group_free(struct attr_group *ag)
+{
+	int i;
+
+	for (i=0; i < ag->count; i++) {
+		if (ag->present & (1<<i))
+			attr_free_data(&ag->attrs[i]);
+	}
+	free(ag);
+}
+
+void
+attr_group_reset(struct attr_group *ag)
+{
+	int i;
+
+	for (i=0; i < ag->count; i++) {
+		if (ag->present & (1<<i))
+			attr_free_data(&ag->attrs[i]);
+	}
+	ag->present = 0;
+}
+
+struct attr_group *
+attr_group_alloc(unsigned int count)
+{
+	struct attr_group *ag;
+	if (count > 31) {
+		dbg(0,"request for more than 31 attributes in group, please split \n");
+		return NULL;
+	}
+	ag = calloc(1, sizeof(*ag) + count * sizeof(struct attr));
+	if (!ag)
+		return NULL;
+	ag->count = count;
+	return ag;
+}
+
+static int
+attr_group_present(struct attr_group *ag, int idx)
+{
+	return ag->present & (1<<idx);
+}
+
+static void
+attr_group_set_present(struct attr_group *ag, int idx)
+{
+	ag->present |= (1<<idx);
+}
+
+struct attr_group *
+attr_group_alloc_types(unsigned int count, enum attr_type *types)
+{
+	struct attr_group *ag;
+	int i;
+	ag = attr_group_alloc(count);
+	if (!ag)
+		return NULL;
+	for (i = 0; i < count; i++) {
+		ag->attrs[i].type = *types++;
+	}
+	return ag;
+}
+
+struct attr *
+attr_group_get(struct attr_group *ag, int idx)
+{
+	if (attr_group_present(ag, idx))
+		return &ag->attrs[idx];
+	return NULL;
+}
+
+struct attr *
+attr_group_gettype(struct attr_group *ag, enum attr_type type)
+{
+	int i;
+	for (i=0; i < ag->count; i++) {
+		if (ag->attrs[i].type == type) {
+			if (attr_group_present(ag, i))
+				return &ag->attrs[i];
+		}
+	}
+	return NULL;
+}
+
+int
+attr_group_get_data(struct item *it, struct attr_group *ag)
+{
+	int i;
+	int rc = 0;
+	for (i=0; i < ag->count; i++) {
+		if (item_attr_get(it, ag->attrs[i].type , &ag->attrs[i])) {
+			attr_group_set_present(ag, i);
+			rc++;
+		}
+	}
+	return rc;
 }

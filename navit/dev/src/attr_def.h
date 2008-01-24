@@ -36,6 +36,8 @@ ATTR(speed)
 ATTR(interval)
 ATTR(position_qual)
 ATTR(zoom)
+ATTR(town_id)
+ATTR(street_id)
 ATTR2(0x00028000,type_boolean_begin)
 /* boolean */
 ATTR(overwrite)

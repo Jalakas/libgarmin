@@ -161,7 +161,7 @@ country_search_new(struct attr *search, int partial)
 	ret->count=0;
 
 	ret->item.type=type_country_label;
-	ret->item.id_hi=0;		
+	ret->item.id_hi=0;
 	ret->item.map=NULL;
 	ret->item.meth=&country_meth;
 	ret->item.priv_data=ret;

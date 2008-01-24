@@ -10,6 +10,7 @@ struct search_list_country {
 	char *iso2;
 	char *iso3;
 	char *name;
+	unsigned int id;
 };
 
 struct search_list_town {
@@ -18,12 +19,14 @@ struct search_list_town {
 	struct pcoord *c;
 	char *postal;
 	char *name;
+	unsigned int id;
 };
 
 struct search_list_street {
 	struct item item;
 	struct pcoord *c;
 	char *name;
+	unsigned int id;
 };
 
 struct search_list_result {
