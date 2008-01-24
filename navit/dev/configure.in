@@ -192,7 +192,7 @@ if test x"$cegui" = xyes
 	AC_PATH_X
 	X_CFLAGS="-I$x_includes"
 	X_LIBS="-L$ac_x_libraries"
-
+	OPENGL_LIBS="$X_LIBS -lGL -lGLU"
 	 # Save the LIBS into a temp var since AC_CHECK_LIB adds the lib into LIBS 	 
 	 # and we want just to check and use CEGUI_LIBS 	 
 	 libstemp="$LIBS" 	 
