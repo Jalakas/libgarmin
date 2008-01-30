@@ -225,7 +225,8 @@ void gar_free(struct gar *g)
 	log(1, "Implement me\n");
 }
 
-static int gar_load_img_hdr(struct gimg *g, unsigned int *dataoffset, unsigned int *blocksize)
+static int gar_load_img_hdr(struct gimg *g, unsigned int *dataoffset, 
+				unsigned int *blocksize, unsigned int *fatoffset)
 {
 	int rc;
 	struct hdr_img_t hdr;
@@ -252,12 +253,14 @@ static int gar_load_img_hdr(struct gimg *g, unsigned int *dataoffset, unsigned i
 		log(1, "Invalid identifier: [%s]\n", hdr.identifier);
 		return -1;
 	}
+	log(17, "Fat offset: %d hdr:%d\n", hdr.fat_offset, sizeof(hdr));
 	log(15, "File: [%s]\n", g->file);
 	log(10, "Desc1:[%s]\n", hdr.desc1);
 	log(10, "Desc2:[%s]\n", hdr.desc2);
 	*blocksize = get_blocksize(&hdr);
 	log(15, "Blocksize: %u\n", *blocksize);
 	*dataoffset = hdr.dataoffset;
+	*fatoffset = hdr.fat_offset;
 	log(15, "Dataoffset: %u[%08X]\n", *dataoffset, *dataoffset);
 	return 1;
 }
@@ -327,6 +330,7 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 	int rc;
 	unsigned int blocksize;
 	unsigned int dataoffset;
+	unsigned int fatoffset;
 	g = gimg_alloc(gar, file);
 	if (!g) {
 		log(1,"Out of memory!\n");
@@ -346,12 +350,13 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 	if (g->xor) {
 		log(1, "Map is XORed you can use garxor to speed the reading\n");
 	}
-	if (gar_load_img_hdr(g, &dataoffset, &blocksize) < 0) {
+
+	if (gar_load_img_hdr(g, &dataoffset, &blocksize, &fatoffset) < 0) {
 		log(1, "Failed to load header from: [%s]\n", g->file);
 		return -1;
 	}
 
-	rc = gar_load_fat(g, dataoffset, blocksize);
+	rc = gar_load_fat(g, dataoffset, blocksize, fatoffset);
 	if (rc == 0)
 		return -1;
 	gar_check_nt_map(g);
@@ -359,6 +364,7 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 		// FIXME: When we have a TDB we can skip this
 		// but when no TDB must load, we will keep
 		// the dskimg loaded and deal w/ subfiles
+		// We can use MPS file to do this
 		gar_load_subfiles(g);
 		log(6, "Loaded %d mapsets\n", g->mapsets);
 	}

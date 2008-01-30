@@ -39,7 +39,8 @@ struct hdr_img_t
 	u_int8_t  xorByte;            ///< 0x00000000
 	u_int8_t  byte0x00000001_0x0000000F[15];
 	char    signature[7];       ///< 0x00000010 .. 0x00000016
-	u_int8_t  byte0x00000017_0x00000040[42];
+	u_int8_t  byte0x00000017_0x00000039[41];
+	u_int8_t fat_offset;		// in blocks of 512bytes from the start
 	char    identifier[7];      ///< 0x00000041 .. 0x00000047
 	u_int8_t  byte0x00000048;
 	char    desc1[20];          ///< 0x00000049 .. 0x0000005C

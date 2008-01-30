@@ -212,7 +212,7 @@ static int gar_add_fe(struct gimg *g, struct FATblock_t *fent, int blocksize)
 	return 0;
 }
 
-int gar_load_fat(struct gimg *g, int dataoffset, int blocksize)
+int gar_load_fat(struct gimg *g, int dataoffset, int blocksize, unsigned int fatoffset)
 {
 	struct FATblock_t fent;
 	ssize_t s = sizeof(struct FATblock_t);
@@ -229,6 +229,9 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize)
 		fatend -= sizeof(struct hdr_img_t);
 		log(15, "FAT size %d\n", fatend);
 	}
+	/* This explains the 'reserved entries at start' */
+	if (fatoffset)
+		glseek(g, fatoffset * 512, SEEK_SET);
 	/* Read reserved FAT entries first */
 	while ((rc = gread(g, &fent, s)) == s) {
 		if (fent.flag != 0x00)
@@ -236,7 +239,7 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize)
 		rsz+=rc;
 		count ++;
 	}
-	log(17, "FAT Reserved entries %d\n", count);
+	log(17, "FAT Reserved entries %d(%d)\n", count, s);
 	count = 0;
 	do {
 		rsz+=rc;
