@@ -839,12 +839,22 @@ static void gar_register_subfile(struct gimg *g, struct gar_subfile *sub)
 	list_append(&sub->l, &g->lsubfiles);
 }
 
+static void gar_init_rgndata(struct gar_rgn_data *rgn)
+{
+	ga_init(&rgn->points, 1, 512);
+	ga_init(&rgn->polylines, 1, 512);
+	ga_init(&rgn->polygons, 1, 512);
+}
+
 static int gar_parse_rgn2(struct gar_subfile *sub)
 {
 	struct gimg *g = sub->gimg;
 	ssize_t off;
 	int rc;
 	unsigned char buf[512];
+
+	gar_init_rgndata(&sub->rgn);
+
 	if (sub->rgnlen2) {
 		off = sub->rgnbase + sub->rgnoffset2;
 		if (glseek(g, off, SEEK_SET) != off) {
@@ -890,6 +900,9 @@ static int gar_parse_rgn2(struct gar_subfile *sub)
 			goto out_err;
 		gar_print_buf("RGN5=RGN1DATA", buf, rc);
 	}
+	gar_load_rgnpoints(sub);
+	gar_load_rgnpolys(sub);
+	gar_load_rgnlines(sub);
 
 out_err:
 	return -1;

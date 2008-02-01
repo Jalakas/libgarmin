@@ -57,6 +57,12 @@ struct zip_def {
 
 struct gar_net_info;
 
+struct gar_rgn_data {
+	struct garray points;
+	struct garray polylines;
+	struct garray polygons;
+};
+
 struct gar_subfile {
 	list_t l;
 	int loaded;
@@ -104,6 +110,7 @@ struct gar_subfile {
 	int nfpolyline;
 	struct mlfilter *fpolygone;
 	int nfpolygone;
+	struct gar_rgn_data rgn;
 };
 
 int gar_load_subfiles(struct gimg *g);
