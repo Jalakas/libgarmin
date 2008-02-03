@@ -76,11 +76,12 @@ struct mapset_search {
 	struct map_search *ms;
 	struct item *item;
 	struct attr *search_attr;
+	struct attr_group *ag;
 	int partial;
 };
 
 struct mapset_search *
-mapset_search_new(struct mapset *ms, struct item *item, struct attr *search_attr, int partial)
+mapset_search_new(struct mapset *ms, struct attr_group *ag, struct item *item, struct attr *search_attr, int partial)
 {
 	struct mapset_search *this;
 	dbg(1,"enter(%p,%p,%p,%d)\n", ms, item, search_attr, partial);
@@ -89,7 +90,8 @@ mapset_search_new(struct mapset *ms, struct item *item, struct attr *search_attr
 	this->item=item;
 	this->search_attr=search_attr;
 	this->partial=partial;
-	this->ms=map_search_new(this->map->data, item, search_attr, partial);
+	this->ag = ag;
+	this->ms=map_search_new(this->map->data, ag, item, search_attr, partial);
 	return this;
 }
 
@@ -104,7 +106,7 @@ mapset_search_get_item(struct mapset_search *this)
 		if (! this->map)
 			break;
 		map_search_destroy(this->ms);
-		this->ms=map_search_new(this->map->data, this->item, this->search_attr, this->partial);
+		this->ms=map_search_new(this->map->data, this->ag, this->item, this->search_attr, this->partial);
 	}
 	return ret;
 }

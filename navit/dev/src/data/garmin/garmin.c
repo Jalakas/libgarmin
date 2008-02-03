@@ -176,7 +176,7 @@ garmin_object_debug(struct gobject *o, struct attr *attr)
 
 
 static struct map_search_priv *
-gmap_search_new(struct map_priv *map, struct item *item, struct attr *search, int partial)
+gmap_search_new(struct map_priv *map, struct attr_group *ag, struct item *item, struct attr *search, int partial)
 {
 	struct map_rect_priv *mr=g_new0(struct map_rect_priv, 1);
 	struct gar_search *gs;

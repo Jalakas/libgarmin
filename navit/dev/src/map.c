@@ -169,7 +169,7 @@ struct map_search {
 };
 
 struct map_search *
-map_search_new(struct map *m, struct item *item, struct attr *search_attr, int partial)
+map_search_new(struct map *m, struct attr_group *ag, struct item *item, struct attr *search_attr, int partial)
 {
 	struct map_search *this_;
 	dbg(1,"enter(%p,%p,%p,%d)\n", m, item, search_attr, partial);
@@ -183,7 +183,7 @@ map_search_new(struct map *m, struct item *item, struct attr *search_attr, int p
 		if (m->meth.map_search_new) {
 			if (m->meth.charset) 
 				this_->search_attr.u.str=g_convert(this_->search_attr.u.str, -1,m->meth.charset,"utf-8",NULL,NULL,NULL);
-			this_->priv=m->meth.map_search_new(m->priv, item, &this_->search_attr, partial);
+			this_->priv=m->meth.map_search_new(m->priv, ag, item, &this_->search_attr, partial);
 		} else {
 			g_free(this_);
 			this_=NULL;

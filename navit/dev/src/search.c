@@ -6,6 +6,7 @@
 #include "coord.h"
 #include "item.h"
 #include "search.h"
+#include "attr.h"
 
 struct search_list_level {
 	struct mapset *ms;
@@ -317,7 +318,7 @@ search_list_get_result(struct search_list *this_)
 				leu->last=leu->curr;
 				leu->curr=g_list_next(leu->curr);
 			}
-			le->search=mapset_search_new(this_->ms, le->parent, &le->attr, le->partial);
+			le->search=mapset_search_new(this_->ms, this_->result.attrs, le->parent, &le->attr, le->partial);
 			le->hash=g_hash_table_new_full(search_item_hash_hash, search_item_hash_equal, g_free, NULL);
 		}
 		dbg(1,"le->search=%p\n", le->search);
