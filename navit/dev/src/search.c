@@ -16,7 +16,6 @@ struct search_list_level {
 	GHashTable *hash;
 	GList *list,*curr,*last;
 	int complete;
-	
 };
 
 struct search_list {
@@ -44,6 +43,13 @@ search_item_hash_equal(gconstpointer a, gconstpointer b)
 	return FALSE;
 }
 
+static enum attr_type search_attrs[] = {
+	attr_country_id,
+	attr_district_id,
+	attr_town_id,
+	attr_street_id,
+};
+
 struct search_list *
 search_list_new(struct mapset *ms)
 {
@@ -51,7 +57,12 @@ search_list_new(struct mapset *ms)
 
 	ret=g_new0(struct search_list, 1);
 	ret->ms=ms;
-	
+	ret->result.attrs = attr_group_alloc_types(sizeof(search_attrs)/sizeof(search_attrs[0]),
+				search_attrs);
+	if (!ret->result.attrs) {
+		g_free(ret);
+		return NULL;
+	}
 	return ret;
 }
 
@@ -263,7 +274,12 @@ search_list_search_free(struct search_list *sl, int level)
 	le->curr=NULL;
 	le->last=NULL;
 	le->complete=0;
+}
 
+void
+search_list_select(struct search_list *sl, enum attr_type attr, unsigned int value)
+{
+	attr_group_set_intvalue(sl->result.attrs, attr, value);
 }
 
 static int
@@ -355,5 +371,8 @@ search_list_get_result(struct search_list *this_)
 void
 search_list_destroy(struct search_list *this_)
 {
+	if (this_->result.attrs) {
+		attr_group_free(this_->result.attrs);
+	}
 	g_free(this_);
 }

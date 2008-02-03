@@ -110,6 +110,14 @@ static int mode2col[] = {
 	6, // number
 };
 
+static enum attr_type mode2attr[] = {
+	attr_country_id,
+	attr_district_id,
+	attr_town_id,
+	attr_street_id,
+};
+
+
 static void set_columns(struct search_param *param)
 {
 	GList *columns_list,*columns;
@@ -140,6 +148,8 @@ static void select_row(GtkTreeSelection *sel, struct search_param *search)
 	GtkTreeModel *model;
 	gchar *text;
 	int col = mode2col[search->mode];
+	int id;
+	enum attr_type attr;
 
 	printf("selected Called\n");
 
@@ -167,6 +177,11 @@ static void select_row(GtkTreeSelection *sel, struct search_param *search)
 		}
 		search->dontsearch = 0;
 		g_free (text);
+		gtk_tree_model_get (model, &iter, 0,  &text,  -1);
+		id = atoi(text);
+		g_free (text);
+		attr = mode2attr[search->mode];
+		search_list_select(search->sl, attr, id);
 	}
 }
 

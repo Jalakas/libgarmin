@@ -42,6 +42,7 @@ struct search_list_result {
 	struct search_list_district *district;
 	struct search_list_town *town;
 	struct search_list_street *street;
+	struct attr_group *attrs;
 };
 
 /* prototypes */
@@ -53,6 +54,8 @@ struct search_list *search_list_new(struct mapset *ms);
 void search_list_search(struct search_list *this_, struct attr *search_attr, int partial);
 struct search_list_result *search_list_get_result(struct search_list *this_);
 void search_list_destroy(struct search_list *this_);
+void search_list_select(struct search_list *sl, enum attr_type attr, unsigned int value);
+
 /* end of prototypes */
 #ifdef __cplusplus
 }

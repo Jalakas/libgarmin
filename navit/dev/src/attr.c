@@ -297,3 +297,17 @@ attr_group_get_data(void *priv, struct item *it, struct attr_group *ag)
 	}
 	return rc;
 }
+
+int
+attr_group_set_intvalue(struct attr_group *ag, enum attr_type type, int val)
+{
+	int i;
+	for (i=0; i < ag->count; i++) {
+		if (ag->attrs[i].type == type) {
+			ag->attrs[i].u.num = val;
+			attr_group_set_present(ag, i);
+			return 1;
+		}
+	}
+	return 0;
+}
