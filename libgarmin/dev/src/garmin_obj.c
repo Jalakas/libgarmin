@@ -34,6 +34,7 @@ static void gar_ref_subdiv(struct gobject *o)
 {
 	struct gpoint *gp;
 	struct gpoly *gl;
+	struct gar_search_res *sr;
 	struct gar_subdiv *sd = NULL;
 
 	switch (o->type) {
@@ -75,6 +76,25 @@ static void gar_unref_subdiv(struct gobject *o)
 		gar_subdiv_unref(sd);
 }
 
+static void gar_free_search_obj(struct gar_search_res *s)
+{
+	gar_subfile_unref(s->sub);
+	free(s);
+}
+
+static struct gar_search_res *gar_alloc_search_obj(struct gar_subfile *sub, struct gar_search_res *from)
+{
+	struct gar_search_res *s;
+	s = calloc(1, sizeof(*s));
+	if (!s)
+		return s;
+	if (from)
+		*s = *from;
+	s->sub = sub;
+	gar_subfile_ref(sub);
+	return s;
+}
+
 static struct gobject *gar_alloc_object(int type, void *obj)
 {
 	struct gobject *o;
@@ -93,6 +113,8 @@ void gar_free_objects(struct gobject *g)
 	while (g) {
 		gn = g->next;
 		gar_unref_subdiv(g);
+		if (g->type == GO_SEARCH)
+			gar_free_search_obj(g->gptr);
 		free(g);
 		g = gn;
 	}
@@ -436,6 +458,7 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr)
 }
 static void gar_debug_objects(struct gobject *o);
 
+/* TODO: Handle special chars  */
 static int gar_match(char *needle, char *str, int type)
 {
 	switch (type) {
@@ -449,20 +472,27 @@ static int gar_match(char *needle, char *str, int type)
 	return 0;
 }
 
+
 static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 					struct gar_search *s)
 {
 	int i, rc = 0;
 	int nsub;
+	struct gar_search_res *so;
+	struct gar_search_res *from = NULL;
 	struct gar_subfile *gsub;
 	struct gobject *first = NULL, *o = NULL;
 
+	if (s->fromobj && s->fromobj->type == GO_SEARCH)
+		from = s->fromobj->gptr;
+	if (from) {
+		log(1, "Search from cid: %d rid: %d\n",
+				from->countryid, from->regionid);
+	}
 	switch (s->type) {
 		case GS_COUNTRY:
 			break;
 		case GS_REGION:
-			log(1, "Region search not implemented\n");
-			return 0;
 			break;
 		case GS_CITY:
 			break;
@@ -494,9 +524,52 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 			// FIXME: Load only if have enough bits
 			gar_load_subfile_data(gsub);
 		}
-
+		gar_init_srch(gsub, 0);
 		gar_init_srch(gsub, 1);
+
 		switch (s->type) {
+			case GS_COUNTRY:
+				for (i = 1; i < gsub->ccount; i++) {
+					if (gar_match(s->needle, gsub->countries[i], s->match)) {
+						log(1, "Match: %s\n", gsub->countries[i]);
+						so = gar_alloc_search_obj(gsub, from);
+						if (so) {
+							so->countryid = i;
+							o = gar_alloc_object(GO_SEARCH, so);
+							if (o) {
+								rc ++;
+								if (first) {
+									o->next = first;
+									first = o;
+								} else
+									first = o;
+							}
+						}
+					}
+				}
+				break;
+			case GS_REGION:
+				for (i = 1; i < gsub->rcount; i++) {
+					if ((!from || from->countryid == gsub->regions[i]->country) &&
+					gar_match(s->needle, gsub->regions[i]->name, s->match)) {
+						log(1, "Match: %s\n", gsub->regions[i]->name);
+						so = gar_alloc_search_obj(gsub, from);
+						if (so) {
+							so->countryid = gsub->regions[i]->country;
+							so->regionid = i;
+							o = gar_alloc_object(GO_SEARCH, so);
+							if (o) {
+								rc ++;
+								if (first) {
+									o->next = first;
+									first = o;
+								} else
+									first = o;
+							}
+						}
+					}
+				}
+				break;
 			case GS_CITY:
 				for (i = 1; i < gsub->cicount; i++) {
 					char *lbl = gsub->cities[i]->label;
@@ -562,6 +635,7 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 //		gar_free_srch(gsub);
 	}
 	*ret = first;
+	log(1, "Returning %d matches\n", rc);
 	return rc;
 }
 
@@ -726,9 +800,11 @@ u_int16_t gar_obj_type(struct gobject *o)
 		ret = ((struct gpoly *)o->gptr)->type;
 		break;
 	case GO_ROAD:
+	case GO_SEARCH:
 		ret = 1;
 		break;
 	default:
+		ret = ~0;
 		log(1, "Error unknown object type:%d\n", o->type);
 	}
 	return ret;
@@ -931,6 +1007,8 @@ int gar_object_mapid(struct gobject *o)
 		break;
 	case GO_ROAD:
 		return ((struct gar_road *)o->gptr)->sub->id;
+	case GO_SEARCH:
+		return ((struct gar_search_res *)o->gptr)->sub->id;
 	default:
 		log(1, "Error unknown object type:%d\n", o->type);
 	}
@@ -984,6 +1062,17 @@ int gar_object_index(struct gobject *o)
 		}
 	case GO_ROAD:
 			return ((struct gar_road *)o->gptr)->offset;
+	case GO_SEARCH:
+			{
+				struct gar_search_res *s = o->gptr;
+				if (s->cityid)
+					return s->cityid;
+				if (s->regionid)
+					return s->regionid;
+				if (s->countryid)
+					return s->countryid;
+				return -1;
+			}
 	default:
 		log(1, "Error unknown object type:%d\n", o->type);
 	}
@@ -1060,4 +1149,78 @@ static void gar_debug_objects(struct gobject *o)
 		}
 		o = o->next;
 	}
+}
+
+unsigned int gar_srch_get_countryid(struct gobject *o)
+{
+	struct gar_search_res *s = o->gptr;
+	if (o->type != GO_SEARCH)
+		return 0;
+	return s->countryid;
+}
+
+char *gar_srch_get_country(struct gobject *o)
+{
+	struct gar_subfile *sub;
+	struct gar_search_res *s = o->gptr;
+	unsigned id;
+	if (o->type != GO_SEARCH)
+		return 0;
+	id = s->countryid;
+	sub = s->sub;
+	if (id < sub->ccount)
+		return sub->countries[id];
+	return NULL;
+}
+
+unsigned int gar_srch_get_regionid(struct gobject *o)
+{
+	struct gar_search_res *s = o->gptr;
+	if (o->type != GO_SEARCH)
+		return 0;
+	return s->regionid;
+}
+
+char *gar_srch_get_region(struct gobject *o)
+{
+	struct gar_subfile *sub;
+	struct gar_search_res *s = o->gptr;
+	unsigned id;
+	if (o->type != GO_SEARCH)
+		return 0;
+	id = s->regionid;
+	sub = s->sub;
+	if (id < sub->rcount)
+		return sub->regions[id]->name;
+	return NULL;
+}
+
+unsigned int gar_srch_get_cityid(struct gobject *o)
+{
+	struct gar_search_res *s = o->gptr;
+	if (o->type != GO_SEARCH)
+		return 0;
+	return s->cityid;
+}
+
+unsigned int gar_srch_get_zipid(struct gobject *o)
+{
+	struct gar_search_res *s = o->gptr;
+	if (o->type != GO_SEARCH)
+		return 0;
+	return s->zipid;
+}
+
+char *gar_srch_get_zip(struct gobject *o)
+{
+	struct gar_subfile *sub;
+	struct gar_search_res *s = o->gptr;
+	unsigned id;
+	if (o->type != GO_SEARCH)
+		return 0;
+	id = s->countryid;
+	sub = s->sub;
+	if (id < sub->czips)
+		return sub->zips[id]->code;
+	return NULL;
 }

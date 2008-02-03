@@ -738,27 +738,6 @@ void gar_free_srch(struct gar_subfile *f)
 	}
 }
 
-#define POI_STREET_NUM		(1<<0)
-#define POI_STREET		(1<<1)
-#define POI_CITY		(1<<2)
-#define POI_ZIP			(1<<3)
-#define POI_PHONE		(1<<4)
-#define POI_EXIT		(1<<5)
-#define POI_TIDE_PREDICT	(1<<6)
-#define POI_UNKNOW		(1<<7)
-
-struct gar_poi_properties {
-	u_int8_t	flags;
-	u_int32_t	lbloff;
-	char		*number;
-	u_int32_t	streetoff;
-	unsigned short	cityidx;
-	unsigned short	zipidx;
-	char		*phone;
-	u_int32_t	exitoff;
-	u_int32_t	tideoff;
-};
-
 void gar_log_poi_properties(struct gar_subfile *sub, struct gar_poi_properties *p)
 {
 	char buf[1024];

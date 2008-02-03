@@ -65,6 +65,7 @@ struct gar_search {
 #define GO_POLYLINE	3
 #define GO_POLYGON	4
 #define GO_ROAD		5
+#define GO_SEARCH	6
 
 struct gar_subfile;
 struct gar_objdraworder;
@@ -182,6 +183,14 @@ int gar_object_flags(struct gobject *o);
 #define POI_EXIT		(1<<5)
 #define POI_TIDE_PREDICT	(1<<6)
 #define POI_UNKNOW		(1<<7)
+
+unsigned int gar_srch_get_countryid(struct gobject *o);
+char *gar_srch_get_country(struct gobject *o);
+unsigned int gar_srch_get_regionid(struct gobject *o);
+char *gar_srch_get_region(struct gobject *o);
+unsigned int gar_srch_get_cityid(struct gobject *o);
+unsigned int gar_srch_get_zipid(struct gobject *o);
+char *gar_srch_get_zip(struct gobject *o);
 
 
 #ifdef __cplusplus
