@@ -181,6 +181,7 @@ gmap_search_new(struct map_priv *map, struct attr_group *ag, struct item *item, 
 	struct map_rect_priv *mr=g_new0(struct map_rect_priv, 1);
 	struct gar_search *gs;
 	int rc;
+	struct attr *attr;
 
 	dlog(1, "Called item=%p!\n",item);
 	mr->mpriv=map;
@@ -189,6 +190,23 @@ gmap_search_new(struct map_priv *map, struct attr_group *ag, struct item *item, 
 		dlog(1, "Can not init search \n");
 		free(mr);
 		return NULL;
+	}
+	if (ag) {
+		attr = attr_group_gettype(ag, attr_country_id);
+		if (attr) {
+			dlog(1, "Countryid:%d\n", attr->u.num);
+			gs->fromres.countryid = attr->u.num;
+		}
+		attr = attr_group_gettype(ag, attr_district_id);
+		if (attr) {
+			dlog(1, "Regionid:%d\n", attr->u.num);
+			gs->fromres.regionid = attr->u.num;
+		}
+		attr = attr_group_gettype(ag, attr_town_id);
+		if (attr) {
+			dlog(1, "cityid:%d\n", attr->u.num);
+			gs->fromres.cityid = attr->u.num;
+		}
 	}
 	mr->search = gs;
 	switch (search->type) {
