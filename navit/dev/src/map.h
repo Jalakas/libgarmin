@@ -16,6 +16,8 @@ struct map_selection {
 	int order[layer_end];		
 };
 
+#define MAP_COUNTRYLIST		(1<<0)
+
 struct map_methods {
 	enum projection pro;
 	char *charset;
@@ -27,6 +29,7 @@ struct map_methods {
 	struct map_search_priv *(*map_search_new)(struct map_priv *map, struct item *item, struct attr *search, int partial);
 	void			(*map_search_destroy)(struct map_search_priv *ms);
 	struct item *		(*map_search_get_item)(struct map_search_priv *ms);
+	unsigned flags;
 };
 
 static inline int

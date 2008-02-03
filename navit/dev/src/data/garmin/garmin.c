@@ -193,7 +193,11 @@ gmap_search_new(struct map_priv *map, struct item *item, struct attr *search, in
 	mr->search = gs;
 	switch (search->type) {
 		case attr_country_name:
+		case attr_country_all:
 			gs->type = GS_COUNTRY;
+				break;
+		case attr_district_name:
+			gs->type = GS_REGION;
 				break;
 		case attr_town_name:
 			gs->type = GS_CITY;
@@ -205,7 +209,6 @@ gmap_search_new(struct map_priv *map, struct item *item, struct attr *search, in
 			gs->type = GS_ROAD;
 				break;
 #if someday
-		case attr_region_name:
 		case attr_intersection:
 		case attr_housenumber:
 #endif
@@ -421,6 +424,113 @@ static struct item_methods methods_garmin_poly = {
 	coord_is_segment,
 };
 
+static int 
+search_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
+{
+	struct gobject *g = priv_data;
+	struct map_rect_priv *mr = g->priv_data;
+	int rc;
+	switch (attr_type) {
+	case attr_any:
+			if (g != mr->last_oattr) {
+				mr->last_oattr = g;
+				mr->last_attr = 0;
+			}
+			switch(mr->last_attr) {
+				case 0:
+					mr->last_attr++;
+					attr->type = attr_label;
+					rc = garmin_object_label(g, attr);
+					if (rc)
+						return rc;
+				case 1:
+					mr->last_attr++;
+					attr->type = attr_debug;
+					rc = garmin_object_debug(g, attr);
+					if (rc)
+						return rc;
+				case 2:
+					mr->last_attr++;
+					if (g->type == GO_POLYLINE) {
+						attr->type = attr_street_name;
+						rc = garmin_object_label(g, attr);
+						if (rc)
+							return rc;
+					}
+				case 3:
+					mr->last_attr++;
+					attr->type = attr_flags;
+					attr->u.num = 0;
+					rc = gar_object_flags(g);
+					if (rc & F_ONEWAY)
+						attr->u.num |= AF_ONEWAY;
+					if (rc & F_SEGMENTED)
+						attr->u.num |= AF_SEGMENTED;
+					return 1;
+				default:
+					return 0;
+			}
+			break;
+	case attr_label:
+		attr->type = attr_label;
+		return garmin_object_label(g, attr);
+	case attr_town_name:
+		attr->type = attr_town_name;
+		return garmin_object_label(g, attr);
+	case attr_street_name:
+		attr->type = attr_street_name;
+		return garmin_object_label(g, attr);
+	case attr_flags:
+		attr->type = attr_flags;
+		attr->u.num = 0;
+		rc = gar_object_flags(g);
+		if (rc & F_ONEWAY)
+			attr->u.num |= AF_ONEWAY;
+		if (rc & F_SEGMENTED)
+			attr->u.num |= AF_SEGMENTED;
+		return 1;
+	case attr_country_id:
+		rc = gar_srch_get_countryid(g);
+		if (rc) {
+			attr->type = attr_country_id;
+			attr->u.num = rc;
+			return 1;
+		}
+		return 0;
+	case attr_country_name:
+		attr->type = attr_country_name;
+		attr->u.str = gar_srch_get_country(g);
+		if (attr->u.str)
+			return 1;
+		return 0;
+	case attr_district_id:
+		rc = gar_srch_get_regionid(g);
+		if (rc) {
+			attr->type = attr_district_id;
+			attr->u.num = rc;
+			return 1;
+		}
+		return 0;
+	case attr_district_name:
+		attr->type = attr_district_name;
+		attr->u.str = gar_srch_get_region(g);
+		if (attr->u.str)
+			return 1;
+		return 0;
+	default:
+		dlog(1, "Dont know about attribute %d[%04X]=%s yet\n", attr_type,attr_type, attr_to_name(attr_type));
+	}
+
+	return 0;
+}
+
+static struct item_methods methods_garmin_search = {
+	coord_rewind,
+	point_coord_get,
+	attr_rewind,
+	search_attr_get,
+};
+
 static struct item *
 garmin_poi2item(struct map_rect_priv *mr, struct gobject *o, unsigned short otype)
 {
@@ -449,6 +559,15 @@ garmin_pg2item(struct map_rect_priv *mr, struct gobject *o, unsigned short otype
 }
 
 static struct item *
+garmin_srch2item(struct map_rect_priv *mr, struct gobject *o, unsigned short otype)
+{
+	mr->item.type = type_country_label;
+	mr->item.meth = &methods_garmin_search;
+	return &mr->item;
+}
+
+
+static struct item *
 garmin_obj2item(struct map_rect_priv *mr, struct gobject *o)
 {
 	unsigned short otype;
@@ -463,6 +582,8 @@ garmin_obj2item(struct map_rect_priv *mr, struct gobject *o)
 			return garmin_pg2item(mr, o, otype);
 		case GO_ROAD:
 			return garmin_pl2item(mr, o, otype);
+		case GO_SEARCH:
+			return garmin_srch2item(mr, o, otype);
 		default:
 			dlog(1, "Unknown garmin object type:%d\n",
 				o->type);
@@ -508,8 +629,10 @@ gmap_rect_get_item(struct map_rect_priv *mr)
 		mr->item.priv_data = o;
 		mr->item.type = type_none;
 		o->priv_data = mr;
-		if (!garmin_obj2item(mr, o))
+		if (!garmin_obj2item(mr, o)) {
+			dlog(1, "Failed to create item\n");
 			return NULL;
+		}
 		return &mr->item;
 	}
 	return NULL;
@@ -725,6 +848,7 @@ static struct map_methods map_methods = {
 	gmap_search_new,
 	gmap_search_destroy,
 	gmap_rect_get_item,
+	MAP_COUNTRYLIST,
 };
 
 static struct map_priv *

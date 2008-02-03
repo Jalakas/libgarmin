@@ -13,6 +13,13 @@ struct search_list_country {
 	unsigned int id;
 };
 
+struct search_list_district {
+	struct item item;
+	char *name;
+	char *country;
+	unsigned int id;
+};
+
 struct search_list_town {
 	struct item item;
 	struct item itemt;
@@ -32,6 +39,7 @@ struct search_list_street {
 struct search_list_result {
 	struct pcoord *c;
 	struct search_list_country *country;
+	struct search_list_district *district;
 	struct search_list_town *town;
 	struct search_list_street *street;
 };
