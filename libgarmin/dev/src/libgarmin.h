@@ -60,6 +60,8 @@ struct gar_search_res {
 	unsigned regionid;
 	unsigned cityid;
 	unsigned zipid;
+	unsigned roadid;
+	unsigned poiid;
 };
 
 struct gar_search {
@@ -202,6 +204,9 @@ unsigned int gar_srch_get_cityid(struct gobject *o);
 char *gar_srch_get_city(struct gobject *o);
 unsigned int gar_srch_get_zipid(struct gobject *o);
 char *gar_srch_get_zip(struct gobject *o);
+unsigned int gar_srch_get_roadid(struct gobject *o);
+char *gar_srch_get_roadname(struct gobject *o);
+
 
 
 #ifdef __cplusplus

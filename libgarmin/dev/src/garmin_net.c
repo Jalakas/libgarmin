@@ -188,6 +188,30 @@ static void gar_log_sai(struct gar_subfile *sub, struct street_addr_info *sai)
 
 void gar_sai2searchres(struct street_addr_info *sai, struct gar_search_res *res)
 {
+	u_int8_t fl = sai->flags;
+	fl >>=2;
+	if ((fl&3)!=3 && sai->field1) {
+		if ((fl&3)==0) {
+//			log(11, "Number: size=%d\n", *sai->field1);
+		} else {
+			res->zipid = *(unsigned short*)sai->field1;
+		}
+	}
+	fl >>= 2;
+	if ((fl&3)!=3 && sai->field2) {
+		if ((fl&3)==0) {
+			log(11, "Number: size=%d\n", *sai->field2);
+		} else {
+			res->cityid = *(unsigned short*)sai->field2;
+		}
+	}
+	fl >>= 2;
+	if ((fl&3)!=3 && sai->field3) {
+		if ((fl&3)==0) {
+			log(11, "Number: size=%d\n", *sai->field3);
+		} else
+			res->regionid = *(unsigned short*)sai->field3; 
+	}
 	
 }
 
@@ -225,8 +249,13 @@ int gar_match_sai(struct street_addr_info *sai, unsigned int zipid, unsigned int
 	}
 	fl >>= 2;
 	if (rid) {
-		if (rid == *(unsigned short*)sai->field3)
-			rc = 1;
+		if ((fl&3)!=3 && sai->field3) {
+			if ((fl&3)==0) {
+				log(11, "Number: size=%d\n", *sai->field3);
+			} else
+				if (rid == *(unsigned short*)sai->field3)
+					rc = 1;
+		}
 	}
 	return rc;
 }

@@ -630,6 +630,8 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 			case GS_CITY:
 				for (i = 1; i < gsub->cicount; i++) {
 					char *lbl = gsub->cities[i]->label;
+					if (from->regionid && gsub->cities[i]->region_idx != from->regionid)
+						continue;
 					ot = NULL;
 					if (!lbl) {
 						ot = gar_get_subfile_object_byidx(gsub, 
@@ -680,16 +682,17 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 					gar_load_roadnetwork(gsub);
 					for (i=0; i < ROADS_HASH_TAB_SIZE; i++) {
 						list_for_entry(r, &gsub->net->lroads[i], l) {
-							if (!r->sai ||  gar_match_sai(r->sai, from->zipid, from->regionid, from->cityid, 0)) {
+							if (!r->sai || (from->cityid == 0 && from->regionid == 0 && from->zipid == 0) ||  gar_match_sai(r->sai, from->zipid, from->regionid, from->cityid, 0)) {
 								for(j = 0; j < 4; j++) {
 									if (r->labels[j]) {
-										if (gar_get_lbl(gsub, r->labels[j], L_LBL, buf, sizeof(buf))) {
+										if (gar_get_lbl(gsub, r->labels[j], L_LBL, (unsigned char *)buf, sizeof(buf))) {
 											if (gar_match(s->needle, buf, s->match)) {
 											so = gar_alloc_search_obj(gsub, from);
 											if (so) {
 												log(10, "Found road: %s\n", buf);
 												if (r->sai)
 													gar_sai2searchres(r->sai, so);
+												so->roadid = r->offset;
 												o = gar_alloc_object(GO_SEARCH, so);
 												if (o) {
 													rc++;
@@ -931,6 +934,12 @@ int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 		struct city_def *cd = NULL;
 		struct gpoint *gp;
 		res = o->gptr;
+		if (res->roadid) {
+			struct gar_road *rd = gar_get_road(sub, res->roadid);
+			if (rd) {
+			}
+			return 0;
+		}
 		// give the most precise coord here
 		if (res->cityid) {
 			if (res->cityid < res->sub->cicount) {
@@ -979,8 +988,12 @@ int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 				ret->x = gp->c.x;
 				ret->y = gp->c.y;
 				return 1;
+			} else {
+				log(1, "Error can not find city object\n");
 			}
-		}
+		} else {
+				log(1, "Error can not any find city\n");
+			}
 		return 0;
 	} else if (o->type == GO_ROAD) {
 		struct gar_road *rd = o->gptr;
@@ -1199,6 +1212,8 @@ int gar_object_index(struct gobject *o)
 	case GO_SEARCH:
 			{
 				struct gar_search_res *s = o->gptr;
+				if (s->roadid)
+					return s->roadid;
 				if (s->cityid)
 					return s->cityid;
 				if (s->regionid)
@@ -1324,7 +1339,7 @@ char *gar_srch_get_region(struct gobject *o)
 		return 0;
 	id = s->regionid;
 	sub = s->sub;
-	if (id < sub->rcount)
+	if (id && id < sub->rcount)
 		return sub->regions[id]->name;
 	return NULL;
 }
@@ -1344,17 +1359,18 @@ char *gar_srch_get_city(struct gobject *o)
 	unsigned id;
 	char *lbl = NULL;
 	if (o->type != GO_SEARCH)
-		return 0;
+		return NULL;
 	id = s->cityid;
+	if (!id)
+		return NULL;
 	if (s->sub->cities[id]->label)
-		return s->sub->cities[id]->label;
+		return strdup(s->sub->cities[id]->label);
 	ot = gar_get_subfile_object_byidx(s->sub, 
 			s->sub->cities[id]->subdiv_idx,
 			s->sub->cities[id]->point_idx, GO_POINT);
 	if (ot)
 		lbl = gar_get_object_lbl(ot);
 	return lbl;
-
 }
 
 unsigned int gar_srch_get_zipid(struct gobject *o)
@@ -1374,7 +1390,48 @@ char *gar_srch_get_zip(struct gobject *o)
 		return 0;
 	id = s->zipid;
 	sub = s->sub;
-	if (id < sub->czips)
+	if (id && id < sub->czips)
 		return sub->zips[id]->code;
 	return NULL;
+}
+
+unsigned int gar_srch_get_roadid(struct gobject *o)
+{
+	struct gar_search_res *s = o->gptr;
+	if (o->type != GO_SEARCH)
+		return 0;
+	return s->roadid;
+}
+
+char *gar_srch_get_roadname(struct gobject *o)
+{
+	struct gar_search_res *s = o->gptr;
+	struct gar_subfile *sub = s->sub;
+	unsigned id;
+	struct gar_road *rd;
+	if (o->type != GO_SEARCH)
+		return 0;
+	id = s->roadid;
+	rd = gar_get_road(sub, id);
+	if (rd) {
+		char buf[8192];
+		int i,sz = 0;
+		for (i=0;i < 4; i++) {
+			if (rd->labels[i]) {
+				if (sz) {
+					strcat(buf, "/");
+					sz++;
+				}
+				sz += gar_get_lbl(rd->sub, rd->labels[i], L_LBL,
+				 (unsigned char *)buf+sz, sizeof(buf)-sz);
+			}
+		}
+		if (sz) {
+			log(1, "roadname:[%s]\n", buf);
+			return strdup(buf);
+		}
+	} else {
+		log(1, "Can not find road %d\n", id);
+	}
+	return strdup("");
 }
