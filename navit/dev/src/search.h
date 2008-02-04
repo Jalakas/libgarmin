@@ -40,6 +40,13 @@ struct search_list_street {
 	struct item item;
 	struct pcoord *c;
 	char *name;
+	char *postal;
+	char *city;
+	char *country;
+	char *district;
+	unsigned int cid;
+	unsigned int rid;
+	unsigned int tid;
 	unsigned int id;
 };
 

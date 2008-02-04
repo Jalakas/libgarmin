@@ -1,0 +1,26 @@
+/* XPM */
+static char *drinking_water[] = {
+/* columns rows colors chars-per-pixel */
+"15 15 5 1",
+"  c gray40",
+". c blue",
+"X c gray60",
+"o c gray100",
+"O c None",
+/* pixels */
+"O     OOOOOOOOO",
+"O     OOOOOOOOO",
+"O     XXXXXOOOO",
+"O     XXXXXXOOO",
+"O     XXXXXXXOO",
+"O     OOOOXOXOO",
+"O     OOOOXXXOO",
+"O     OOOOXXXOO",
+"O     OOOO...OO",
+"O     OOOO.o.OO",
+"O     OOOO...OO",
+"O     OOOOo.oOO",
+"O     OOOO...OO",
+"O     OOOO..o.O",
+"OO    OOO..o.oO"
+};

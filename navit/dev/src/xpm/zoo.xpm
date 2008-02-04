@@ -1,0 +1,25 @@
+/* XPM */
+static char *zoo[] = {
+/* columns rows colors chars-per-pixel */
+"15 15 4 1",
+"  c gray75",
+". c moccasin",
+"X c gainsboro",
+"o c None",
+/* pixels */
+"ooooooooooooooo",
+"ooooooooooooooo",
+"ooooooooooooooo",
+"ooooooooXXXoooo",
+"oooXXXX XX oooo",
+"ooXXXX XXXX ooo",
+"oXXXX XX.XXXooo",
+"XXXXXX XXXXXooX",
+"oXXXXX  XXXXoXo",
+"oXXXXXXX.XXXoXo",
+"oXXXXXXX..XXXXo",
+"ooXXXXXXXX.XXoo",
+"ooX XXooX Xoooo",
+"ooX XoooX Xoooo",
+"ooXXXoooXXXoooo"
+};

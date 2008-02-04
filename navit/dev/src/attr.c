@@ -249,6 +249,12 @@ attr_group_set_present(struct attr_group *ag, int idx)
 	ag->present |= (1<<idx);
 }
 
+static void
+attr_group_clear_present(struct attr_group *ag, int idx)
+{
+	ag->present &= ~(1<<idx);
+}
+
 struct attr_group *
 attr_group_alloc_types(unsigned int count, enum attr_type *types)
 {
@@ -306,6 +312,21 @@ attr_group_set_intvalue(struct attr_group *ag, enum attr_type type, int val)
 		if (ag->attrs[i].type == type) {
 			ag->attrs[i].u.num = val;
 			attr_group_set_present(ag, i);
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int
+attr_group_clear(struct attr_group *ag, enum attr_type type)
+{
+	int i;
+	for (i=0; i < ag->count; i++) {
+		if (ag->attrs[i].type == type) {
+			if (attr_group_present(ag, i))
+				attr_free_data(&ag->attrs[i]);
+			attr_group_clear_present(ag, i);
 			return 1;
 		}
 	}

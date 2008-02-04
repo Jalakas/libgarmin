@@ -100,8 +100,8 @@ static char **columns_text[] = {
 	(char *[]){ "ID", _n("Car"),_n("Iso2"),_n("Iso3"),_n("Country"),NULL},
 	(char *[]){ "ID", _n("Country"), _n("District"), NULL},
 	(char *[]){ "ID", _n("Country"), _n("District"),_n("Postal"),_n("Town"),NULL},
-	(char *[]){ "ID", _n("Car"),_n("Postal"),_n("Town"),_n("District"),_n("Street"),NULL},
-	(char *[]){ "ID", _n("Car"),_n("Postal"),_n("Town"),_n("District"),_n("Street"),_n("Number"),NULL},
+	(char *[]){ "ID", _n("Country"), _n("District"),_n("Postal"),_n("Town"),_n("Street"),NULL},
+	(char *[]){ "ID", _n("Country"), _n("District"),_n("Postal"),_n("Town"),_n("Street"),_n("Number"),NULL},
 };
 
 static int mode2col[] = {
@@ -144,25 +144,6 @@ static void set_columns(struct search_param *param)
 	
 }
 
-static void update_selection(struct search_param *search, struct search_list_result *res)
-{
-	struct attr *attr;
-	struct attr_group *ag = res->attrs;
-	attr = attr_group_gettype(ag, attr_country_id);
-	if (attr) {
-		printf("Countryid:%d\n", attr->u.num);
-	}
-	attr = attr_group_gettype(ag, attr_district_id);
-	if (attr) {
-		printf("Regionid:%d\n", attr->u.num);
-	}
-	attr = attr_group_gettype(ag, attr_town_id);
-	if (attr) {
-		printf("townid:%d\n", attr->u.num);
-	}
-
-}
-
 static void select_row(GtkTreeSelection *sel, struct search_param *search)
 {
 	GtkTreeIter iter;
@@ -178,9 +159,8 @@ static void select_row(GtkTreeSelection *sel, struct search_param *search)
 	if (gtk_tree_selection_get_selected (sel, &model, &iter))
 	{
 		gtk_tree_model_get (model, &iter, RES_COL,  &res,  -1);
-		update_selection(search, res);
 		gtk_tree_model_get (model, &iter, col,  &text,  -1);
-		g_print ("You selected: %s\n", text);
+		g_print ("You selected: %s %p\n", text, res);
 		search->dontsearch = 1;
 		switch(search->mode) {
 			case 0:
@@ -190,22 +170,41 @@ static void select_row(GtkTreeSelection *sel, struct search_param *search)
 				gtk_entry_set_text(GTK_ENTRY(search->entry_district), text);
 				g_free (text);
 				gtk_tree_model_get (model, &iter, 1,  &text,  -1);
-				gtk_entry_set_text(GTK_ENTRY(search->entry_country), text);
+				if (text)
+					gtk_entry_set_text(GTK_ENTRY(search->entry_country), text);
 				break;
 			case 2:
 				gtk_entry_set_text(GTK_ENTRY(search->entry_city), text);
 				g_free (text);
 				gtk_tree_model_get (model, &iter, 1,  &text,  -1);
-				gtk_entry_set_text(GTK_ENTRY(search->entry_country), text);
+				if (text)
+					gtk_entry_set_text(GTK_ENTRY(search->entry_country), text);
 				g_free (text);
 				gtk_tree_model_get (model, &iter, 2,  &text,  -1);
-				gtk_entry_set_text(GTK_ENTRY(search->entry_district), text);
+				if (text)
+					gtk_entry_set_text(GTK_ENTRY(search->entry_district), text);
 				g_free (text);
 				gtk_tree_model_get (model, &iter, 3,  &text,  -1);
-				gtk_entry_set_text(GTK_ENTRY(search->entry_postal), text);
+				if (text)
+					gtk_entry_set_text(GTK_ENTRY(search->entry_postal), text);
 				break;
 			case 3:
 				gtk_entry_set_text(GTK_ENTRY(search->entry_street), text);
+				g_free (text);
+				gtk_tree_model_get (model, &iter, 1,  &text,  -1);
+				if (text)
+					gtk_entry_set_text(GTK_ENTRY(search->entry_country), text);
+				g_free (text);
+				gtk_tree_model_get (model, &iter, 2,  &text,  -1);
+				if (text)
+					gtk_entry_set_text(GTK_ENTRY(search->entry_district), text);
+				g_free (text);
+				gtk_tree_model_get (model, &iter, 3,  &text,  -1);
+				if (text)
+					gtk_entry_set_text(GTK_ENTRY(search->entry_postal), text);
+				gtk_tree_model_get (model, &iter, 4,  &text,  -1);
+				if (text)
+					gtk_entry_set_text(GTK_ENTRY(search->entry_city), text);
 				break;
 			case 4:
 				gtk_entry_set_text(GTK_ENTRY(search->entry_number), text);
@@ -228,12 +227,6 @@ static void changed(GtkWidget *widget, struct search_param *search)
 	printf("changed %s\n", search->attr.u.str);
 	if (search->dontsearch)
 		return;
-#if 0
-	sel = gtk_tree_view_get_selection(search->treeview);
-	if (gtk_tree_selection_get_selected(sel, &iter)) {
-		printf("have selection:\n");
-	}
-#endif
 	if (widget == search->entry_country) {
 		dbg(0,"country\n");
 		search->attr.type=attr_country_all;
@@ -249,7 +242,7 @@ static void changed(GtkWidget *widget, struct search_param *search)
 	if (widget == search->entry_city) {
 		dbg(0,"town\n");
 		search->attr.type=attr_town_name;
-		if (strlen(search->attr.u.str) < 3) 
+		if (strlen(search->attr.u.str) < 2) 
 			return;
 		search->mode = 2;
 		set_columns(search);
@@ -266,7 +259,6 @@ static void changed(GtkWidget *widget, struct search_param *search)
 	while((res=search_list_get_result(search->sl))) {
 		gtk_list_store_append(search->liststore,&iter);
 		gtk_list_store_set(search->liststore,&iter,COORD_COL,res->c,-1);
-		gtk_list_store_set(search->liststore,&iter,RES_COL,res,-1);
 		if (widget == search->entry_country) {
 			if (res->country) {
 				sprintf(buf, "%d", res->country->id);
@@ -275,6 +267,7 @@ static void changed(GtkWidget *widget, struct search_param *search)
 				gtk_list_store_set(search->liststore,&iter,2,res->country->iso3,-1);
 				gtk_list_store_set(search->liststore,&iter,3,res->country->iso2,-1);
 				gtk_list_store_set(search->liststore,&iter,4,res->country->name,-1);
+				gtk_list_store_set(search->liststore,&iter,RES_COL,res->country,-1);
 			}
 		} else if (widget == search->entry_district) {
 			if (res->district) {
@@ -282,8 +275,9 @@ static void changed(GtkWidget *widget, struct search_param *search)
 				gtk_list_store_set(search->liststore,&iter,0,buf,-1);
 				gtk_list_store_set(search->liststore,&iter,1,res->district->country,-1);
 				gtk_list_store_set(search->liststore,&iter,2,res->district->name,-1);
+				gtk_list_store_set(search->liststore,&iter,RES_COL,res->district,-1);
 			}
-		} else { // if widget == search->entry_town
+		} else if (widget == search->entry_city) {
 //			if (res->country)
 //				gtk_list_store_set(search->liststore,&iter,1,res->country->car,-1);
 //			else
@@ -296,6 +290,7 @@ static void changed(GtkWidget *widget, struct search_param *search)
 				gtk_list_store_set(search->liststore,&iter,3,res->town->postal,-1);
 				gtk_list_store_set(search->liststore,&iter,4,res->town->name,-1);
 				gtk_list_store_set(search->liststore,&iter,5,"",-1);
+				gtk_list_store_set(search->liststore,&iter,RES_COL,res->town,-1);
 			} else {
 				gtk_list_store_set(search->liststore,&iter,0,"0",-1);
 				gtk_list_store_set(search->liststore,&iter,1,"",-1);
@@ -309,6 +304,18 @@ static void changed(GtkWidget *widget, struct search_param *search)
 //			else
 //				gtk_list_store_set(search->liststore,&iter,4,"",-1);
 			
+		} else if (widget == search->entry_street) {
+			if (res->street) {
+				sprintf(buf, "%d", res->street->id);
+				gtk_list_store_set(search->liststore,&iter,0,buf,-1);
+				gtk_list_store_set(search->liststore,&iter,1,res->street->country,-1);
+				gtk_list_store_set(search->liststore,&iter,2,res->street->district,-1);
+				gtk_list_store_set(search->liststore,&iter,3,res->street->postal,-1);
+				gtk_list_store_set(search->liststore,&iter,4,res->street->city,-1);
+				gtk_list_store_set(search->liststore,&iter,5,res->street->name,-1);
+				gtk_list_store_set(search->liststore,&iter,6,"",-1);
+				gtk_list_store_set(search->liststore,&iter,RES_COL,res->town,-1);
+			}
 		}
 	}
 }

@@ -204,7 +204,7 @@ gmap_search_new(struct map_priv *map, struct attr_group *ag, struct item *item, 
 		}
 		attr = attr_group_gettype(ag, attr_town_id);
 		if (attr) {
-			dlog(1, "cityid:%d\n", attr->u.num);
+			dlog(1, "Cityid:%d\n", attr->u.num);
 			gs->fromres.cityid = attr->u.num;
 		}
 	}
@@ -212,13 +212,19 @@ gmap_search_new(struct map_priv *map, struct attr_group *ag, struct item *item, 
 	switch (search->type) {
 		case attr_country_name:
 		case attr_country_all:
-			gs->type = GS_COUNTRY;
+				gs->type = GS_COUNTRY;
+				gs->fromres.countryid = 0;
+				gs->fromres.regionid = 0;
+				gs->fromres.cityid = 0;
 				break;
 		case attr_district_name:
-			gs->type = GS_REGION;
+				gs->type = GS_REGION;
+				gs->fromres.regionid = 0;
+				gs->fromres.cityid = 0;
 				break;
 		case attr_town_name:
-			gs->type = GS_CITY;
+				gs->type = GS_CITY;
+				gs->fromres.cityid = 0;
 				break;
 		case attr_town_postal:
 			gs->type = GS_ZIP;
@@ -517,7 +523,19 @@ search_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 		return 0;
 	case attr_street_name:
 		attr->type = attr_street_name;
-		return garmin_object_label(g, attr);
+		if (mr->label)
+			free(mr->label);
+		mr->label = gar_srch_get_roadname(g);
+		attr->u.str = mr->label;
+		if (attr->u.str)
+			return 1;
+		return 0;
+	case attr_street_id:
+		attr->type = attr_street_id;
+		attr->u.num = gar_srch_get_roadid(g);
+		if (attr->u.num)
+			return 1;
+		return 0;
 	case attr_flags:
 		attr->type = attr_flags;
 		attr->u.num = 0;
@@ -580,11 +598,13 @@ search_coord_get(void *priv_data, struct coord *c, int count)
 	if (mr->last_coord > 0)
 		return 0;
 
-	gar_get_object_coord(mr->gmap, g, &gc);
-	c->x = gc.x;
-	c->y = gc.y;
-	mr->last_coord++;
-	return 1;
+	if (gar_get_object_coord(mr->gmap, g, &gc)) {
+		c->x = gc.x;
+		c->y = gc.y;
+		mr->last_coord++;
+		return 1;
+	}
+	return 0;
 }
 
 static struct item_methods methods_garmin_search = {
