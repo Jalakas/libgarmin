@@ -17,6 +17,7 @@ struct search_list_district {
 	struct item item;
 	char *name;
 	char *country;
+	unsigned int cid;
 	unsigned int id;
 };
 
@@ -26,6 +27,10 @@ struct search_list_town {
 	struct pcoord *c;
 	char *postal;
 	char *name;
+	char *country;
+	char *district;
+	unsigned int cid;
+	unsigned int rid;
 	unsigned int id;
 };
 

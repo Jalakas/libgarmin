@@ -68,6 +68,7 @@ void attr_group_free(struct attr_group *ag);
 void attr_group_reset(struct attr_group *ag);
 struct map;
 char *attr_to_text(struct attr *attr, struct map *map, int pretty);
+int attr_group_set_intvalue(struct attr_group *ag, enum attr_type type, int val);
 
 /* end of prototypes */
 #endif

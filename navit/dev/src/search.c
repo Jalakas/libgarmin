@@ -183,6 +183,10 @@ search_list_town_new(struct item *item)
 		ret->name=map_convert_string(item->map,attr.u.str);
 	if (item_attr_get(item, attr_town_postal, &attr))
 		ret->postal=map_convert_string(item->map,attr.u.str);
+	if (item_attr_get(item, attr_country_name, &attr))
+		ret->country=map_convert_string(item->map,attr.u.str);
+	if (item_attr_get(item, attr_district_name, &attr))
+		ret->district=map_convert_string(item->map,attr.u.str);
 	if (item_coord_get(item, &c, 1)) {
 		ret->c=g_new(struct pcoord, 1);
 		ret->c->x=c.x;
@@ -191,6 +195,10 @@ search_list_town_new(struct item *item)
 	}
 	if (item_attr_get(item, attr_town_id, &attr))
 		ret->id=attr.u.num;
+	if (item_attr_get(item, attr_country_id, &attr))
+		ret->cid=attr.u.num;
+	if (item_attr_get(item, attr_district_id, &attr))
+		ret->rid=attr.u.num;
 	return ret;
 }
 
@@ -280,6 +288,16 @@ search_list_search_free(struct search_list *sl, int level)
 void
 search_list_select(struct search_list *sl, enum attr_type attr, unsigned int value)
 {
+	switch (attr) {
+		case attr_country_id:
+			break;
+		case attr_district_id:
+			break;
+		case attr_town_id:
+			break;
+		case attr_street_id:
+			break;
+	}
 	attr_group_set_intvalue(sl->result.attrs, attr, value);
 }
 
@@ -312,11 +330,12 @@ search_list_get_result(struct search_list *this_)
 				le->parent=NULL;
 			else {
 				leu=&this_->levels[level-1];
-				if (!leu->curr)
-					break;
-				le->parent=leu->curr->data;
-				leu->last=leu->curr;
-				leu->curr=g_list_next(leu->curr);
+				if (leu->curr) {
+					leu->last=leu->curr;
+					le->parent=leu->curr->data;
+					leu->curr=g_list_next(leu->curr);
+				} else
+					le->parent = NULL;
 			}
 			le->search=mapset_search_new(this_->ms, this_->result.attrs, le->parent, &le->attr, le->partial);
 			le->hash=g_hash_table_new_full(search_item_hash_hash, search_item_hash_equal, g_free, NULL);
@@ -338,20 +357,20 @@ search_list_get_result(struct search_list *this_)
 				break;
 			case 1:
 				p = search_list_district_new(item);
-				this_->result.country=this_->levels[0].last->data;
+//				this_->result.country=this_->levels[0].last->data;
 				this_->result.district = p;
 				break;
 			case 2:
 				p=search_list_town_new(item);
-				this_->result.country=this_->levels[0].last->data;
-				this_->result.district=this_->levels[1].last->data;
+//				this_->result.country=this_->levels[0].last->data;
+//				this_->result.district=this_->levels[1].last->data;
 				this_->result.town=p;
 				this_->result.c=this_->result.town->c;
 				break;
 			case 3:
 				p=search_list_street_new(item);
-				this_->result.country=this_->levels[0].last->data;
-				this_->result.town=this_->levels[1].last->data;
+//				this_->result.country=this_->levels[0].last->data;
+//				this_->result.town=this_->levels[1].last->data;
 				this_->result.street=p;
 				this_->result.c=this_->result.street->c;
 				break;

@@ -97,7 +97,7 @@ static void button_bookmark(GtkWidget *widget, struct search_param *search)
 static char **columns_text[] = {
 	(char *[]){ "ID", _n("Car"),_n("Iso2"),_n("Iso3"),_n("Country"),NULL},
 	(char *[]){ "ID", _n("Country"), _n("District"), NULL},
-	(char *[]){ "ID", _n("Car"),_n("Postal"),_n("Town"),_n("District"),NULL},
+	(char *[]){ "ID", _n("Country"), _n("District"),_n("Postal"),_n("Town"),NULL},
 	(char *[]){ "ID", _n("Car"),_n("Postal"),_n("Town"),_n("District"),_n("Street"),NULL},
 	(char *[]){ "ID", _n("Car"),_n("Postal"),_n("Town"),_n("District"),_n("Street"),_n("Number"),NULL},
 };
@@ -105,7 +105,7 @@ static char **columns_text[] = {
 static int mode2col[] = {
 	4, // country
 	2, // district
-	3, // town
+	4, // town
 	5, // street
 	6, // number
 };
@@ -175,13 +175,13 @@ static void select_row(GtkTreeSelection *sel, struct search_param *search)
 				gtk_entry_set_text(search->entry_number, text);
 				break;
 		}
-		search->dontsearch = 0;
 		g_free (text);
 		gtk_tree_model_get (model, &iter, 0,  &text,  -1);
 		id = atoi(text);
 		g_free (text);
 		attr = mode2attr[search->mode];
 		search_list_select(search->sl, attr, id);
+		search->dontsearch = 0;
 	}
 }
 
@@ -250,28 +250,31 @@ static void changed(GtkWidget *widget, struct search_param *search)
 				gtk_list_store_set(search->liststore,&iter,1,res->district->country,-1);
 				gtk_list_store_set(search->liststore,&iter,2,res->district->name,-1);
 			}
-		} else {
-			if (res->country)
-				gtk_list_store_set(search->liststore,&iter,1,res->country->car,-1);
-			else
-				gtk_list_store_set(search->liststore,&iter,1,"",-1);
+		} else { // if widget == search->entry_town
+//			if (res->country)
+//				gtk_list_store_set(search->liststore,&iter,1,res->country->car,-1);
+//			else
+//				gtk_list_store_set(search->liststore,&iter,1,"",-1);
 			if (res->town) {
 				sprintf(buf, "%d", res->town->id);
 				gtk_list_store_set(search->liststore,&iter,0,buf,-1);
-				gtk_list_store_set(search->liststore,&iter,2,res->town->postal,-1);
-				gtk_list_store_set(search->liststore,&iter,3,res->town->name,-1);
-				gtk_list_store_set(search->liststore,&iter,4,"",-1);
+				gtk_list_store_set(search->liststore,&iter,1,res->town->country,-1);
+				gtk_list_store_set(search->liststore,&iter,2,res->town->district,-1);
+				gtk_list_store_set(search->liststore,&iter,3,res->town->postal,-1);
+				gtk_list_store_set(search->liststore,&iter,4,res->town->name,-1);
+				gtk_list_store_set(search->liststore,&iter,5,"",-1);
 			} else {
 				gtk_list_store_set(search->liststore,&iter,0,"0",-1);
-
+				gtk_list_store_set(search->liststore,&iter,1,"",-1);
 				gtk_list_store_set(search->liststore,&iter,2,"",-1);
 				gtk_list_store_set(search->liststore,&iter,3,"",-1);
 				gtk_list_store_set(search->liststore,&iter,4,"",-1);
+				gtk_list_store_set(search->liststore,&iter,5,"",-1);
 			}
-			if (res->street)
-				gtk_list_store_set(search->liststore,&iter,4,res->street->name,-1);
-			else
-				gtk_list_store_set(search->liststore,&iter,4,"",-1);
+//			if (res->street)
+//				gtk_list_store_set(search->liststore,&iter,4,res->street->name,-1);
+//			else
+//				gtk_list_store_set(search->liststore,&iter,4,"",-1);
 			
 		}
 	}

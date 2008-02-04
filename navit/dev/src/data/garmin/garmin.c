@@ -494,7 +494,27 @@ search_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 		return garmin_object_label(g, attr);
 	case attr_town_name:
 		attr->type = attr_town_name;
-		return garmin_object_label(g, attr);
+		if (mr->label)
+			free(mr->label);
+		mr->label = gar_srch_get_city(g);
+		attr->u.str = mr->label;
+		if (attr->u.str)
+			return 1;
+		return 0;
+	case attr_town_id:
+		rc = gar_srch_get_cityid(g);
+		if (rc) {
+			attr->type = attr_town_id;
+			attr->u.num = rc;
+			return 1;
+		}
+		return 0;
+	case attr_town_postal:
+		attr->type = attr_town_postal;
+		attr->u.str = gar_srch_get_zip(g);
+		if (attr->u.str)
+			return 1;
+		return 0;
 	case attr_street_name:
 		attr->type = attr_street_name;
 		return garmin_object_label(g, attr);
@@ -535,6 +555,8 @@ search_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 		if (attr->u.str)
 			return 1;
 		return 0;
+	case attr_town_streets_item:
+		return 0;
 	default:
 		dlog(1, "Dont know about attribute %d[%04X]=%s yet\n", attr_type,attr_type, attr_to_name(attr_type));
 	}
@@ -542,9 +564,32 @@ search_attr_get(void *priv_data, enum attr_type attr_type, struct attr *attr)
 	return 0;
 }
 
+static int 
+search_coord_get(void *priv_data, struct coord *c, int count)
+{
+	struct gobject *g = priv_data;
+	struct map_rect_priv *mr = g->priv_data;
+	struct gcoord gc;
+	if (!count)
+		return 0;
+	if (g != mr->last_itterated) {
+		mr->last_itterated = g;
+		mr->last_coord = 0;
+	}
+
+	if (mr->last_coord > 0)
+		return 0;
+
+	gar_get_object_coord(mr->gmap, g, &gc);
+	c->x = gc.x;
+	c->y = gc.y;
+	mr->last_coord++;
+	return 1;
+}
+
 static struct item_methods methods_garmin_search = {
 	coord_rewind,
-	point_coord_get,
+	search_coord_get,
 	attr_rewind,
 	search_attr_get,
 };
