@@ -588,7 +588,7 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 			case GS_COUNTRY:
 				for (i = 1; i < gsub->ccount; i++) {
 					if (gar_match(s->needle, gsub->countries[i], s->match)) {
-						log(1, "Match: %s\n", gsub->countries[i]);
+						log(1, "Match: %s(%d)\n", gsub->countries[i],i);
 						so = gar_alloc_search_obj(gsub, from);
 						if (so) {
 							so->countryid = i;
@@ -609,7 +609,7 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 				for (i = 1; i < gsub->rcount; i++) {
 					if ((!from->countryid || from->countryid == gsub->regions[i]->country) &&
 					gar_match(s->needle, gsub->regions[i]->name, s->match)) {
-						log(1, "Match: %s\n", gsub->regions[i]->name);
+						log(1, "Match: %s(%d)\n", gsub->regions[i]->name, i);
 						so = gar_alloc_search_obj(gsub, from);
 						if (so) {
 							so->countryid = gsub->regions[i]->country;
@@ -640,7 +640,7 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 					}
 					log(15, "Match: %s %s\n", s->needle, lbl);
 					if (lbl && gar_match(s->needle, lbl, s->match)) {
-						log(1, "Match: %s\n", lbl);
+						log(1, "Match: %s(%d)\n", lbl, i);
 						so = gar_alloc_search_obj(gsub, from);
 						if (so) {
 							so->countryid = gsub->regions[gsub->cities[i]->region_idx]->country;
@@ -944,7 +944,7 @@ int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 			int i;
 			struct city_def *cd = NULL;
 			for (i=1; i < res->sub->cicount; i++) {
-				cd = res->sub->cities[res->cityid];
+				cd = res->sub->cities[i];
 				if (!cd->label && cd->region_idx == res->regionid) {
 					break;
 				} else
