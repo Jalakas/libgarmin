@@ -309,6 +309,7 @@ search_list_search_free(struct search_list *sl, int level)
 void
 search_list_select(struct search_list *sl, void *p)
 {
+	struct search_list_result *res = p;
 	struct search_list_country *country;
 	struct search_list_district *district;
 	struct search_list_town *town;
@@ -317,25 +318,32 @@ search_list_select(struct search_list *sl, void *p)
 	attr_group_reset(sl->result.attrs);
 	switch(sl->level) {
 		case 0:
-			country = p;
-			attr_group_set_intvalue(sl->result.attrs, attr_country_id,
-				 country->id);
+			country = res->country;
+			if (country) {
+				printf("Cid:%d\n", country->id);
+				attr_group_set_intvalue(sl->result.attrs, attr_country_id,
+					 country->id);
+			}
 			break;
 		case 1:
-			district = p;
-			attr_group_set_intvalue(sl->result.attrs, attr_country_id,
-				 district->cid);
-			attr_group_set_intvalue(sl->result.attrs, attr_district_id,
-				 district->id);
+			district = res->district;
+			if (district) {
+				attr_group_set_intvalue(sl->result.attrs, attr_country_id,
+					 district->cid);
+				attr_group_set_intvalue(sl->result.attrs, attr_district_id,
+					 district->id);
+			}
 			break;
 		case 2:
-			town = p;
-			attr_group_set_intvalue(sl->result.attrs, attr_country_id,
-				 town->cid);
-			attr_group_set_intvalue(sl->result.attrs, attr_district_id,
-				 town->rid);
-			attr_group_set_intvalue(sl->result.attrs, attr_town_id,
-				 town->id);
+			town = res->town;
+			if (town) {
+				attr_group_set_intvalue(sl->result.attrs, attr_country_id,
+					 town->cid);
+				attr_group_set_intvalue(sl->result.attrs, attr_district_id,
+					 town->rid);
+				attr_group_set_intvalue(sl->result.attrs, attr_town_id,
+					 town->id);
+			}
 			break;
 		case 3:
 			street = p;
