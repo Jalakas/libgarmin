@@ -44,4 +44,5 @@ off_t gar_net_get_lbl_offset(struct gar_subfile *sub, off_t offset, int idx);
 // int gar_net_parse_sorted(struct gar_subfile *sub);
 int gar_load_roadnetwork(struct gar_subfile *sub);
 struct gar_road *gar_get_road(struct gar_subfile *sub, off_t offset);
-
+int gar_match_sai(struct street_addr_info *sai, unsigned int zipid, unsigned int rid, unsigned int cid, unsigned int num);
+void gar_sai2searchres(struct street_addr_info *sai, struct gar_search_res *res);

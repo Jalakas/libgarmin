@@ -96,6 +96,8 @@ struct hdr_rgn_t
 	u_int32_t unknown9;
 } __attribute((packed));
 
+#define geti24(x)	(*(int *)(x)&0xFFFFFF)
+
 typedef u_int8_t u_int24_t[3];
 
 struct hdr_tre_t

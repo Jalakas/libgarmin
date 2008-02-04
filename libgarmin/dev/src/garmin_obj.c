@@ -323,6 +323,62 @@ static int gar_subdiv_visible(struct gar_subdiv *sd, struct gar_rect *rect)
 	return gar_rects_intersectboth(&sr, rect);
 }
 
+static void *gar_subfile_get_byidx(struct gar_subfile *sub,
+				int sdidx, int oidx, int otype)
+{
+	int i,j;
+	struct gar_subdiv *sd;
+	struct gar_maplevel *ml;
+	void *obj = NULL;
+	/* FIXME: This can be improved */
+	for(i=0; i < sub->nlevels; i++) {
+		ml = sub->maplevels[i];
+		sd = ga_get_abs(&ml->subdivs, sdidx);
+		if (sd) {
+			if (!sd->loaded) {
+				if (gar_load_subdiv_data(sub, sd) < 0)
+					goto out;
+			}
+			switch(otype) {
+			case GO_POINT:
+				obj = ga_get_abs(&sd->points, oidx);
+				goto out;
+			case GO_POLYLINE:
+				obj = ga_get_abs(&sd->polylines, oidx);
+				goto out;
+			case GO_POLYGON:
+				obj = ga_get_abs(&sd->polygons, oidx);
+				goto out;
+			default:
+				log(1, "Unknown object type: %d mapid:%s\n",
+					otype, sub->mapid);
+			}
+			break;
+		}
+	}
+	j = 0;
+	for(i=0; i < sub->nlevels; i++)
+		j += sub->maplevels[i]->ml.nsubdiv;
+	log(1, "Can not find subdiv: %d have %d\n", sdidx, j);
+	return NULL;
+out:
+	if (obj)
+		return obj;
+	else {
+		if (otype == GO_POLYLINE) {
+			int size = ga_get_count(&sd->polylines);
+			log(1, "Can not find idx:%d sdidx:%d, have maxidx:%d\n",
+						oidx, sdidx, size);
+		}
+		if (otype == GO_POINT) {
+			int size = ga_get_count(&sd->points);
+			log(1, "Can not find idx:%d sdidx:%d, have maxidx:%d\n",
+						oidx, sdidx, size);
+		}
+	}
+	return NULL;
+}
+
 
 struct gobject *gar_get_subfile_object_byidx(struct gar_subfile *sub,
 				int sdidx, int oidx, int otype)
@@ -624,19 +680,26 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 					gar_load_roadnetwork(gsub);
 					for (i=0; i < ROADS_HASH_TAB_SIZE; i++) {
 						list_for_entry(r, &gsub->net->lroads[i], l) {
-							for(j = 0; j < 4; j++) {
-								if (r->labels[j]) {
-									if (gar_get_lbl(gsub, r->labels[j], L_LBL, buf, sizeof(buf))) {
-										if (gar_match(s->needle, buf, s->match)) {
-											log(10, "Found road: %s\n", buf);
-											o = gar_alloc_object(GO_ROAD, r);
-											if (o) {
-												rc++;
-												if (first) {
-													o->next = first;
-													first = o;
-												} else
-													first = o;
+							if (!r->sai ||  gar_match_sai(r->sai, from->zipid, from->regionid, from->cityid, 0)) {
+								for(j = 0; j < 4; j++) {
+									if (r->labels[j]) {
+										if (gar_get_lbl(gsub, r->labels[j], L_LBL, buf, sizeof(buf))) {
+											if (gar_match(s->needle, buf, s->match)) {
+											so = gar_alloc_search_obj(gsub, from);
+											if (so) {
+												log(10, "Found road: %s\n", buf);
+												if (r->sai)
+													gar_sai2searchres(r->sai, so);
+												o = gar_alloc_object(GO_SEARCH, so);
+												if (o) {
+													rc++;
+													if (first) {
+														o->next = first;
+														first = o;
+													} else
+														first = o;
+												}
+											}
 											}
 										}
 									}
@@ -863,6 +926,62 @@ int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 		ret->x = gp->c.x;
 		ret->y = gp->c.y;
 		return 1;
+	} else if (o->type == GO_SEARCH) {
+		struct gar_search_res *res;
+		struct city_def *cd = NULL;
+		struct gpoint *gp;
+		res = o->gptr;
+		// give the most precise coord here
+		if (res->cityid) {
+			if (res->cityid < res->sub->cicount) {
+				cd = res->sub->cities[res->cityid];
+				if (cd->label) {
+					cd = NULL;
+				}
+			}
+		} 
+		if (!cd && res->regionid) {
+			int i;
+			struct city_def *cd = NULL;
+			for (i=1; i < res->sub->cicount; i++) {
+				cd = res->sub->cities[res->cityid];
+				if (!cd->label && cd->region_idx == res->regionid) {
+					break;
+				} else
+					cd = NULL;
+			}
+		} 
+		if (!cd && res->countryid) {
+			int i;
+			int rid = 0;
+			struct city_def *cd = NULL;
+			for (i=1; i < res->sub->rcount; i++) {
+				if (res->sub->regions[i]->country == res->countryid) {
+					rid = i;
+					break;
+				}
+			}
+			if (rid) {
+				for (i=1; i < res->sub->cicount; i++) {
+					cd = res->sub->cities[i];
+					if (!cd->label && cd->region_idx == rid) {
+						break;
+					} else
+						cd = NULL;
+				}
+			}
+		}
+		if (cd) {
+			gp = gar_subfile_get_byidx(res->sub,
+				cd->subdiv_idx, cd->point_idx,
+				GO_POINT);
+			if (gp) {
+				ret->x = gp->c.x;
+				ret->y = gp->c.y;
+				return 1;
+			}
+		}
+		return 0;
 	} else if (o->type == GO_ROAD) {
 		struct gar_road *rd = o->gptr;
 		if (rd->rio_cnt) {

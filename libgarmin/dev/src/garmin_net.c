@@ -186,6 +186,51 @@ static void gar_log_sai(struct gar_subfile *sub, struct street_addr_info *sai)
 	}
 }
 
+void gar_sai2searchres(struct street_addr_info *sai, struct gar_search_res *res)
+{
+	
+}
+
+int gar_match_sai(struct street_addr_info *sai, unsigned int zipid, unsigned int rid, unsigned int cityid, unsigned int num)
+{
+	int rc = 0;
+	int i;
+	u_int8_t fl = sai->flags;
+	fl >>=2;
+	if (num) {
+		// TODO
+	}
+	if (zipid) {
+		if ((fl&3)!=3 && sai->field1) {
+			if ((fl&3)==0) {
+			//	log(11, "Number: size=%d\n", *sai->field1);
+			} else {
+				i = *(unsigned short*)sai->field1;
+				if (i == zipid)
+					rc = 1;
+			}
+		}
+	}
+	fl >>=2;
+	if (cityid) {
+		if ((fl&3)!=3 && sai->field2) {
+			if ((fl&3)==0) {
+//				log(11, "Number: size=%d\n", *sai->field2);
+			} else {
+				i = *(unsigned short*)sai->field2;
+				if (i == cityid)
+					rc = 1;
+			}
+		}
+	}
+	fl >>= 2;
+	if (rid) {
+		if (rid == *(unsigned short*)sai->field3)
+			rc = 1;
+	}
+	return rc;
+}
+
 static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 {
 	u_int8_t flags, size;
@@ -419,10 +464,14 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 				if (!rp) {
 					log(11, "No roadptr ERROR\n");
 				} else {
-					log(11, "Road (%x) at %d b1=%x b2=%x\n",
+					log(11, "Road (%x) at %d b1=%x b2=%x dest %d\n",
 						node->arcs[j].roadidx,
-						*(int *)rp->off&0xFFFFFF,
-						rp->b1, rp->b2);
+						geti24(rp->off),
+						rp->b1, rp->b2,
+						node->arcs[j].dest->offset);
+					if (geti24(rp->off) == ri->offset) {
+						log(11, "Own road\n");
+					}
 				}
 			}
 			gar_free_graph(graph);
@@ -617,7 +666,7 @@ static struct gar_road *gar_parse_road(struct gar_subfile *sub, off_t offset)
 			rd->sr_offset[i] = segs[i];
 	}
 	rd->road_flags = flags;
-	rd->road_len = road_len;
+	rd->road_len = road_len * 10;	// from mkgmap
 	rd->rio_cnt = rio_cnt;
 	rd->rio = malloc(rio_cnt * sizeof(u_int8_t));
 	rd->ri_cnt = ri_cnt;
