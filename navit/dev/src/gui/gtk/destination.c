@@ -15,6 +15,8 @@
 #include "projection.h"
 
 #define COL_COUNT 8
+#define COORD_COL 8
+#define RES_COL 9
 
 #define gettext_noop(String) String
 #define _(STRING)    gettext(STRING)
@@ -41,7 +43,7 @@ static void button_map(GtkWidget *widget, struct search_param *search)
 	GtkTreeIter iter;
 	if (!gtk_tree_model_get_iter_first (GTK_TREE_MODEL (search->liststore2), &iter))
 		return;
-	gtk_tree_model_get (GTK_TREE_MODEL (search->liststore2), &iter, COL_COUNT, &c, -1);
+	gtk_tree_model_get (GTK_TREE_MODEL (search->liststore2), &iter, COORD_COL, &c, -1);
 	if (c) {
 		navit_set_center(search->nav, c);
 	}
@@ -69,7 +71,7 @@ static void button_destination(GtkWidget *widget, struct search_param *search)
 
 	if (!gtk_tree_model_get_iter_first (GTK_TREE_MODEL (search->liststore2), &iter))
 		return;
-	gtk_tree_model_get (GTK_TREE_MODEL (search->liststore2), &iter, COL_COUNT, &c, -1);
+	gtk_tree_model_get (GTK_TREE_MODEL (search->liststore2), &iter, COORD_COL, &c, -1);
 	if (c) {
 		desc=description(search, &iter);
 		navit_set_destination(search->nav, c, desc);
@@ -85,7 +87,7 @@ static void button_bookmark(GtkWidget *widget, struct search_param *search)
 
 	if (!gtk_tree_model_get_iter_first (GTK_TREE_MODEL (search->liststore2), &iter))
 		return;
-	gtk_tree_model_get (GTK_TREE_MODEL (search->liststore2), &iter, COL_COUNT, &c, -1);
+	gtk_tree_model_get (GTK_TREE_MODEL (search->liststore2), &iter, COORD_COL, &c, -1);
 	if (c) {
 		desc=description(search, &iter);
 		navit_add_bookmark(search->nav, c, desc);
@@ -142,6 +144,25 @@ static void set_columns(struct search_param *param)
 	
 }
 
+static void update_selection(struct search_param *search, struct search_list_result *res)
+{
+	struct attr *attr;
+	struct attr_group *ag = res->attrs;
+	attr = attr_group_gettype(ag, attr_country_id);
+	if (attr) {
+		printf("Countryid:%d\n", attr->u.num);
+	}
+	attr = attr_group_gettype(ag, attr_district_id);
+	if (attr) {
+		printf("Regionid:%d\n", attr->u.num);
+	}
+	attr = attr_group_gettype(ag, attr_town_id);
+	if (attr) {
+		printf("townid:%d\n", attr->u.num);
+	}
+
+}
+
 static void select_row(GtkTreeSelection *sel, struct search_param *search)
 {
 	GtkTreeIter iter;
@@ -150,37 +171,48 @@ static void select_row(GtkTreeSelection *sel, struct search_param *search)
 	int col = mode2col[search->mode];
 	int id;
 	enum attr_type attr;
+	struct search_list_result *res;
 
 	printf("selected Called\n");
 
 	if (gtk_tree_selection_get_selected (sel, &model, &iter))
 	{
+		gtk_tree_model_get (model, &iter, RES_COL,  &res,  -1);
+		update_selection(search, res);
 		gtk_tree_model_get (model, &iter, col,  &text,  -1);
 		g_print ("You selected: %s\n", text);
 		search->dontsearch = 1;
 		switch(search->mode) {
 			case 0:
-				gtk_entry_set_text(search->entry_country, text);
+				gtk_entry_set_text(GTK_ENTRY(search->entry_country), text);
 				break;
 			case 1:
-				gtk_entry_set_text(search->entry_district, text);
+				gtk_entry_set_text(GTK_ENTRY(search->entry_district), text);
+				g_free (text);
+				gtk_tree_model_get (model, &iter, 1,  &text,  -1);
+				gtk_entry_set_text(GTK_ENTRY(search->entry_country), text);
 				break;
 			case 2:
-				gtk_entry_set_text(search->entry_city, text);
+				gtk_entry_set_text(GTK_ENTRY(search->entry_city), text);
+				g_free (text);
+				gtk_tree_model_get (model, &iter, 1,  &text,  -1);
+				gtk_entry_set_text(GTK_ENTRY(search->entry_country), text);
+				g_free (text);
+				gtk_tree_model_get (model, &iter, 2,  &text,  -1);
+				gtk_entry_set_text(GTK_ENTRY(search->entry_district), text);
+				g_free (text);
+				gtk_tree_model_get (model, &iter, 3,  &text,  -1);
+				gtk_entry_set_text(GTK_ENTRY(search->entry_postal), text);
 				break;
 			case 3:
-				gtk_entry_set_text(search->entry_street, text);
+				gtk_entry_set_text(GTK_ENTRY(search->entry_street), text);
 				break;
 			case 4:
-				gtk_entry_set_text(search->entry_number, text);
+				gtk_entry_set_text(GTK_ENTRY(search->entry_number), text);
 				break;
 		}
 		g_free (text);
-		gtk_tree_model_get (model, &iter, 0,  &text,  -1);
-		id = atoi(text);
-		g_free (text);
-		attr = mode2attr[search->mode];
-		search_list_select(search->sl, attr, id);
+		search_list_select(search->sl, res);
 		search->dontsearch = 0;
 	}
 }
@@ -233,7 +265,8 @@ static void changed(GtkWidget *widget, struct search_param *search)
 	gtk_list_store_clear(search->liststore);
 	while((res=search_list_get_result(search->sl))) {
 		gtk_list_store_append(search->liststore,&iter);
-		gtk_list_store_set(search->liststore,&iter,COL_COUNT,res->c,-1);
+		gtk_list_store_set(search->liststore,&iter,COORD_COL,res->c,-1);
+		gtk_list_store_set(search->liststore,&iter,RES_COL,res,-1);
 		if (widget == search->entry_country) {
 			if (res->country) {
 				sprintf(buf, "%d", res->country->id);
@@ -447,11 +480,12 @@ int destination_address(struct navit *nav)
 
 //	gtk_tree_view_set_model (GTK_TREE_VIEW (search->treeview), NULL);
 	{ 
-		GType types[COL_COUNT+1];
+		GType types[COL_COUNT+2];
 		for(i=0;i<COL_COUNT;i++)
 			types[i]=G_TYPE_STRING;
-		types[i]=G_TYPE_POINTER;
-		search->liststore=gtk_list_store_newv(COL_COUNT+1,types);
+		types[i++]=G_TYPE_POINTER;
+		types[i++]=G_TYPE_POINTER;
+		search->liststore=gtk_list_store_newv(COL_COUNT+2,types);
 		search->liststore2=gtk_tree_model_sort_new_with_model(GTK_TREE_MODEL(search->liststore));
 		gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (search->liststore2), 0, GTK_SORT_ASCENDING);
 	//	gtk_tree_view_set_model (GTK_TREE_VIEW (search->treeview), GTK_TREE_MODEL(search->liststore2));

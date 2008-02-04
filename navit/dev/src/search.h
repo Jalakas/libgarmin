@@ -10,6 +10,7 @@ struct search_list_country {
 	char *iso2;
 	char *iso3;
 	char *name;
+	struct pcoord *c;
 	unsigned int id;
 };
 
@@ -17,6 +18,7 @@ struct search_list_district {
 	struct item item;
 	char *name;
 	char *country;
+	struct pcoord *c;
 	unsigned int cid;
 	unsigned int id;
 };
@@ -59,7 +61,7 @@ struct search_list *search_list_new(struct mapset *ms);
 void search_list_search(struct search_list *this_, struct attr *search_attr, int partial);
 struct search_list_result *search_list_get_result(struct search_list *this_);
 void search_list_destroy(struct search_list *this_);
-void search_list_select(struct search_list *sl, enum attr_type attr, unsigned int value);
+void search_list_select(struct search_list *sl, void *p);
 
 /* end of prototypes */
 #ifdef __cplusplus

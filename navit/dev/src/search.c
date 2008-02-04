@@ -116,6 +116,7 @@ search_list_country_new(struct item *item)
 {
 	struct search_list_country *ret=g_new0(struct search_list_country, 1);
 	struct attr attr;
+	struct coord c;
 
 	ret->item=*item;
 	if (item_attr_get(item, attr_country_car, &attr))
@@ -128,6 +129,12 @@ search_list_country_new(struct item *item)
 		ret->name=g_strdup(attr.u.str);
 	if (item_attr_get(item, attr_country_id, &attr))
 		ret->id=attr.u.num;
+	if (item_coord_get(item, &c, 1)) {
+		ret->c=g_new(struct pcoord, 1);
+		ret->c->x=c.x;
+		ret->c->y=c.y;
+		ret->c->pro = map_projection(item->map);
+	}
 	return ret;
 }
 
@@ -138,6 +145,8 @@ search_list_country_destroy(struct search_list_country *this_)
 	g_free(this_->iso2);
 	g_free(this_->iso3);
 	g_free(this_->name);
+	if (this_->c)
+		g_free(this_->c);
 	g_free(this_);
 }
 
@@ -146,14 +155,24 @@ search_list_district_new(struct item *item)
 {
 	struct search_list_district *ret=g_new0(struct search_list_district, 1);
 	struct attr attr;
+	struct coord c;
 
 	ret->item=*item;
 	if (item_attr_get(item, attr_district_name, &attr))
 		ret->name=g_strdup(attr.u.str);
 	if (item_attr_get(item, attr_district_id, &attr))
 		ret->id=attr.u.num;
+	if (item_attr_get(item, attr_country_id, &attr))
+		ret->cid=attr.u.num;
 	if (item_attr_get(item, attr_country_name, &attr))
 		ret->country=g_strdup(attr.u.str);
+	if (item_coord_get(item, &c, 1)) {
+		ret->c=g_new(struct pcoord, 1);
+		ret->c->x=c.x;
+		ret->c->y=c.y;
+		ret->c->pro = map_projection(item->map);
+	}
+
 	return ret;
 }
 
@@ -162,6 +181,8 @@ search_list_district_destroy(struct search_list_district *this_)
 {
 	g_free(this_->name);
 	g_free(this_->country);
+	if (this_->c)
+		g_free(this_->c);
 	g_free(this_);
 }
 
@@ -286,19 +307,40 @@ search_list_search_free(struct search_list *sl, int level)
 }
 
 void
-search_list_select(struct search_list *sl, enum attr_type attr, unsigned int value)
+search_list_select(struct search_list *sl, void *p)
 {
-	switch (attr) {
-		case attr_country_id:
+	struct search_list_country *country;
+	struct search_list_district *district;
+	struct search_list_town *town;
+	struct search_list_street *street;
+
+	attr_group_reset(sl->result.attrs);
+	switch(sl->level) {
+		case 0:
+			country = p;
+			attr_group_set_intvalue(sl->result.attrs, attr_country_id,
+				 country->id);
 			break;
-		case attr_district_id:
+		case 1:
+			district = p;
+			attr_group_set_intvalue(sl->result.attrs, attr_country_id,
+				 district->cid);
+			attr_group_set_intvalue(sl->result.attrs, attr_district_id,
+				 district->id);
 			break;
-		case attr_town_id:
+		case 2:
+			town = p;
+			attr_group_set_intvalue(sl->result.attrs, attr_country_id,
+				 town->cid);
+			attr_group_set_intvalue(sl->result.attrs, attr_district_id,
+				 town->rid);
+			attr_group_set_intvalue(sl->result.attrs, attr_town_id,
+				 town->id);
 			break;
-		case attr_street_id:
+		case 3:
+			street = p;
 			break;
 	}
-	attr_group_set_intvalue(sl->result.attrs, attr, value);
 }
 
 static int
