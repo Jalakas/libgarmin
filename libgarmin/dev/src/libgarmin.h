@@ -52,11 +52,21 @@ struct gcoord {
 #define GM_START	1
 #define GM_ANY		2
 
+struct gar_subfile;
+struct gar_search_res {
+	struct gar_subfile *sub;
+	unsigned fileid;
+	unsigned countryid;
+	unsigned regionid;
+	unsigned cityid;
+	unsigned zipid;
+};
+
 struct gar_search {
 	unsigned char type;
 	unsigned char match;
 	char *needle;
-	struct gobject *fromobj;
+	struct gar_search_res fromres;
 };
 
 #define GO_POINT	1
@@ -189,6 +199,7 @@ char *gar_srch_get_country(struct gobject *o);
 unsigned int gar_srch_get_regionid(struct gobject *o);
 char *gar_srch_get_region(struct gobject *o);
 unsigned int gar_srch_get_cityid(struct gobject *o);
+char *gar_srch_get_city(struct gobject *o);
 unsigned int gar_srch_get_zipid(struct gobject *o);
 char *gar_srch_get_zip(struct gobject *o);
 

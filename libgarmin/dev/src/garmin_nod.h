@@ -16,7 +16,6 @@
     MA  02110-1301  USA
 */
 
-
 #define NODE_HASH_TAB_SIZE	256      /* must be power of 2 */
 #define NODE_HASH(offset)	(((offset) *2654435769UL)& (NODE_HASH_TAB_SIZE-1))
 
@@ -106,6 +105,12 @@ struct cpoint {
 	u_int8_t	*restr;
 };
 
+struct roadptr {
+	u_int24_t off;
+	// check size when accessing b1/b2
+	u_int8_t b1;
+	u_int8_t b2;
+} __attribute((packed));
 
 struct gar_nod_info *gar_init_nod(struct gar_subfile *sub);
 void gar_free_nod(struct gar_nod_info *nod);

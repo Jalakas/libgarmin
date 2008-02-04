@@ -692,14 +692,6 @@ int gar_graph2tfmap(struct gar_graph *g, char *filename)
 	return j;
 }
 
-struct roadptr {
-	u_int32_t off;
-	// check size when accessing b1/b2
-	u_int8_t b1;
-	u_int8_t b2;
-};
-
-
 static struct cpoint *gar_alloc_cp(void)
 {
 	struct cpoint *p;

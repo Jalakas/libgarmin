@@ -36,6 +36,7 @@
 #include "garmin_rgn.h"
 #include "garmin_lbl.h"
 #include "garmin_tdb.h"
+#include "garmin_mdr.h"
 
 log_fn glogfn;
 int gar_debug_level = 1;
@@ -368,6 +369,7 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 		gar_load_subfiles(g);
 		log(6, "Loaded %d mapsets\n", g->mapsets);
 	}
+	gar_init_mdr(g);
 #if 0
 	g->north = north;
 	g->east = east;

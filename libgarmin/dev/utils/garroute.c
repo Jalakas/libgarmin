@@ -6,6 +6,7 @@
 #define __USE_BSD
 #include <sys/time.h>
 #include "libgarmin.h"
+#include "GarminTypedef.h"
 #include "list.h"
 #include "garmin_nod.h"
 

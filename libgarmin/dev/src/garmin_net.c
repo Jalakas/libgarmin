@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include "libgarmin.h"
 #include "libgarmin_priv.h"
+#include "GarminTypedef.h"
 #include "garmin_fat.h"
 #include "garmin_rgn.h"
 #include "garmin_net.h"
@@ -303,12 +304,14 @@ out_err:
 
 static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 {
-	int i;
+	int i,j;
 	int idx;
 	int sdidx;
 	char buf[2048];
 	int sz;
 	struct gobject *o;
+	struct gpoly *gp;
+
 	log(11, "Labels at %ld %ld %ld %ld\n",
 		ri->labels[0],ri->labels[1],ri->labels[2],ri->labels[3]);
 	if (ri->labels[0]) {
@@ -367,6 +370,16 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 					free(cp);
 				}
 			}
+			{
+			gp = o->gptr;
+			struct gcoord dc;
+			dc = gp->c;
+			for (j = 0; j < gp->npoints; j++) {
+				dc.x += gp->deltas[j].x;
+				dc.y += gp->deltas[j].y;
+				log(11, "%f/%f\n", GARDEG(dc.x), GARDEG(dc.y));
+			}
+			}
 #if 0
 			cp = gar_get_object_lbl(o);
 			if (cp) {
@@ -388,10 +401,31 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 		log(11, "NOD info at %d\n",ri->nod_offset);
 		if (ri->nod) {
 			int i, l = (ri->nod->bmlen+7)/8;
-			log(11, "NOD1 at %d bmlen=%d\n", ri->nod->nodesoff, ri->nod->bmlen);
+			log(11, "NOD1 at %d bmlen=%d fb=%d\n", ri->nod->nodesoff, ri->nod->bmlen, ri->nod->bitmap[0]&1);
 			for (i = 0; i < l; i++) {
 				log(11, "BITMAP: %x\n", ri->nod->bitmap[i]);
 			}
+		}
+		{
+			struct gar_graph *graph;
+			struct node *node;
+			struct roadptr *rp;
+			graph = gar_alloc_graph(sub);
+			node = gar_get_node(graph, ri->nod->nodesoff);
+			gar_read_node(graph, NULL, node);
+			log(11, "NODE at %f/%f\n", GARDEG(node->c.x),GARDEG(node->c.y));
+			for (j=0; j < node->narcs; j++) {
+				rp = gar_cp_idx2road(node->cpoint, node->arcs[j].roadidx);
+				if (!rp) {
+					log(11, "No roadptr ERROR\n");
+				} else {
+					log(11, "Road (%x) at %d b1=%x b2=%x\n",
+						node->arcs[j].roadidx,
+						*(int *)rp->off&0xFFFFFF,
+						rp->b1, rp->b2);
+				}
+			}
+			gar_free_graph(graph);
 		}
 //		gar_read_nod2(sub, ri->nod_offset);
 //		log(11, "nod data at %u\n", ri->nod_offset);

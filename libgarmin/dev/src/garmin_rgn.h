@@ -119,8 +119,5 @@ void gar_subfile_ref(struct gar_subfile *s);
 void gar_subfile_unref(struct gar_subfile *s);
 void gar_subfile_unload(struct gar_subfile *s);
 
-struct gcountry {
-	unsigned id;
-	char *label;
-};
+struct gar_subfile *gar_find_subfile_byid(struct gimg *g, unsigned int id);
 

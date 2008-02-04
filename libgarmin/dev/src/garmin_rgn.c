@@ -31,6 +31,7 @@
 #include "garmin_fat.h"
 #include "garmin_lbl.h"
 #include "garmin_net.h"
+#include "garmin_mdr.h"
 #include "garmin_subdiv.h"
 #include "garmin_order.h"
 #include "geoutils.h"
@@ -338,7 +339,7 @@ static ssize_t gar_get_rgnoff(struct gar_subfile *sub, ssize_t *l)
 		log(11, "rgn header len: %d offset:%d\n",rgnhdr.hsub.length, rgnhdr.offset);
 		rgnoff = gar_subfile_baseoffset(sub, "RGN");
 		sub->rgnbase = rgnoff;
-		if (rgnhdr.hsub.length > 8) {
+		if (rgnhdr.hsub.length > 8 + sizeof(rgnhdr.hsub)) {
 			sub->rgnoffset2 = rgnhdr.offset2;
 			sub->rgnlen2    = rgnhdr.length2;
 			sub->rgnoffset3 = rgnhdr.offset3;
@@ -1159,6 +1160,17 @@ void gar_free_gmap(struct gmap *g)
 	//free(g);
 }
 
+struct gar_subfile *gar_find_subfile_byid(struct gimg *g, unsigned int id)
+{
+	struct gar_subfile *sub;
+	list_for_entry(sub, &g->lsubfiles, l) {
+		if (sub->id == id)
+			return sub;
+	}
+	return NULL;
+}
+
+
 static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *rect, int flags)
 {
 	struct gar_subfile *sub;
@@ -1228,6 +1240,7 @@ struct gmap *gar_find_subfiles(struct gar *gar, void *select, int flags)
 	if (flags&GO_GET_SEARCH) {
 		//goto do_search;
 		// FIXME: If we have object use just its subfile
+		// FIXME: Use only the indexed images from mdr sect1
 		rect = NULL;
 	}
 	if (rect)
@@ -1239,6 +1252,11 @@ struct gmap *gar_find_subfiles(struct gar *gar, void *select, int flags)
 	}
 
 	list_for_entry(g, &gar->limgs,l) {
+		if ((flags&GO_GET_SEARCH) && g->mdr) {
+			log(7, "Using MDR\n");
+			if (gar_mdr_get_files(files, g) > 0)
+				return files;
+		}
 		if (rect && gar->tdbloaded) {
 			struct gar_rect r;
 			r.lulat = g->north;

@@ -91,6 +91,7 @@ static struct gar_search_res *gar_alloc_search_obj(struct gar_subfile *sub, stru
 	if (from)
 		*s = *from;
 	s->sub = sub;
+	s->fileid = sub->id;
 	gar_subfile_ref(sub);
 	return s;
 }
@@ -481,13 +482,13 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 	struct gar_search_res *so;
 	struct gar_search_res *from = NULL;
 	struct gar_subfile *gsub;
-	struct gobject *first = NULL, *o = NULL;
+	struct gobject *first = NULL, *o = NULL, *ot;
 
-	if (s->fromobj && s->fromobj->type == GO_SEARCH)
-		from = s->fromobj->gptr;
+	from = &s->fromres;
 	if (from) {
-		log(1, "Search from cid: %d rid: %d\n",
-				from->countryid, from->regionid);
+		log(1, "Search from cid: %d rid: %d cid:%d\n",
+				from->countryid, from->regionid,
+				from->cityid);
 	}
 	switch (s->type) {
 		case GS_COUNTRY:
@@ -550,7 +551,7 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 				break;
 			case GS_REGION:
 				for (i = 1; i < gsub->rcount; i++) {
-					if ((!from || from->countryid == gsub->regions[i]->country) &&
+					if ((!from->countryid || from->countryid == gsub->regions[i]->country) &&
 					gar_match(s->needle, gsub->regions[i]->name, s->match)) {
 						log(1, "Match: %s\n", gsub->regions[i]->name);
 						so = gar_alloc_search_obj(gsub, from);
@@ -573,29 +574,43 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 			case GS_CITY:
 				for (i = 1; i < gsub->cicount; i++) {
 					char *lbl = gsub->cities[i]->label;
-					o = NULL;
+					ot = NULL;
 					if (!lbl) {
-						o = gar_get_subfile_object_byidx(gsub, 
+						ot = gar_get_subfile_object_byidx(gsub, 
 								gsub->cities[i]->subdiv_idx,
 								gsub->cities[i]->point_idx, GO_POINT);
-						if (o)
-							lbl = gar_get_object_lbl(o);
+						if (ot)
+							lbl = gar_get_object_lbl(ot);
 					}
 					log(15, "Match: %s %s\n", s->needle, lbl);
 					if (lbl && gar_match(s->needle, lbl, s->match)) {
-						if (o) {
-							rc ++;
-							if (first) {
-								o->next = first;
-								first = o;
-							} else
-								first = o;
-						} else {
-							// FIXME we have region
+						log(1, "Match: %s\n", lbl);
+						so = gar_alloc_search_obj(gsub, from);
+						if (so) {
+							so->countryid = gsub->regions[gsub->cities[i]->region_idx]->country;
+							so->regionid = gsub->cities[i]->region_idx;
+							so->cityid = i;
+							if (ot) {
+								struct gar_poi_properties *pr;
+								pr = gar_get_poi_properties(ot->gptr);
+								if (pr) {
+									so->zipid = pr->zipidx;
+									gar_free_poi_properties(pr);
+								}
+							}
+							o = gar_alloc_object(GO_SEARCH, so);
+							if (o) {
+								rc ++;
+								if (first) {
+									o->next = first;
+									first = o;
+								} else
+									first = o;
+							}
 						}
 					} else {
-						if (o)
-							gar_free_objects(o);
+						if (ot)
+							gar_free_objects(ot);
 					}
 					if (!gsub->cities[i]->label && lbl)
 						free(lbl);
@@ -1203,6 +1218,26 @@ unsigned int gar_srch_get_cityid(struct gobject *o)
 	return s->cityid;
 }
 
+char *gar_srch_get_city(struct gobject *o)
+{
+	struct gar_search_res *s = o->gptr;
+	struct gobject *ot;
+	unsigned id;
+	char *lbl = NULL;
+	if (o->type != GO_SEARCH)
+		return 0;
+	id = s->cityid;
+	if (s->sub->cities[id]->label)
+		return s->sub->cities[id]->label;
+	ot = gar_get_subfile_object_byidx(s->sub, 
+			s->sub->cities[id]->subdiv_idx,
+			s->sub->cities[id]->point_idx, GO_POINT);
+	if (ot)
+		lbl = gar_get_object_lbl(ot);
+	return lbl;
+
+}
+
 unsigned int gar_srch_get_zipid(struct gobject *o)
 {
 	struct gar_search_res *s = o->gptr;
@@ -1218,7 +1253,7 @@ char *gar_srch_get_zip(struct gobject *o)
 	unsigned id;
 	if (o->type != GO_SEARCH)
 		return 0;
-	id = s->countryid;
+	id = s->zipid;
 	sub = s->sub;
 	if (id < sub->czips)
 		return sub->zips[id]->code;

@@ -31,10 +31,3 @@ struct gar_poi_properties {
 	u_int32_t	tideoff;
 };
 
-struct gar_search_res {
-	struct gar_subfile *sub;
-	unsigned countryid;
-	unsigned regionid;
-	unsigned cityid;
-	unsigned zipid;
-};

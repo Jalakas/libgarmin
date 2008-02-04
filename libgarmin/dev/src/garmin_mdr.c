@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include "libgarmin.h"
 #include "libgarmin_priv.h"
 #include "garmin_fat.h"
+#include "garmin_rgn.h"
+#include "garmin_mdr.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -187,6 +190,87 @@ struct hdr_mdr_t
 	// len = 568
 } __attribute((packed));
 
+
+int gar_init_mdr(struct gimg *g)
+{
+	int fcnt;
+	int i,rc;
+	struct gar_mdr *m;
+	char **files;
+	struct hdr_mdr_t mdr;
+
+	m = calloc(1, sizeof(*m));
+	if (!m)
+		return -1;
+	files = gar_file_get_subfiles(g, &fcnt, "MDR");
+	if (files) {
+		if (fcnt > 1) {
+			log(1, "Warning: More than one MDR is not supported\n");
+		}
+		for (i=0; i < fcnt; i++) {
+			ssize_t off = gar_file_offset(g, files[i]);
+
+			if (glseek(g, off, SEEK_SET) != off) {
+				log(1, "Error seeking to %zd\n", off);
+				return -1;
+			}
+			rc = gread(g, &mdr, sizeof(mdr));
+			if (rc < 0) {
+				log(1, "Error reading MDR header\n");
+				return -1;
+			}
+			log(1, "HDR len =%d our=%d\n", mdr.hsub.length, sizeof(mdr));
+			m->mdroff = gar_file_baseoffset(g, files[i]);
+			m->idxfiles_offset = mdr.offset1;
+			m->idxfiles_len = mdr.length1;
+			g->mdr = m;
+			break;
+		}
+		free(files);
+	}
+	return 1;
+}
+
+int gar_mdr_get_files(struct gmap *files, struct gimg *g)
+{
+	struct gar_mdr *m = g->mdr;
+	int i, cnt = m->idxfiles_len/4;
+	struct gar_subfile *sub;
+	unsigned int *id;
+	char buf[m->idxfiles_len];
+	unsigned int off;
+	int idx = 0;
+
+	off = g->mdr->mdroff + m->idxfiles_offset;
+	if (glseek(g, off, SEEK_SET) != off) {
+		log(1, "Error seeking to %d\n", off);
+		return -1;
+	}
+	i = gread(g, &buf, m->idxfiles_len);
+	if (i!=m->idxfiles_len) {
+		log(1, "Error reading indexed files\n");
+		return -1;
+	}
+	id = (unsigned int *)&buf[0];
+	files->subs = calloc(cnt, sizeof(struct gar_subfile *));
+	if (!files->subs)
+		return -1;
+	files->subfiles = cnt;
+	for (i = 0; i < cnt; i++) {
+		sub = gar_find_subfile_byid(g, *id);
+		if (!sub) {
+			log(1, "Error can not find id %d\n", *id);
+		} else {
+			files->subs[idx++] = sub;
+		}
+		id++;
+	}
+	files->lastsub = idx;
+	return idx;
+
+}
+
+#ifdef STANDALONE
 static void print_buf(char *pref, unsigned char *a, int s)
 {
 	char buf[4096];
@@ -503,3 +587,4 @@ int main(int argc, char **argv)
 		}
 	}
 }
+#endif

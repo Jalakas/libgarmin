@@ -82,6 +82,8 @@ struct gar_lbl_t {
 	u_int32_t addrshiftpoi;
 };
 
+struct gar_mdr;
+
 struct gimg {
 	list_t l;
 	struct gar *gar;
@@ -101,6 +103,7 @@ struct gimg {
 	double east; 
 	double south; 
 	double west;
+	struct gar_mdr *mdr;
 };
 
 struct gpoint {
