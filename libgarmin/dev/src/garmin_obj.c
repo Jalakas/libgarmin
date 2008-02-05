@@ -956,6 +956,33 @@ int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 		if (res->roadid) {
 			struct gar_road *rd = gar_get_road(res->sub, res->roadid);
 			if (rd) {
+				if (rd->rio_cnt) {
+					struct gar_subdiv *sd;
+					int idx, sdidx;
+					if (!rd->sub->loaded) {
+						if (gar_load_subfile_data(rd->sub) < 0)
+							return 0;
+					}
+					idx = rd->ri[0] & 0xff;
+					sdidx = rd->ri[0] >> 8;
+					sdidx &= 0xFFFF;
+					sd = ga_get_abs(&rd->sub->maplevels[rd->sub->nlevels - 1]->subdivs, sdidx);
+					if (sd) {
+						if (!sd->loaded) {
+							if (gar_load_subdiv_data(rd->sub, sd) < 0)
+								return 0;
+						}
+						gl = ga_get_abs(&sd->polylines, idx);
+						if (gl) {
+							ret->x = gl->c.x;
+							ret->y = gl->c.y;
+							return 1;
+						}
+					} else {
+						log(1, "Error can not find road idx/sd %d %d in level %d roadid:%d\n", idx, sdidx,rd->rio[0], rd->offset);
+						return 0;
+					}
+				}
 			}
 			return 0;
 		}
