@@ -800,15 +800,15 @@ static int gar_decode_base11(unsigned char *cp, char *out, int l)
 	do {
 		done = (*cp) & 0x80;
 		*cp &= 0x7f;
-		a = (*(cp+rb))/11;
-		b = (*(cp+rb))%11;
+		a = (*(cp))/11;
+		b = (*(cp))%11;
 		if (a!=10&&b!=10) {
 			sz += sprintf(out+sz, "%d%d", a, b);
 		} else {
 			if (a!=10)
-				sz += sprintf(out+sz, "%d ", a);
+				sz += sprintf(out+sz, "%d-", a);
 			else if (b!=10)
-				sz += sprintf(out+sz, " %d", b);
+				sz += sprintf(out+sz, "-%d", b);
 			else
 				sz += sprintf(out+sz, " ");
 		}
@@ -819,6 +819,7 @@ static int gar_decode_base11(unsigned char *cp, char *out, int l)
 	} while (!done);
 	return rb;
 }
+
 static unsigned char gar_get_setbit(unsigned char b, int bit)
 {
 	int set=0;
