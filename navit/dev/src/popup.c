@@ -196,7 +196,6 @@ popup_show_item(void *popup, struct displayitem *di)
 		popup_printf(menu, menu_type_menu, "(No map)");
 	}
 }
-
 static void
 popup_display(struct navit *nav, void *popup, struct point *p)
 {
@@ -213,7 +212,6 @@ popup_display(struct navit *nav, void *popup, struct point *p)
 	}
 	graphics_displaylist_close(dlh);
 }
-
 static struct pcoord c;
 
 void
