@@ -386,7 +386,6 @@ xdisplay_draw_elements(struct graphics *gra,struct displaylist *displaylist, str
 	struct graphics_gc *gc;
 	struct graphics_image *img;
 	struct point p;
-//	GHashTable *display_list = displaylist->dl;
 	struct displaytype *dt;
 	struct displayitem *di;
 	es=itm->elements;
@@ -398,13 +397,9 @@ xdisplay_draw_elements(struct graphics *gra,struct displaylist *displaylist, str
 			dt = display_list_get_type(displaylist,  type);
 			if (!dt)
 				continue;
-//			ls=g_hash_table_lookup(display_list, GINT_TO_POINTER(type));
-//			l=ls;
 			gc=NULL;
 			img=NULL;
-//			while (l) {
 			list_for_entry(di, &dt->litems,l) {
-//				di=l->data;
 				di->displayed=1;
 				if (! gc) {
 					gc=graphics_gc_new(gra);
@@ -460,7 +455,6 @@ xdisplay_draw_elements(struct graphics *gra,struct displaylist *displaylist, str
 					printf("Unhandled element type %d\n", e->type);
 				
 				}
-			//	l=g_list_next(l);
 			}
 			types=g_list_next(types);
 		}
@@ -723,7 +717,6 @@ graphics_displaylist_new(void)
 	struct displaylist *ret=g_new(struct displaylist, 1);
 	int i;
 
-//	ret->dl=g_hash_table_new(NULL,NULL);
 	for (i=0; i < TYPES_HASH_TAB_SIZE; i++) {
 		list_init(&ret->types[i]);
 	}
