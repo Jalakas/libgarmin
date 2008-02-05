@@ -5,7 +5,13 @@ struct map_priv;
 struct attr;
 #include "coord.h"
 #include "point.h"
-#include "layer.h"
+
+enum layer_type {
+	layer_town=0,
+	layer_street,
+	layer_poly,
+	layer_end,
+};
 
 struct map_selection {
 	struct map_selection *next;
@@ -13,7 +19,7 @@ struct map_selection {
 		struct coord_rect c_rect;
 		struct point_rect p_rect;
 	} u;
-	int order[layer_end];		
+	int order[layer_end];
 };
 
 #define MAP_COUNTRYLIST		(1<<0)
