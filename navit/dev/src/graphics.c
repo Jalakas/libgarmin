@@ -57,7 +57,7 @@ alloc_displaytype(unsigned int type)
 }
 
 static void
-free_displaytype(struct displaytype *dt)
+free_displaytype_items(struct displaytype *dt)
 {
 	struct displayitem *di;
 	list_for_first_entry(di, &dt->litems, l) {
@@ -66,7 +66,6 @@ free_displaytype(struct displaytype *dt)
 			dbg(1,"warning: item '%s' not displayed\n", item_to_name(di->item.type));
 		free(di);
 	}
-	free(dt);
 }
 
 #define TYPES_HASH_TAB_SIZE     256
@@ -294,9 +293,8 @@ xdisplay_free(struct displaylist *displaylist)
 	int i;
 	struct displaytype *dt;
 	for (i=0; i < TYPES_HASH_TAB_SIZE; i++) {
-		list_for_first_entry(dt, &displaylist->types[i], l) {
-			list_remove(&dt->l);
-			free_displaytype(dt);
+		list_for_entry(dt, &displaylist->types[i], l) {
+			free_displaytype_items(dt);
 		}
 	}
 }
