@@ -212,7 +212,6 @@ void gar_sai2searchres(struct street_addr_info *sai, struct gar_search_res *res)
 		} else
 			res->regionid = *(unsigned short*)sai->field3; 
 	}
-	
 }
 
 int gar_match_sai(struct street_addr_info *sai, unsigned int zipid, unsigned int rid, unsigned int cityid, unsigned int num)

@@ -690,8 +690,23 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 											so = gar_alloc_search_obj(gsub, from);
 											if (so) {
 												log(10, "Found road: %s\n", buf);
-												if (r->sai)
+												if (r->sai) {
 													gar_sai2searchres(r->sai, so);
+													if (!so->regionid) {
+														if (so->cityid) {
+															so->regionid = gsub->cities[so->cityid]->region_idx;
+														}
+													}
+													if (!so->countryid) {
+														if (so->regionid) {
+															so->countryid = gsub->regions[so->regionid]->country;
+														}
+													}
+												} else {
+													so->cityid = 0;
+													so->regionid = 0;
+													so->zipid = 0;
+												}
 												// FIXME: if we have only region
 												// we can get the country
 												// if we have city, we can get region
