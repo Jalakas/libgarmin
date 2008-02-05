@@ -692,6 +692,10 @@ static int gar_get_search_objects(struct gmap *gm, struct gobject **ret,
 												log(10, "Found road: %s\n", buf);
 												if (r->sai)
 													gar_sai2searchres(r->sai, so);
+												// FIXME: if we have only region
+												// we can get the country
+												// if we have city, we can get region
+												// and country
 												so->roadid = r->offset;
 												o = gar_alloc_object(GO_SEARCH, so);
 												if (o) {
@@ -935,7 +939,7 @@ int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 		struct gpoint *gp;
 		res = o->gptr;
 		if (res->roadid) {
-			struct gar_road *rd = gar_get_road(sub, res->roadid);
+			struct gar_road *rd = gar_get_road(res->sub, res->roadid);
 			if (rd) {
 			}
 			return 0;
