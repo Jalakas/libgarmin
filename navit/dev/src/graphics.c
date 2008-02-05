@@ -607,14 +607,14 @@ void
 graphics_displaylist_move(struct displaylist *displaylist, int dx, int dy)
 {
 	struct displayitem *di;
-	int i;
 	struct displaytype *dt;
+	int i,j;
 	for (i=0; i < TYPES_HASH_TAB_SIZE; i++) {
 		list_for_entry(dt, &displaylist->types[i], l) {
 			list_for_entry(di, &dt->litems, l) {
-				for (i = 0 ; i < di->count ; i++) {
-					di->pnt[i].x+=dx;
-					di->pnt[i].y+=dy;
+				for (j = 0 ; j < di->count ; j++) {
+					di->pnt[j].x+=dx;
+					di->pnt[j].y+=dy;
 				}
 			}
 		}
@@ -658,66 +658,19 @@ graphics_draw(struct graphics *gra, struct displaylist *displaylist, GList *maps
 }
 
 
-#if 1
-struct displaylist_handle {
-	int idx;
-	struct displayitem *last;
-	struct displaylist *dl;
-};
-
-
-struct displaylist_handle *
-graphics_displaylist_open(struct displaylist *displaylist)
+void display_list_for_each(struct displaylist *displaylist, void (*cb_fn)(struct displayitem *di, void *data), void *data)
 {
-	struct displaylist_handle *ret;
-
-	ret=g_new0(struct displaylist_handle, 1);
-	ret->dl = displaylist;
-	return ret;
-}
-
-struct displayitem *
-graphics_displaylist_next(struct displaylist_handle *dlh)
-{
-	struct displayitem *di = NULL;
-	list_t *l;
-nextidx:
-	if (dlh->idx < TYPES_HASH_TAB_SIZE) {
-		if (dlh->last) {
-			if (dlh->last->l.n == &dlh->dl->types[dlh->idx]) {
-				dlh->idx++;
-				dlh->last = NULL;
-				goto nextidx;
+	struct displayitem *di;
+	int i;
+	struct displaytype *dt;
+	for (i=0; i < TYPES_HASH_TAB_SIZE; i++) {
+		list_for_entry(dt, &displaylist->types[i], l) {
+			list_for_entry(di, &dt->litems, l) {
+				cb_fn(di, data);
 			}
-			l = &dlh->last->l;
-			di = list_entry(l, struct displayitem, l);
-		} else {
-			if (list_empty(&dlh->dl->types[dlh->idx])) {
-				dlh->idx++;
-				dlh->last = NULL;
-				goto nextidx;
-			}
-			l = &dlh->dl->types[dlh->idx];
-			di = list_entry(l, struct displayitem, l);
 		}
-		dlh->last = di;
-		if (!di) {
-			dlh->idx++;
-			goto nextidx;
-		}
-	} else {
-		return NULL;
 	}
-	return di;
 }
-
-void
-graphics_displaylist_close(struct displaylist_handle *dlh)
-{
-	g_free(dlh);
-}
-
-#endif
 struct displaylist *
 graphics_displaylist_new(void)
 {

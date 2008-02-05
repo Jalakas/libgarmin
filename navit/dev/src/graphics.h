@@ -120,13 +120,11 @@ int graphics_ready(struct graphics *this_);
 void graphics_displaylist_draw(struct graphics *gra, struct displaylist *displaylist, struct transformation *trans, GList *layouts);
 void graphics_displaylist_move(struct displaylist *displaylist, int dx, int dy);
 void graphics_draw(struct graphics *gra, struct displaylist *displaylist, GList *mapsets, struct transformation *trans, GList *layouts);
-struct displaylist_handle *graphics_displaylist_open(struct displaylist *displaylist);
-struct displayitem *graphics_displaylist_next(struct displaylist_handle *dlh);
-void graphics_displaylist_close(struct displaylist_handle *dlh);
 struct displaylist *graphics_displaylist_new(void);
 struct item *graphics_displayitem_get_item(struct displayitem *di);
 char *graphics_displayitem_get_label(struct displayitem *di);
 int graphics_displayitem_within_dist(struct displayitem *di, struct point *p, int dist);
+void display_list_for_each(struct displaylist *displaylist, void (*cb_fn)(struct displayitem *di, void *data), void *data);
 /* end of prototypes */
 #ifdef __cplusplus
 }

@@ -196,21 +196,30 @@ popup_show_item(void *popup, struct displayitem *di)
 		popup_printf(menu, menu_type_menu, "(No map)");
 	}
 }
+
+struct show_cb_data {
+	void *popup;
+	struct point *p;
+};
+
+static void
+popup_show_item_cb(struct displayitem *di, void *data)
+{
+	struct show_cb_data *d = data;
+	if (graphics_displayitem_within_dist(di, d->p, 5)) {
+		popup_show_item(d->popup, di);
+	}
+}
+
 static void
 popup_display(struct navit *nav, void *popup, struct point *p)
 {
-	struct displaylist_handle *dlh;
+	struct show_cb_data cb;
 	struct displaylist *display;
-	struct displayitem *di;
-
 	display=navit_get_displaylist(nav);
-	dlh=graphics_displaylist_open(display);
-	while ((di=graphics_displaylist_next(dlh))) {
-		if (graphics_displayitem_within_dist(di, p, 5)) {
-			popup_show_item(popup, di);
-		}
-	}
-	graphics_displaylist_close(dlh);
+	cb.popup = popup;
+	cb.p = p;
+	display_list_for_each(display, popup_show_item_cb, &cb); 
 }
 static struct pcoord c;
 
