@@ -30,7 +30,6 @@
 
 #define _(STRING)    gettext(STRING)
 
-struct map_data *map_data_default;
 
 static void sigchld(int sig)
 {
