@@ -181,7 +181,7 @@ zipfile_to_tile(struct file *f, struct zip_cd *cd, struct tile *t)
 	zipfn=(char *)(file_data_read(f,cd->zipofst+sizeof(struct zip_lfh), lfh->zipfnln));
 	strncpy(buffer, zipfn, lfh->zipfnln);
 	buffer[lfh->zipfnln]='\0';
-	dbg(0,"0x%x '%s' %d %d,%d\n", lfh->ziplocsig, buffer, sizeof(*cd)+cd->zipcfnl, lfh->zipsize, lfh->zipuncmp);
+	dbg(1,"0x%x '%s' %d %d,%d\n", lfh->ziplocsig, buffer, sizeof(*cd)+cd->zipcfnl, lfh->zipsize, lfh->zipuncmp);
 	switch (lfh->zipmthd) {
 	case 0:
 		t->start=(int *)(file_data_read(f,cd->zipofst+sizeof(struct zip_lfh)+lfh->zipfnln, lfh->zipuncmp));

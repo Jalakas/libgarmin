@@ -24,12 +24,11 @@ profile_timer(int level, const char *module, const char *function, const char *f
 		gettimeofday(&curr, NULL);
 		msec=(curr.tv_usec-last[level].tv_usec)/1000+
 		     (curr.tv_sec-last[level].tv_sec)*1000;
-	
 		sprintf(buffer, "profile:%s", module);
 		debug_vprintf(1, buffer, strlen(buffer), function, strlen(function), 1, fmt, ap); 
-		if (msec >= 100) 
+		if (msec >= 100) {
 			debug_printf(1, buffer, strlen(buffer), function, strlen(function), 0, " %d msec\n", msec);
-		else {
+		} else {
 			usec=(curr.tv_usec-last[level].tv_usec)+(curr.tv_sec-last[level].tv_sec)*1000*1000;
 			debug_printf(1, buffer, strlen(buffer), function, strlen(function), 0, " %d.%d msec\n", usec/1000, usec%1000);
 		}

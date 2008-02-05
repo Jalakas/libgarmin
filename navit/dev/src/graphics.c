@@ -69,7 +69,7 @@ free_displaytype(struct displaytype *dt)
 	free(dt);
 }
 
-#define TYPES_HASH_TAB_SIZE     128
+#define TYPES_HASH_TAB_SIZE     256
 #define TYPE_HASH(type)       (((type) * 2654435769UL)& (TYPES_HASH_TAB_SIZE-1))
 
 struct displaylist {
@@ -644,7 +644,7 @@ graphics_draw(struct graphics *gra, struct displaylist *displaylist, GList *maps
 #endif
 	profile(0,NULL);
 	do_draw(displaylist, trans, mapsets, order);
-	profile(1,"do_draw");
+//	profile(1,"do_draw");
 	graphics_displaylist_draw(gra, displaylist, trans, layouts);
 	profile(1,"xdisplay_draw");
 	profile(0,"end");
@@ -680,6 +680,7 @@ struct displayitem *
 graphics_displaylist_next(struct displaylist_handle *dlh)
 {
 	struct displayitem *di = NULL;
+	list_t *l;
 nextidx:
 	if (dlh->idx < TYPES_HASH_TAB_SIZE) {
 		if (dlh->last) {
@@ -688,9 +689,15 @@ nextidx:
 				dlh->last = NULL;
 				goto nextidx;
 			}
-			di = list_entry(dlh->last->l.n, struct displayitem, l);
+			l = &dlh->last->l;
+			di = list_entry(l, struct displayitem, l);
 		} else {
-			list_t *l = &dlh->dl->types[dlh->idx];
+			if (list_empty(&dlh->dl->types[dlh->idx])) {
+				dlh->idx++;
+				dlh->last = NULL;
+				goto nextidx;
+			}
+			l = &dlh->dl->types[dlh->idx];
 			di = list_entry(l, struct displayitem, l);
 		}
 		dlh->last = di;
