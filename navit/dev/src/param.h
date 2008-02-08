@@ -1,6 +1,7 @@
 #ifndef NAVIT_PARAM_H
 #define NAVIT_PARAM_H
 
+#warning please convert me to attributes
 struct param_list {
 	char *name;
 	char *value;	

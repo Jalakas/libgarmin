@@ -330,11 +330,6 @@ display_add(struct displaylist *displaylist, struct item *item, int count, struc
 	if (dt) {
 		list_append(&di->l, &dt->litems);
 	}
-#if 0
-	l=g_hash_table_lookup(displaylist->dl, GINT_TO_POINTER(item->type));
-	l=g_list_prepend(l, di);
-	g_hash_table_insert(displaylist->dl, GINT_TO_POINTER(item->type), l);
-#endif
 }
 
 
@@ -351,7 +346,7 @@ label_line(struct graphics *gra, struct graphics_gc *fg, struct graphics_gc *bg,
 		dx*=100;
 		dy=p[i+1].y-p[i].y;
 		dy*=100;
-		l=(int)sqrt((float)(dx*dx+dy*dy));
+		l=(int)sqrtf((float)(dx*dx+dy*dy));
 		if (l > tl) {
 			x=p[i].x;
 			y=p[i].y;
@@ -387,6 +382,7 @@ xdisplay_draw_elements(struct graphics *gra,struct displaylist *displaylist, str
 	struct point p;
 	struct displaytype *dt;
 	struct displayitem *di;
+	char icon[PATH_MAX];
 	es=itm->elements;
 	while (es) {
 		e=es->data;
@@ -434,9 +430,8 @@ xdisplay_draw_elements(struct graphics *gra,struct displaylist *displaylist, str
 					break;
 				case element_icon:
 					if (!img) {
-						char *icon=g_strjoin(NULL,navit_sharedir, "/xpm/", e->u.icon.src, NULL);
+						sprintf(icon, "%s/xpm/%s", navit_sharedir, e->u.icon.src);
 						img=graphics_image_new(gra, icon);
-						g_free(icon);
 						if (! img)
 							g_warning("failed to load icon '%s'\n", e->u.icon.src);
 					}

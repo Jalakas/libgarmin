@@ -28,9 +28,11 @@ profile_timer(int level, const char *module, const char *function, const char *f
 		debug_vprintf(1, buffer, strlen(buffer), function, strlen(function), 1, fmt, ap); 
 		if (msec >= 100) {
 			debug_printf(1, buffer, strlen(buffer), function, strlen(function), 0, " %d msec\n", msec);
+			fprintf(stderr, "%s:%d msec\n", function, msec);
 		} else {
 			usec=(curr.tv_usec-last[level].tv_usec)+(curr.tv_sec-last[level].tv_sec)*1000*1000;
 			debug_printf(1, buffer, strlen(buffer), function, strlen(function), 0, " %d.%d msec\n", usec/1000, usec%1000);
+			fprintf(stderr, "%s:%d.%d msec\n", function, usec/1000, usec%1000);
 		}
 		gettimeofday(&last[level], NULL);
 	} else {

@@ -2,6 +2,7 @@
 #include "menu.h"
 #include "debug.h"
 
+// unused
 void
 menu_route_do_update(struct container *co)
 {
