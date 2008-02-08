@@ -8,12 +8,15 @@
 #include "module.h"
 #include "list.h"
 
+#define MODULES_CFG "modules.conf"
 #define MF_ACTIVE	(1<<0)
 #define MF_LAZY		(1<<1)
 #define MF_GLOBAL	(1<<2)
+#define MF_ONDEMAND	(1<<3)
 
 struct module {
 	list_t l;
+	char *alias;
 	char *name;
 	int flags;
 	int (*module_load)(void);
@@ -52,32 +55,49 @@ static void set_module_flag(char *name, int flag)
 	}
 }
 
+static int navit_load_module(struct module *m)
+{
+	char path[PATH_MAX];
+	int flags;
+	void *handle;
+	if (m->flags & MF_GLOBAL)
+		flags = RTLD_GLOBAL;
+	else
+		flags = RTLD_LOCAL;
+	flags |= RTLD_NOW;
+	debug(5, "Loading: %s\n", m->name);
+	sprintf(path, "%s/modules/navit_%s", navit_libdir, m->name);
+	handle = dlopen(path, flags);
+	if (!handle) {
+		debug(0, "Error loading module: %s(%s)\n", m->name,dlerror());
+		m->flags &= ~MF_ACTIVE;
+		return -1;
+	}
+	m->module_load = dlsym(handle, "module_load");
+	m->module_reconfigure = dlsym(handle, "module_reconfigure");
+	m->module_unload = dlsym(handle, "module_unload");
+	return 0;
+}
+
+int navit_request_module(const char *name)
+{
+	struct module *m;
+	list_for_entry(m, &lmodules, l) {
+		if (!strcmp(m->name, name) || (m->alias && !strcmp(m->alias,name)))
+			return navit_load_module(m);
+	}
+	return -1;
+}
+
 static void navit_modules_load(void)
 {
 	struct module *m;
-	void *handle;
-	int flags;
-	char path[PATH_MAX];
+
 
 	list_for_entry(m, &lmodules, l) {
-		if (!(m->flags & MF_ACTIVE))
+		if (!(m->flags & MF_ACTIVE) || m->flags&MF_ONDEMAND)
 			continue;
-		if (m->flags & MF_GLOBAL)
-			flags = RTLD_GLOBAL;
-		else
-			flags = RTLD_LOCAL;
-		flags |= RTLD_NOW;
-		debug(5, "Loading: %s\n", m->name);
-		sprintf(path, "%s/modules/%s", navit_libdir, m->name);
-		handle = dlopen(path, flags);
-		if (!handle) {
-			debug(0, "Error loading module: %s(%s)\n", m->name,dlerror());
-			m->flags &= ~MF_ACTIVE;
-			continue;
-		}
-		m->module_load = dlsym(handle, "module_load");
-		m->module_reconfigure = dlsym(handle, "module_reconfigure");
-		m->module_unload = dlsym(handle, "module_unload");
+		navit_load_module(m);
 	}
 }
 
@@ -86,7 +106,7 @@ static void navit_modules_start(void)
 	struct module *m;
 
 	list_for_entry(m, &lmodules, l) {
-		if (!(m->flags&MF_ACTIVE))
+		if (!(m->flags&MF_ACTIVE) || m->flags&MF_ONDEMAND)
 			continue;
 		if (m->module_load)
 			m->module_load();
@@ -104,7 +124,7 @@ void navit_modules_init(void)
 	int active;
 
 	debug(0, "Loading modules ...\n");
-	cfg = navit_cfg_load("modules.cfg");
+	cfg = navit_cfg_load(MODULES_CFG);
 	if (!cfg) {
 		debug(0, "No modules configured\n");
 		return;
@@ -129,6 +149,18 @@ void navit_modules_init(void)
 		mod = navit_module_alloc(cfg_var_value(var), active);
 		if (mod)
 			list_append(&mod->l, &lmodules);
+	}
+	cat = navit_cfg_find_cat(cfg, "ondemand");
+	if (cat) {
+		var = NULL;
+		while ((var = navit_cat_vars_walk(cat, var))!=NULL) {
+			mod = navit_module_alloc(cfg_var_value(var), 1);
+			if (mod) {
+				mod->alias = strdup(cfg_var_name(var));
+				mod->flags |= MF_ONDEMAND;
+				list_append(&mod->l, &lmodules);
+			}
+		}
 	}
 
 	cat = navit_cfg_find_cat(cfg, "global");

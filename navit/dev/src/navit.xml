@@ -437,8 +437,8 @@ Change to your home coordinates.
 				<circle color="#000000" radius="3" label_size="15" />
 			</item>
 			<item type="track" order="3-">
-                                <polyline color="#3f3f3f" width="1" />
-                        </item>
+				<polyline color="#3f3f3f" width="1" />
+			</item>
 
 			<item type="poi_airport" order="0-">
 				<icon src="airport.xpm" />
