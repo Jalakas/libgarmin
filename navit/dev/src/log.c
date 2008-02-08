@@ -41,7 +41,7 @@ strftime_localtime(char *buffer, int size, char *fmt)
 
 	t=time(NULL);
 	tm=localtime(&t);
-	strftime(buffer, 4096, fmt, tm);
+	strftime(buffer, size, fmt, tm);
 }
 
 static void
@@ -50,7 +50,7 @@ expand_filenames(struct log *this_)
 	char buffer[4096];
 	int i;
 
-	strftime_localtime(buffer, 4096, this_->filename);
+	strftime_localtime(buffer, sizeof(buffer), this_->filename);
 	this_->filename_ex1=g_strdup(buffer);
 	if (strstr(this_->filename_ex1,"%i")) {
 		i=0;
@@ -121,7 +121,7 @@ log_change_required(struct log *this_)
 {
 	char buffer[4096];
 
-	strftime_localtime(buffer, 4096, this_->filename);
+	strftime_localtime(buffer, sizeof(buffer), this_->filename);
 	return (strcmp(this_->filename_ex1, buffer) != 0);
 }
 
