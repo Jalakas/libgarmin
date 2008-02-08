@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdarg.h>
+#include <stdio.h>
 extern int debug_level;
 #define dbg_str2(x) #x
 #define dbg_str1(x) dbg_str2(x)
@@ -19,6 +20,8 @@ int debug_level_get(const char *name);
 void debug_vprintf(int level, const char *module, const int mlen, const char *function, const int flen, int prefix, const char *fmt, va_list ap);
 void debug_printf(int level, const char *module, const int mlen, const char *function, const int flen, int prefix, const char *fmt, ...);
 /* end of prototypes */
+
+#define debug(l,f...) fprintf(stderr, ## f)
 
 #ifdef __cplusplus
 }

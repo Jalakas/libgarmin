@@ -1282,9 +1282,9 @@ navit_vehicle_draw(struct navit *this_, struct navit_vehicle *nv, struct point *
 		transform(this_->trans, pro, &nv->coord, &pnt2, 1, 0);
 	}
 #if 1
-	cursor_draw(nv->cursor, &pnt2, nv->dir-transform_get_angle(this_->trans, 0), nv->speed > 2, pnt == NULL);
+	cursor_draw(nv->cursor, &pnt2, nv->dir- transform_get_angle(this_->trans, 0), nv->speed > 2, pnt == NULL);
 #else
-	cursor_draw(nv->cursor, &pnt2, nv->dir-transform_get_angle(this_->trans, 0), nv->speed > 2, 1);
+	cursor_draw(nv->cursor, &pnt2, nv->dir- transform_get_angle(this_->trans, 0), nv->speed > 2, 1);
 #endif
 }
 
@@ -1402,12 +1402,15 @@ navit_add_vehicle(struct navit *this_, struct vehicle *v, struct attr **attrs)
 {
 	struct navit_vehicle *nv=g_new0(struct navit_vehicle, 1);
 	struct attr *name,*update,*follow,*color,*active;
+#if 0
 	nv->vehicle=v;
 	nv->update=1;
 	nv->follow=0;
-	nv->name="Noname";
 	if ((name=attr_search(attrs, NULL, attr_name)))
 		nv->name=g_strdup(name->u.str);
+	else
+		nv->name=g_strdup("Noname");
+
 	if ((update=attr_search(attrs, NULL, attr_update)))
 		nv->update=nv->update=update->u.num;
 	if ((follow=attr_search(attrs, NULL, attr_follow)))
@@ -1416,6 +1419,7 @@ navit_add_vehicle(struct navit *this_, struct vehicle *v, struct attr **attrs)
 		nv->c=*(color->u.color);
 	nv->update_curr=nv->update;
 	nv->follow_curr=nv->follow;
+#endif
 	this_->vehicles=g_list_append(this_->vehicles, nv);
 	if ((active=attr_search(attrs, NULL, attr_active)) && active->u.num) 
 		navit_set_vehicle(this_, nv);

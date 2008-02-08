@@ -3,6 +3,7 @@
 
 #include "item.h"
 #include "color.h"
+#include "list.h"
 
 struct element_line;
 struct element_text;
@@ -37,9 +38,17 @@ struct itemtype {
 	GList *elements;
 };
 
-struct layer { char *name; int details; GList *itemtypes; };
+struct layer {
+	char *name;
+	int details;
+	GList *itemtypes;
+};
 
-struct layout { char *name; GList *layers; };
+struct layout {
+	list_t l;
+	char *name;
+	GList *layers;
+};
 
 /* prototypes */
 enum item_type;
@@ -49,6 +58,7 @@ struct itemtype;
 struct layer;
 struct layout;
 struct layout *layout_new(const char *name);
+struct layout *layout_find(const char *name);
 struct layer *layer_new(const char *name, int details);
 void layout_add_layer(struct layout *layout, struct layer *layer);
 struct itemtype *itemtype_new(int order_min, int order_max);

@@ -27,9 +27,15 @@
 #include "coord.h"
 #include "route.h"
 #include "navigation.h"
+#include "module.h"
 
 #define _(STRING)    gettext(STRING)
 
+char *navit_prefix;
+char *navit_libdir;
+char *navit_sharedir;
+char *navit_libprefix;
+char *navit_localedir;
 
 static void sigchld(int sig)
 {
@@ -107,14 +113,20 @@ int main(int argc, char **argv)
 		printf(_("Running from source directory\n"));
 		getcwd(buffer, PATH_MAX);
 		setenv("NAVIT_PREFIX", buffer, 0);
+		navit_prefix = strdup(buffer);
 		setenv("NAVIT_LIBDIR", buffer, 0);
+		navit_libdir = strdup(buffer);
 		setenv("NAVIT_SHAREDIR", buffer, 0);
+		navit_sharedir = strdup(buffer);
 		setenv("NAVIT_LIBPREFIX", "*/.libs/", 0);
+		navit_libprefix = strdup("*/.libs/");
 		s=g_strdup_printf("%s/../locale", buffer);
 		setenv("NAVIT_LOCALEDIR", s, 0);
+		navit_localedir = strdup(s);
 		g_free(s);
 	} else {
-		if (!getenv("NAVIT_PREFIX")) {
+		navit_prefix = getenv("NAVIT_PREFIX");
+		if (!navit_prefix) {
 			l=strlen(argv[0]);
 			if (l > 10 && !strcmp(argv[0]+l-10,"/bin/navit")) {
 				s=g_strdup(argv[0]);
@@ -122,9 +134,12 @@ int main(int argc, char **argv)
 				if (strcmp(s, PREFIX))
 					printf(_("setting '%s' to '%s'\n"), "NAVIT_PREFIX", s);
 				setenv("NAVIT_PREFIX", s, 0);
+				navit_prefix = strdup(s);
 				g_free(s);
-			} else
+			} else {
 				setenv("NAVIT_PREFIX", PREFIX, 0);
+				navit_prefix = strdup(PREFIX);
+			}
 		}
 #ifdef _WIN32
 		s=g_strdup_printf("locale");
@@ -132,6 +147,7 @@ int main(int argc, char **argv)
 		s=g_strdup_printf("%s/share/locale", getenv("NAVIT_PREFIX"));
 #endif
 		setenv("NAVIT_LOCALEDIR", s, 0);
+		navit_localedir = strdup(s);
 		g_free(s);
 #ifdef _WIN32
 		s=g_strdup_printf(".");
@@ -139,12 +155,14 @@ int main(int argc, char **argv)
 		s=g_strdup_printf("%s/share/navit", getenv("NAVIT_PREFIX"));
 #endif
 		setenv("NAVIT_SHAREDIR", s, 0);
+		navit_sharedir = strdup(s);
 		g_free(s);
 		s=g_strdup_printf("%s/lib/navit", getenv("NAVIT_PREFIX"));
 		setenv("NAVIT_LIBDIR", s, 0);
+		navit_libdir = strdup(s);
 		g_free(s);
 	}
-        bindtextdomain(PACKAGE, getenv("NAVIT_LOCALEDIR"));
+	bindtextdomain(PACKAGE, navit_localedir);
 	bind_textdomain_codeset (PACKAGE, "UTF-8");
 	textdomain(PACKAGE);
 
@@ -153,16 +171,11 @@ int main(int argc, char **argv)
 	extern void builtin_init(void);
 	builtin_init();
 #endif
-#if 0
-	/* handled in gui/gtk */
-	gtk_set_locale();
-	gtk_init(&argc, &argv);
-	gdk_rgb_init();
-#endif
 	s = getenv("NAVIT_WID");
 	if (s) {
-		setenv("SDL_WINDOWID", s, 0);
+		setenv("SDL_WINDOWID", s, 1);
 	}
+	navit_modules_init();
 	route_init();
 	navigation_init();
 	config_file=NULL;
@@ -184,14 +197,14 @@ int main(int argc, char **argv)
 			config_file="navit.xml";
 	}
 	if (! config_file) {
-		config_file=g_strjoin(NULL,getenv("NAVIT_SHAREDIR"), "/navit.xml.local" , NULL);
+		config_file=g_strjoin(NULL,navit_sharedir, "/navit.xml.local" , NULL);
 		if (!file_exists(config_file)) {
 			g_free(config_file);
 			config_file=NULL;
 		}
 	}
 	if (! config_file) {
-		config_file=g_strjoin(NULL,getenv("NAVIT_SHAREDIR"), "/navit.xml" , NULL);
+		config_file=g_strjoin(NULL,navit_sharedir, "/navit.xml" , NULL);
 		if (!file_exists(config_file)) {
 			g_free(config_file);
 			config_file=NULL;

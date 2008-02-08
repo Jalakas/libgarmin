@@ -18,6 +18,7 @@
 #include "route.h"
 #include "util.h"
 #include "list.h"
+#include "globals.h"
 
 struct graphics
 {
@@ -433,7 +434,7 @@ xdisplay_draw_elements(struct graphics *gra,struct displaylist *displaylist, str
 					break;
 				case element_icon:
 					if (!img) {
-						char *icon=g_strjoin(NULL,getenv("NAVIT_SHAREDIR"), "/xpm/", e->u.icon.src, NULL);
+						char *icon=g_strjoin(NULL,navit_sharedir, "/xpm/", e->u.icon.src, NULL);
 						img=graphics_image_new(gra, icon);
 						g_free(icon);
 						if (! img)

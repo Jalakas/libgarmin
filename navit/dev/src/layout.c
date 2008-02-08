@@ -2,15 +2,29 @@
 #include <string.h>
 #include "layout.h"
 
+static list_head(llayouts);
+
 struct layout * layout_new(const char *name)
 {
 	struct layout *l;
 
 	l = g_new0(struct layout, 1);
-	l->name = g_strdup(name);
+	if (l) {
+		l->name = g_strdup(name);
+		list_append(&l->l, &llayouts);
+	}
 	return l;
 }
 
+struct layout *layout_find(const char *name)
+{
+	struct layout *l;
+	list_for_entry(l, &llayouts, l) {
+		if (!strcmp(name, l->name))
+			return l;
+	}
+	return NULL;
+}
 
 struct layer * layer_new(const char *name, int details)
 {

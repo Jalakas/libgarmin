@@ -4,6 +4,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 extern struct gui *main_loop_gui;
 /* prototypes */
 enum item_type;
