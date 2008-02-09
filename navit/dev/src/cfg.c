@@ -242,7 +242,7 @@ int cfg_var_true(struct cfg_varval *v)
 
 int cfg_var_intvalue(struct cfg_varval *v)
 {
-	return atoi(v->value);
+	return strtol(v->value,NULL,0);
 }
 
 char *cfg_var_value(struct cfg_varval *v)
@@ -258,4 +258,9 @@ char *cfg_var_name(struct cfg_varval *v)
 int navit_cfg_save(struct navit_cfg *cfg, char *file)
 {
 	return -1;
+}
+
+char *cfg_cat_name(struct cfg_category *cat)
+{
+	return cat->name;
 }

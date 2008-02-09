@@ -1,8 +1,16 @@
 #include <glib.h>
 #include <string.h>
+#include <stdio.h>
 #include "layout.h"
+#include "cfg.h"
+#include "debug.h"
+#include "color.h"
 
 static list_head(llayouts);
+static list_head(llayers);
+
+#define LAYOUT_CFG	"layout.conf"
+#define LAYERS_CFG	"layers.conf"
 
 struct layout * layout_new(const char *name)
 {
@@ -33,7 +41,18 @@ struct layer * layer_new(const char *name, int details)
 	l = g_new0(struct layer, 1);
 	l->name = g_strdup(name);
 	l->details = details;
+	list_append(&l->l, &llayers);
 	return l;
+}
+
+static struct layer *layer_find(const char *name)
+{
+	struct layer *l;
+	list_for_entry(l, &llayers, l) {
+		if (!strcmp(name, l->name))
+			return l;
+	}
+	return NULL;
 }
 
 void layout_add_layer(struct layout *layout, struct layer *layer)
@@ -79,6 +98,17 @@ polygon_new(struct color *color)
 	return e;
 }
 
+static struct element *
+new_polygon(char *colorname)
+{
+	struct element *e;
+	e = g_new0(struct element, 1);
+	e->type=element_polygon;
+	e->colorname=strdup(colorname);
+
+	return e;
+}
+
 struct element *
 polyline_new(struct color *color, int width, int directed)
 {
@@ -91,6 +121,34 @@ polyline_new(struct color *color, int width, int directed)
 	e->u.polyline.directed=directed;
 
 	return e;
+}
+
+static struct element *
+new_polyline(char *color)
+{
+	struct element *e;
+	
+	e = g_new0(struct element, 1);
+	e->type=element_polyline;
+	e->colorname = strdup(color);
+
+	return e;
+}
+
+static void
+set_width(struct element *e, int w)
+{
+	if (e->type == element_polyline)
+		e->u.polyline.width = w;
+	else if (e->type == element_circle)
+		e->u.circle.width = w;
+}
+
+static void
+set_directed(struct element *e, int d)
+{
+	if (e->type == element_polyline)
+		e->u.polyline.directed=d;
 }
 
 struct element *
@@ -106,6 +164,25 @@ circle_new(struct color *color, int radius, int width, int label_size)
 	e->u.circle.radius=radius;
 
 	return e;
+}
+
+static struct element *
+new_circle(char *colorname)
+{
+	struct element *e;
+	
+	e = g_new0(struct element, 1);
+	e->type=element_circle;
+	e->colorname = strdup(colorname);
+
+	return e;
+}
+
+static void
+set_radius(struct element *e, int r)
+{
+	if (e->type == element_circle)
+		e->u.circle.radius = r;
 }
 
 struct element *
@@ -130,7 +207,7 @@ icon_new(const char *src)
 	e->u.icon.src=(char *)(e+1);
 	strcpy(e->u.icon.src,src);
 
-	return e;	
+	return e;
 }
 
 struct element *
@@ -141,6 +218,248 @@ image_new(void)
 	e = g_malloc0(sizeof(*e));
 	e->type=element_image;
 
-	return e;	
+	return e;
 }
 
+static int
+get_order(char *value, int *min, int *max)
+{
+	const char  *pos;
+	int ret;
+
+	*min = 0;
+	*max = 18;
+	pos = strchr(value, '-');
+	if (!pos) {
+		ret = sscanf(value,"%d",min);
+		*max = *min;
+	} else if (pos == value) {
+		ret = sscanf(value,"-%d",max);
+	} else {
+		ret = sscanf(value,"%d-%d", min, max);
+	}
+	return ret;
+}
+
+static void layer_add_itemtypes(struct layer *l, struct itemtype *it, char *types)
+{
+	char *saveptr=NULL, *tok, *type_str, *str;
+	enum item_type itype;
+
+	type_str = strdup(types);
+	str = type_str;
+	layer_add_itemtype(l, it);
+	while ((tok=strtok_r(str, ",", &saveptr))) {
+		itype=item_from_name(tok);
+		itemtype_add_type(it, itype);
+		str=NULL;
+	}
+	g_free(type_str);
+
+}
+
+static int elements_activate(struct color_scheme *cs, struct itemtype *it)
+{
+	GList *es;
+	struct element *e;
+	struct color *c;
+
+	es=it->elements;
+	while (es) {
+		e=es->data;
+		c = cs_lookup_color(cs, e->colorname);
+		if (c) {
+			e->color = *c;
+		} else {
+			debug(0, "WARNING! Can not find color [%s]\n",
+				e->colorname);
+		}
+		es=g_list_next(es);
+	}
+	return 1;
+}
+
+static int layer_activate(struct color_scheme *cs, struct layer *layer)
+{
+	GList *itms;
+	struct itemtype *itm;
+
+	itms=layer->itemtypes;
+	while (itms) {
+		itm = itms->data;
+		elements_activate(cs, itm);
+		itms=g_list_next(itms);
+	}
+	return 1;
+}
+
+int layout_activate(struct layout *layout)
+{
+	GList *lays;
+	struct layer *lay;
+	struct color_scheme *cs;
+
+	cs = cs_lookup(layout->colorscheme);
+	if (!cs)
+		return -1;
+	lays=layout->layers;
+	while (lays) {
+		lay=lays->data;
+		layer_activate(cs, lay);
+		lays=g_list_next(lays);
+	}
+	return 1;
+}
+
+
+static int layers_init(void)
+{
+	struct navit_cfg *cfg;
+	struct cfg_varval *var = NULL;
+	struct cfg_category *cat = NULL;
+	struct layer *layer;
+	struct itemtype *it = NULL;
+	struct element *e = NULL;
+	char *type = NULL;
+	char *order;
+	int min, max;
+
+
+	debug(0, "Layers initializing ...\n");
+
+	cfg = navit_cfg_load(LAYERS_CFG);
+	if (!cfg)
+		return -1;
+	while ((cat = navit_cfg_cats_walk(cfg, cat))) {
+		layer = layer_new(cfg_cat_name(cat), 0);
+		if (!layer)
+			goto out_err;
+		while ((var = navit_cat_vars_walk(cat, var))) {
+			if (!strcmp(cfg_var_name(var), "type")) {
+				type = cfg_var_value(var);
+			} else if (!strcmp(cfg_var_name(var), "order")) {
+				order = cfg_var_value(var);
+				if (!get_order(order, &min, &max)) {
+					debug(0, "Invalid order:[%s]\n", order);
+					goto out_err;
+				}
+				if (!type) {
+					debug(0, "type is required before order\n");
+					goto out_err;
+				}
+				it = itemtype_new(min, max);
+				if (!it) {
+					debug(0, "Can not create type\n");
+					goto out_err;
+				}
+				layer_add_itemtypes(layer, it, type);
+			} else if (!strcmp(cfg_var_name(var), "polygon")) {
+				if (!it) {
+					debug(0, "type required before polygon\n");
+					goto out_err;
+				}
+				e = new_polygon(cfg_var_value(var));
+				if (e)
+					itemtype_add_element(it, e);
+			} else if (!strcmp(cfg_var_name(var), "polyline")) {
+				if (!it) {
+					debug(0, "type required before polyline\n");
+					goto out_err;
+				}
+				e = new_polyline(cfg_var_value(var));
+				if (e)
+					itemtype_add_element(it, e);
+			} else if (!strcmp(cfg_var_name(var), "circle")) {
+				if (!it) {
+					debug(0, "type required before circle\n");
+					goto out_err;
+				}
+				e = new_circle(cfg_var_value(var));
+				if (e)
+					itemtype_add_element(it, e);
+			} else if (!strcmp(cfg_var_name(var), "label")) {
+				if (!it) {
+					debug(0, "type required before label\n");
+					goto out_err;
+				}
+				e = label_new(cfg_var_intvalue(var));
+				if (e)
+					itemtype_add_element(it, e);
+			} else if (!strcmp(cfg_var_name(var), "image")) {
+				if (!it) {
+					debug(0, "type required before image\n");
+					goto out_err;
+				}
+				e = image_new();
+				if (e)
+					itemtype_add_element(it, e);
+			} else if (!strcmp(cfg_var_name(var), "width")) {
+				if (e) {
+					set_width(e, cfg_var_intvalue(var));
+				} else {
+					debug(0, "Error width and no element\n");
+				}
+			} else if (!strcmp(cfg_var_name(var), "radius")) {
+				if (e) {
+					set_radius(e, cfg_var_intvalue(var));
+				} else {
+					debug(0, "Error radius and no element\n");
+				}
+			} else if (!strcmp(cfg_var_name(var), "directed")) {
+				if (e) {
+					set_directed(e, cfg_var_true(var));
+				} else {
+					debug(0, "Error directed and no element\n");
+				}
+			}
+		}
+	}
+	navit_cfg_free(cfg);
+	return 1;
+out_err:
+	navit_cfg_free(cfg);
+	return -1;
+}
+
+int layout_init(void)
+{
+	struct navit_cfg *cfg;
+	struct cfg_varval *var;
+	struct cfg_category *cat = NULL;
+	struct layout *layout;
+	struct layer *layer; 
+
+	debug(0, "Layout initializing ...\n");
+	cfg = navit_cfg_load(LAYOUT_CFG);
+	if (!cfg)
+		return -1;
+	layers_init();
+	while ((cat = navit_cfg_cats_walk(cfg, cat))) {
+		layout = layout_new(cfg_cat_name(cat));
+		if (!layout)
+			goto out_err;
+		var = NULL;
+		while ((var = navit_cat_vars_walk(cat, var))) {
+			if (!strcmp(cfg_var_name(var), "colors")) {
+				layout->colorscheme = strdup(cfg_var_value(var));
+			} else if (!strcmp(cfg_var_name(var), "background")) {
+				if (cs_resolve_color(layout->colorscheme, cfg_var_value(var),
+								&layout->bgcolor) < 0)
+					goto out_err;
+			} else if (!strcmp(cfg_var_name(var), "layer")) {
+				layer = layer_find(cfg_var_value(var));
+				if (!layer) {
+					debug(0, "WARNING! Layer %s is not defined\n",
+						cfg_var_value(var));
+					continue;
+				}
+				layout_add_layer(layout, layer);
+			}
+		}
+	}
+	navit_cfg_free(cfg);
+	return 1;
+out_err:
+	navit_cfg_free(cfg);
+	return -1;
+}

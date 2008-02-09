@@ -10,7 +10,10 @@ struct element_text;
 
 struct element {
 	enum { element_point, element_polyline, element_polygon, element_circle, element_label, element_icon, element_image } type;
+	// color must be resolved when the layer is activated from the layout
+	// using its color scheme
 	struct color color;
+	char *colorname;
 	int label_size;
 	union {
 		struct element_point {
@@ -39,6 +42,7 @@ struct itemtype {
 };
 
 struct layer {
+	list_t l;
 	char *name;
 	int details;
 	GList *itemtypes;
@@ -46,6 +50,8 @@ struct layer {
 
 struct layout {
 	list_t l;
+	char *colorscheme;
+	struct color bgcolor;
 	char *name;
 	GList *layers;
 };
@@ -71,6 +77,8 @@ struct element *circle_new(struct color *color, int radius, int width, int label
 struct element *label_new(int label_size);
 struct element *icon_new(const char *src);
 struct element *image_new(void);
+int layout_init(void);
+int layout_activate(struct layout *layout);
 
 #endif
 

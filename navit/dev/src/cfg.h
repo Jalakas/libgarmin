@@ -16,6 +16,7 @@ struct cfg_category *navit_cfg_cats_walk(struct navit_cfg *cfg, struct cfg_categ
 struct cfg_category *navit_cfg_find_cat(struct navit_cfg *cfg, char *name);
 struct cfg_varval *navit_cat_find_var(struct cfg_category *cat, char *name);
 struct cfg_varval *navit_cat_vars_walk(struct cfg_category *cat, struct cfg_varval *v);
+char *cfg_cat_name(struct cfg_category *cat);
 char *cfg_var_name(struct cfg_varval *v);
 int cfg_var_true(struct cfg_varval *v);
 int cfg_var_intvalue(struct cfg_varval *v);
