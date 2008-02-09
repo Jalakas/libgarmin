@@ -43,7 +43,7 @@ struct color *cs_lookup_color(struct color_scheme *cs, char *name)
 	return NULL;
 }
 
-static int cs_parse_color(char *def, struct color *color)
+int cs_parse_color(char *def, struct color *color)
 {
 	int r,g,b,a;
 
@@ -129,8 +129,11 @@ int cscheme_init(void)
 	struct cfg_varval *var = NULL;
 	struct cfg_category *cat = NULL;
 	cfg = navit_cfg_load(COLORS_CFG);
-	if (!cfg)
+	if (!cfg) {
+		debug(5, "No color schemes defined\n");
 		return -1;
+	}
+	debug(5, "Color schemes initializing ...\n");
 	while ((cat = navit_cfg_cats_walk(cfg, cat))) {
 		cs = cs_alloc(cfg_cat_name(cat));
 		if (!cs)

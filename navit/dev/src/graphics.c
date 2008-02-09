@@ -26,6 +26,7 @@ struct graphics
 	struct graphics_methods meth;
 	struct graphics_font *font[16];
 	struct graphics_gc *gc[3];
+	struct layout *layout;
 	int ready;
 };
 
@@ -472,29 +473,21 @@ xdisplay_draw_layer(struct displaylist *displaylist, struct graphics *gra, struc
 }
 
 static void
-xdisplay_draw_layout(struct displaylist *displaylist, struct graphics *gra, struct layout *l, int order)
+xdisplay_draw(struct displaylist *displaylist, struct graphics *gra, int order)
 {
-	GList *lays;
 	struct layer *lay;
-	
-	lays=l->layers;
+	GList *lays;
+
+	if (!gra->layout) {
+		debug(0, "Error no layout is set\n");
+		return;
+	}
+
+	lays=gra->layout->layers;
 	while (lays) {
 		lay=lays->data;
 		xdisplay_draw_layer(displaylist, gra, lay, order);
 		lays=g_list_next(lays);
-	}
-}
-
-static void
-xdisplay_draw(struct displaylist *displaylist, struct graphics *gra, GList *layouts, int order)
-{
-	struct layout *l;
-
-	while (layouts) {
-		l=layouts->data;
-		xdisplay_draw_layout(displaylist, gra, l, order);
-		return;
-		layouts=g_list_next(layouts);
 	}
 }
 
@@ -589,11 +582,11 @@ graphics_ready(struct graphics *this_)
 }
 
 void
-graphics_displaylist_draw(struct graphics *gra, struct displaylist *displaylist, struct transformation *trans, GList *layouts)
+graphics_displaylist_draw(struct graphics *gra, struct displaylist *displaylist, struct transformation *trans)
 {
 	int order=transform_get_order(trans);
 	gra->meth.draw_mode(gra->priv, draw_mode_begin);
-	xdisplay_draw(displaylist, gra, layouts, order);
+	xdisplay_draw(displaylist, gra, order);
 	gra->meth.draw_mode(gra->priv, draw_mode_end);
 }
 
@@ -615,9 +608,14 @@ graphics_displaylist_move(struct displaylist *displaylist, int dx, int dy)
 	}
 }
 
+void
+graphics_set_layout(struct graphics *gra, struct layout *layout)
+{
+	gra->layout = layout;
+}
 
 void
-graphics_draw(struct graphics *gra, struct displaylist *displaylist, GList *mapsets, struct transformation *trans, GList *layouts)
+graphics_draw(struct graphics *gra, struct displaylist *displaylist, GList *mapsets, struct transformation *trans)
 {
 	int order=transform_get_order(trans);
 
@@ -639,7 +637,7 @@ graphics_draw(struct graphics *gra, struct displaylist *displaylist, GList *maps
 	profile(0,NULL);
 	do_draw(displaylist, trans, mapsets, order);
 //	profile(1,"do_draw");
-	graphics_displaylist_draw(gra, displaylist, trans, layouts);
+	graphics_displaylist_draw(gra, displaylist, trans);
 	profile(1,"xdisplay_draw");
 	profile(0,"end");
   

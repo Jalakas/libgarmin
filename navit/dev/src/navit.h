@@ -85,6 +85,8 @@ struct navigation *navit_get_navigation(struct navit *this_);
 struct displaylist *navit_get_displaylist(struct navit *this_);
 void navit_destroy(struct navit *this_);
 void navit_toggle_routegraph_display(struct navit *nav);
+void navit_set_layout(struct navit *this_, struct layout *lay);
+
 /* end of prototypes */
 #ifdef __cplusplus
 }

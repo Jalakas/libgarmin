@@ -5,6 +5,9 @@
 #include "cfg.h"
 #include "debug.h"
 #include "color.h"
+#include "callback.h"
+#include "menu.h"
+#include "navit.h"
 
 static list_head(llayouts);
 static list_head(llayers);
@@ -185,6 +188,12 @@ set_radius(struct element *e, int r)
 		e->u.circle.radius = r;
 }
 
+static void
+set_labelsize(struct element *e, int s)
+{
+	e->label_size = s;
+}
+
 struct element *
 label_new(int label_size)
 {
@@ -267,12 +276,33 @@ static int elements_activate(struct color_scheme *cs, struct itemtype *it)
 	es=it->elements;
 	while (es) {
 		e=es->data;
-		c = cs_lookup_color(cs, e->colorname);
-		if (c) {
-			e->color = *c;
+		if (e->type == element_label ||
+			e->type == element_icon || 
+			e->type == element_image) {
+			es=g_list_next(es);
+			continue;
+		}
+		
+		if (!e->colorname) {
+			debug(0, "Element have no color name! type=%d\n", e->type);
+			es=g_list_next(es);
+			continue;
+		}
+		if (*e->colorname != '#') {
+			if (cs) {
+				c = cs_lookup_color(cs, e->colorname);
+				if (c) {
+					e->color = *c;
+				} else {
+					debug(0, "WARNING! Can not find color [%s]\n",
+						e->colorname);
+				}
+			} else {
+				debug(0, "No color scheme defined for color:[%s]\n",
+					e->colorname);
+			}
 		} else {
-			debug(0, "WARNING! Can not find color [%s]\n",
-				e->colorname);
+			cs_parse_color(e->colorname, &e->color);
 		}
 		es=g_list_next(es);
 	}
@@ -297,11 +327,10 @@ int layout_activate(struct layout *layout)
 {
 	GList *lays;
 	struct layer *lay;
-	struct color_scheme *cs;
+	struct color_scheme *cs = NULL;
 
-	cs = cs_lookup(layout->colorscheme);
-	if (!cs)
-		return -1;
+	if (layout->colorscheme)
+		cs = cs_lookup(layout->colorscheme);
 	lays=layout->layers;
 	while (lays) {
 		lay=lays->data;
@@ -382,9 +411,13 @@ static int layers_init(void)
 					debug(0, "type required before label\n");
 					goto out_err;
 				}
-				e = label_new(cfg_var_intvalue(var));
-				if (e)
-					itemtype_add_element(it, e);
+				if (e && e->type == element_circle) 
+					set_labelsize(e, cfg_var_intvalue(var));
+				else {
+					e = label_new(cfg_var_intvalue(var));
+					if (e)
+						itemtype_add_element(it, e);
+				}
 			} else if (!strcmp(cfg_var_name(var), "image")) {
 				if (!it) {
 					debug(0, "type required before image\n");
@@ -436,16 +469,21 @@ int layout_init(void)
 	layers_init();
 	while ((cat = navit_cfg_cats_walk(cfg, cat))) {
 		layout = layout_new(cfg_cat_name(cat));
-		if (!layout)
+		if (!layout) {
+			debug(0, "Failed to allocate layout\n");
 			goto out_err;
+		}
 		var = NULL;
 		while ((var = navit_cat_vars_walk(cat, var))) {
 			if (!strcmp(cfg_var_name(var), "colors")) {
 				layout->colorscheme = strdup(cfg_var_value(var));
 			} else if (!strcmp(cfg_var_name(var), "background")) {
 				if (cs_resolve_color(layout->colorscheme, cfg_var_value(var),
-								&layout->bgcolor) < 0)
+								&layout->bgcolor) < 0) {
+					debug(0, "Error can not resolve color:[%s] in scheme [%s]\n",
+						cfg_var_value(var), layout->colorscheme);
 					goto out_err;
+				}
 			} else if (!strcmp(cfg_var_name(var), "layer")) {
 				layer = layer_find(cfg_var_value(var));
 				if (!layer) {
@@ -462,4 +500,29 @@ int layout_init(void)
 out_err:
 	navit_cfg_free(cfg);
 	return -1;
+}
+
+static void
+menu_layout_set(struct navit *nav, char *name)
+{
+	struct layout *l;
+	l = layout_find(name);
+	if (l) {
+		layout_activate(l);
+		navit_set_layout(nav, l);
+		debug(5, "Layout set to [%s]\n", name);
+	} else {
+		debug(0, "Error can not find layout:[%s]\n", name);
+	}
+}
+
+void layouts_menu_create(struct navit *nav, struct menu *men)
+{
+	struct layout *lay;
+	struct callback *cb;
+
+	list_for_entry(lay, &llayouts, l) {
+		cb=callback_new_2(callback_cast(menu_layout_set), nav, (void *)lay->name);
+		menu_add(men, lay->name, menu_type_menu, cb);
+	}
 }

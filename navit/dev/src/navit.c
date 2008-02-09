@@ -122,9 +122,19 @@ navit_get_tracking(struct navit *this_)
 }
 
 void
+navit_set_layout(struct navit *this_, struct layout *lay)
+{
+	this_->layout_current = lay;
+	graphics_set_layout(this_->gra, lay);
+}
+
+void
 navit_add_layout(struct navit *this_, struct layout *lay)
 {
 	this_->layouts = g_list_append(this_->layouts, lay);
+	if (!this_->layout_current) {
+		navit_set_layout(this_,lay);
+	}
 }
 
 void
@@ -134,7 +144,7 @@ navit_draw(struct navit *this_)
 	struct navit_vehicle *nv;
 
 	transform_setup_source_rect(this_->trans);
-	graphics_draw(this_->gra, this_->displaylist, this_->mapsets, this_->trans, this_->layouts);
+	graphics_draw(this_->gra, this_->displaylist, this_->mapsets, this_->trans);
 	l=this_->vehicles;
 	while (l) {
 		nv=l->data;
@@ -148,7 +158,7 @@ void
 navit_draw_displaylist(struct navit *this_)
 {
 	if (this_->ready) 
-		graphics_displaylist_draw(this_->gra, this_->displaylist, this_->trans, this_->layouts);
+		graphics_displaylist_draw(this_->gra, this_->displaylist, this_->trans);
 }
 
 static void
@@ -233,7 +243,7 @@ navit_motion_timeout(void *data)
 	if (dx || dy) {
 		this_->last=this_->current;
 		graphics_displaylist_move(this_->displaylist, dx, dy);
-		graphics_displaylist_draw(this_->gra, this_->displaylist, this_->trans, this_->layouts);
+		graphics_displaylist_draw(this_->gra, this_->displaylist, this_->trans);
 		this_->moved=1;
 	}
 	this_->motion_timeout=0;
@@ -641,9 +651,10 @@ navit_debug(struct navit *this_)
 }
 
 void
-navit_add_menu_layouts(struct navit *this_, struct menu *men)
+navit_add_menu_layouts(struct navit *nav, struct menu *men)
 {
-	menu_add(men, "Test", menu_type_menu, NULL);
+	layouts_menu_create(nav, men);
+//	menu_add(men, "Test", menu_type_menu, NULL);
 }
 
 void

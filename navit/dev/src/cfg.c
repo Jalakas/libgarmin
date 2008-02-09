@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include "globals.h"
 #include "debug.h"
 #include "cfg.h"
@@ -86,6 +87,16 @@ static struct cfg_varval *cfg_alloc_var(char *name, char *value)
 	return v;
 }
 
+static void trimr(char *str)
+{
+	char *cp = str;
+	cp += strlen(cp) - 1;
+	while(*cp && isspace(*cp)) {
+		*cp = '\0';
+		cp --;
+	}
+}
+
 static int process_line(struct cfg_category *cat, char *line)
 {
 	char name[4096];
@@ -98,6 +109,7 @@ static int process_line(struct cfg_category *cat, char *line)
 		debug(0, "Invalid line:%d\n",rc);
 		return -1;
 	}
+	trimr(value);
 	v = cfg_alloc_var(name, value);
 	if (v) {
 		cat_add_var(cat, v);

@@ -19,6 +19,8 @@ struct module {
 	char *alias;
 	char *name;
 	int flags;
+	// FIXME make this a struct module_
+	// struct navit_module *mod;
 	int (*module_load)(void);
 	int (*module_reconfigure)(void);
 	int (*module_unload)(void);

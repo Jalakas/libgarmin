@@ -9,5 +9,6 @@ struct color_scheme *cs_lookup(char *name);
 struct color *cs_lookup_color(struct color_scheme *cs, char *name);
 int cs_resolve_color(char *scheme, char *name, struct color *color);
 int cscheme_init(void);
+int cs_parse_color(char *def, struct color *color);
 
 #endif

@@ -79,6 +79,8 @@ struct element *icon_new(const char *src);
 struct element *image_new(void);
 int layout_init(void);
 int layout_activate(struct layout *layout);
+struct menu;
+void layouts_menu_create(struct navit *nav, struct menu *men);
 
 #endif
 

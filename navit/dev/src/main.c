@@ -177,6 +177,7 @@ int main(int argc, char **argv)
 		setenv("SDL_WINDOWID", s, 1);
 	}
 	navit_modules_init();
+	cscheme_init();
 	layout_init();
 	route_init();
 	navigation_init();
