@@ -350,7 +350,7 @@ static int layers_init(void)
 	struct itemtype *it = NULL;
 	struct element *e = NULL;
 	char *type = NULL;
-	char *order;
+	char *order = NULL;
 	int min, max;
 
 
@@ -364,26 +364,34 @@ static int layers_init(void)
 		if (!layer)
 			goto out_err;
 		var = NULL;
+		order = NULL;
 		while ((var = navit_cat_vars_walk(cat, var))) {
-		// FIXME make order inheritable
-			if (!strcmp(cfg_var_name(var), "type")) {
-				type = cfg_var_value(var);
-				it = NULL;
-			} else if (!strcmp(cfg_var_name(var), "order")) {
+			if (!strcmp(cfg_var_name(var), "order")) {
 				order = cfg_var_value(var);
 				if (!get_order(order, &min, &max)) {
 					debug(0, "Invalid order:[%s]\n", order);
 					goto out_err;
 				}
-				if (!type) {
-					debug(0, "type is required before order\n");
-					goto out_err;
-				}
+#if 0
 				it = itemtype_new(min, max);
 				if (!it) {
 					debug(0, "Can not create type\n");
 					goto out_err;
 				}
+#endif
+			} else if (!strcmp(cfg_var_name(var), "type")) {
+				if (!order) {
+					debug(0, "order is required before type\n");
+					goto out_err;
+				}
+#if 1
+				it = itemtype_new(min, max);
+				if (!it) {
+					debug(0, "Can not create type\n");
+					goto out_err;
+				}
+#endif
+				type = cfg_var_value(var);
 				debug(10, "types=%s order=%d-%d\n",
 					type, min, max);
 				layer_add_itemtypes(layer, it, type);
