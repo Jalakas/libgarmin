@@ -20,6 +20,10 @@
 #include "list.h"
 #include "globals.h"
 
+#define GC_BG	0
+#define GC_TEXTBG	1
+#define GC_TEXTFG	2
+
 struct graphics
 {
 	struct graphics_priv *priv;
@@ -122,16 +126,20 @@ graphics_overlay_new(struct graphics *parent, struct point *p, int w, int h)
 void
 graphics_init(struct graphics *this_)
 {
-	this_->gc[0]=graphics_gc_new(this_);
-	graphics_gc_set_background(this_->gc[0], &(struct color) { 0xffff, 0xefef, 0xb7b7 });
-	graphics_gc_set_foreground(this_->gc[0], &(struct color) { 0xffff, 0xefef, 0xb7b7 });
-	this_->gc[1]=graphics_gc_new(this_);
-	graphics_gc_set_background(this_->gc[1], &(struct color) { 0x0000, 0x0000, 0x0000 });
-	graphics_gc_set_foreground(this_->gc[1], &(struct color) { 0xffff, 0xffff, 0xffff });
-	this_->gc[2]=graphics_gc_new(this_);
-	graphics_gc_set_background(this_->gc[2], &(struct color) { 0xffff, 0xffff, 0xffff });
-	graphics_gc_set_foreground(this_->gc[2], &(struct color) { 0xffff, 0xffff, 0xffff });
-	this_->meth.background_gc(this_->priv, this_->gc[0]->priv);
+	this_->gc[GC_BG]=graphics_gc_new(this_);
+	graphics_gc_set_background(this_->gc[GC_BG], &(struct color) { 0xffff, 0xefef, 0xb7b7 });
+	graphics_gc_set_foreground(this_->gc[GC_BG], &(struct color) { 0xffff, 0xefef, 0xb7b7 });
+	this_->gc[GC_TEXTBG]=graphics_gc_new(this_);
+	graphics_gc_set_background(this_->gc[GC_TEXTBG], &(struct color) { 0x0000, 0x0000, 0x0000 });
+	graphics_gc_set_foreground(this_->gc[GC_TEXTBG], &(struct color) { 0xffff, 0xffff, 0xffff });
+	this_->gc[GC_TEXTFG]=graphics_gc_new(this_);
+	graphics_gc_set_background(this_->gc[GC_TEXTFG], &(struct color) { 0xffff, 0xffff, 0xffff });
+	graphics_gc_set_foreground(this_->gc[GC_TEXTFG], &(struct color) { 0xffff, 0xffff, 0xffff });
+	this_->meth.background_gc(this_->priv, this_->gc[GC_BG]->priv);
+	// FIXME: layout is set twice 
+	// this is called after set_layout from config 
+	// so complete the setup here
+	graphics_set_layout(this_, this_->layout);
 }
 
 void *
@@ -419,14 +427,14 @@ xdisplay_draw_elements(struct graphics *gra, struct displaylist *displaylist, st
 						p.y=di->pnt[0].y+10;
 						if (! gra->font[e->label_size])
 							gra->font[e->label_size]=graphics_font_new(gra, e->label_size*20);
-						gra->meth.draw_text(gra->priv, gra->gc[2]->priv, gra->gc[1]->priv, gra->font[e->label_size]->priv, di->label, &p, 0x10000, 0);
+						gra->meth.draw_text(gra->priv, gra->gc[GC_TEXTFG]->priv, gra->gc[GC_TEXTBG]->priv, gra->font[e->label_size]->priv, di->label, &p, 0x10000, 0);
 					}
 					break;
 				case element_label:
 					if (di->label) {
 						if (! gra->font[e->label_size])
 							gra->font[e->label_size]=graphics_font_new(gra, e->label_size*20);
-						label_line(gra, gra->gc[2], gra->gc[1], gra->font[e->label_size], di->pnt, di->count, di->label);
+						label_line(gra, gra->gc[GC_TEXTFG], gra->gc[GC_TEXTBG], gra->font[e->label_size], di->pnt, di->count, di->label);
 					}
 					break;
 				case element_icon:
@@ -439,12 +447,12 @@ xdisplay_draw_elements(struct graphics *gra, struct displaylist *displaylist, st
 					if (img) {
 						p.x=di->pnt[0].x - img->hot.x;
 						p.y=di->pnt[0].y - img->hot.y;
-						gra->meth.draw_image(gra->priv, gra->gc[0]->priv, &p, img->priv);
+						gra->meth.draw_image(gra->priv, gra->gc[GC_BG]->priv, &p, img->priv);
 					}
 					break;
 				case element_image:
 					printf("image: '%s'\n", di->label);
-					gra->meth.draw_image_warp(gra->priv, gra->gc[0]->priv, di->pnt, di->count, di->label);
+					gra->meth.draw_image_warp(gra->priv, gra->gc[GC_BG]->priv, di->pnt, di->count, di->label);
 					break;
 				default:
 					printf("Unhandled element type %d\n", e->type);
@@ -611,6 +619,15 @@ void
 graphics_set_layout(struct graphics *gra, struct layout *layout)
 {
 	gra->layout = layout;
+	if (gra->gc[GC_BG]) {
+		graphics_gc_set_background(gra->gc[GC_BG], &layout->bgcolor);
+		graphics_gc_set_foreground(gra->gc[GC_BG], &layout->bgcolor);
+		graphics_gc_set_background(gra->gc[GC_TEXTBG], &layout->textbg);
+		graphics_gc_set_foreground(gra->gc[GC_TEXTBG], &layout->textfg);
+		graphics_gc_set_background(gra->gc[GC_TEXTFG], &layout->textbg);
+		graphics_gc_set_foreground(gra->gc[GC_TEXTFG], &layout->textfg);
+		gra->meth.background_gc(gra->priv, gra->gc[GC_BG]->priv);
+	}
 }
 
 void

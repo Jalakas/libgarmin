@@ -24,6 +24,10 @@ struct layout * layout_new(const char *name)
 		l->name = g_strdup(name);
 		list_append(&l->l, &llayouts);
 	}
+	// setup default colors
+	l->bgcolor = (struct color) { 0xffff, 0xefef, 0xb7b7 };
+	l->textbg = (struct color) { 0x0000, 0x0000, 0x0000 };
+	l->textfg = (struct color) { 0xffff, 0xffff, 0xffff };
 	return l;
 }
 
@@ -501,10 +505,24 @@ int layout_init(void)
 		while ((var = navit_cat_vars_walk(cat, var))) {
 			if (!strcmp(cfg_var_name(var), "colors")) {
 				layout->colorscheme = strdup(cfg_var_value(var));
-			} else if (!strcmp(cfg_var_name(var), "background")) {
+			} else if (!strcmp(cfg_var_name(var), "bgcolor")) {
 				if (cs_resolve_color(layout->colorscheme, cfg_var_value(var),
 								&layout->bgcolor) < 0) {
-					debug(0, "Error can not resolve color:[%s] in scheme [%s]\n",
+					debug(0, "Error can not resolve background color:[%s] in scheme [%s]\n",
+						cfg_var_value(var), layout->colorscheme);
+					goto out_err;
+				}
+			} else if (!strcmp(cfg_var_name(var), "textbg")) {
+				if (cs_resolve_color(layout->colorscheme, cfg_var_value(var),
+								&layout->textbg) < 0) {
+					debug(0, "Error can not resolve text background color:[%s] in scheme [%s]\n",
+						cfg_var_value(var), layout->colorscheme);
+					goto out_err;
+				}
+			} else if (!strcmp(cfg_var_name(var), "textfg")) {
+				if (cs_resolve_color(layout->colorscheme, cfg_var_value(var),
+								&layout->textfg) < 0) {
+					debug(0, "Error can not resolve text  color:[%s] in scheme [%s]\n",
 						cfg_var_value(var), layout->colorscheme);
 					goto out_err;
 				}

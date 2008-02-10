@@ -52,6 +52,8 @@ struct layout {
 	list_t l;
 	char *colorscheme;
 	struct color bgcolor;
+	struct color textbg;
+	struct color textfg;
 	char *name;
 	GList *layers;
 };
