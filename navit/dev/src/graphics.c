@@ -373,7 +373,7 @@ label_line(struct graphics *gra, struct graphics_gc *fg, struct graphics_gc *bg,
 
 
 static void
-xdisplay_draw_elements(struct graphics *gra,struct displaylist *displaylist, struct itemtype *itm)
+xdisplay_draw_elements(struct graphics *gra, struct displaylist *displaylist, struct itemtype *itm)
 {
 	struct element *e;
 	GList *es,*types;
@@ -454,7 +454,7 @@ xdisplay_draw_elements(struct graphics *gra,struct displaylist *displaylist, str
 			types=g_list_next(types);
 		}
 		es=g_list_next(es);
-	}	
+	}
 }
 
 static void
@@ -482,7 +482,6 @@ xdisplay_draw(struct displaylist *displaylist, struct graphics *gra, int order)
 		debug(0, "Error no layout is set\n");
 		return;
 	}
-
 	lays=gra->layout->layers;
 	while (lays) {
 		lay=lays->data;

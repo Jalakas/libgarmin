@@ -759,7 +759,7 @@ gboolean config_load(char *filename, GError **error)
 	result = g_markup_parse_context_parse (context, contents, len, error);
 	if (result && curr) {
 		g_set_error(error,G_MARKUP_ERROR,G_MARKUP_ERROR_PARSE, "element '%s' not closed", curr->element);
-		result=FALSE;	
+		result=FALSE;
 	}
 	if (!result && error && *error) {
 		g_markup_parse_context_get_position(context, &line, &chr);

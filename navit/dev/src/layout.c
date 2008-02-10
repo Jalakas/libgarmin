@@ -130,7 +130,7 @@ static struct element *
 new_polyline(char *color)
 {
 	struct element *e;
-	
+
 	e = g_new0(struct element, 1);
 	e->type=element_polyline;
 	e->colorname = strdup(color);
@@ -158,7 +158,7 @@ struct element *
 circle_new(struct color *color, int radius, int width, int label_size)
 {
 	struct element *e;
-	
+
 	e = g_new0(struct element, 1);
 	e->type=element_circle;
 	e->color=*color;
@@ -173,7 +173,7 @@ static struct element *
 new_circle(char *colorname)
 {
 	struct element *e;
-	
+
 	e = g_new0(struct element, 1);
 	e->type=element_circle;
 	e->colorname = strdup(colorname);
@@ -198,7 +198,7 @@ struct element *
 label_new(int label_size)
 {
 	struct element *e;
-	
+
 	e = g_new0(struct element, 1);
 	e->type=element_label;
 	e->label_size=label_size;
@@ -363,9 +363,12 @@ static int layers_init(void)
 		layer = layer_new(cfg_cat_name(cat), 0);
 		if (!layer)
 			goto out_err;
+		var = NULL;
 		while ((var = navit_cat_vars_walk(cat, var))) {
+		// FIXME make order inheritable
 			if (!strcmp(cfg_var_name(var), "type")) {
 				type = cfg_var_value(var);
+				it = NULL;
 			} else if (!strcmp(cfg_var_name(var), "order")) {
 				order = cfg_var_value(var);
 				if (!get_order(order, &min, &max)) {
@@ -381,7 +384,10 @@ static int layers_init(void)
 					debug(0, "Can not create type\n");
 					goto out_err;
 				}
+				debug(10, "types=%s order=%d-%d\n",
+					type, min, max);
 				layer_add_itemtypes(layer, it, type);
+				e = NULL;
 			} else if (!strcmp(cfg_var_name(var), "polygon")) {
 				if (!it) {
 					debug(0, "type required before polygon\n");
@@ -411,13 +417,21 @@ static int layers_init(void)
 					debug(0, "type required before label\n");
 					goto out_err;
 				}
-				if (e && e->type == element_circle) 
+				if (e && e->type == element_circle) { 
 					set_labelsize(e, cfg_var_intvalue(var));
-				else {
+				} else {
 					e = label_new(cfg_var_intvalue(var));
 					if (e)
 						itemtype_add_element(it, e);
 				}
+			} else if (!strcmp(cfg_var_name(var), "icon")) {
+				if (!it) {
+					debug(0, "type required before icon\n");
+					goto out_err;
+				}
+				e = icon_new(cfg_var_value(var));
+				if (e)
+					itemtype_add_element(it, e);
 			} else if (!strcmp(cfg_var_name(var), "image")) {
 				if (!it) {
 					debug(0, "type required before image\n");
@@ -444,6 +458,8 @@ static int layers_init(void)
 				} else {
 					debug(0, "Error directed and no element\n");
 				}
+			} else {
+				debug(0, "Unknown keyword:[%s]\n",cfg_var_name(var)); 
 			}
 		}
 	}
@@ -492,6 +508,8 @@ int layout_init(void)
 					continue;
 				}
 				layout_add_layer(layout, layer);
+			} else {
+				debug(0, "Unknown keyword:[%s]\n",cfg_var_name(var)); 
 			}
 		}
 	}
