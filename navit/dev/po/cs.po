@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Navit 0.0.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-12-26 11:26+0100\n"
+"POT-Creation-Date: 2008-02-11 01:52+0200\n"
 "PO-Revision-Date: 2007-09-22 10:34+0200\n"
 "Last-Translator: Vaclav Cerny <vatoz@seznam.cz>\n"
 "Language-Team: Čeština\n"
@@ -17,67 +17,67 @@ msgstr ""
 "X-Generator: KBabel 1.11.4\n"
 "Plural-Forms:  nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
-#: ../src/main.c:94
+#: ../src/main.c:115
 #, c-format
 msgid "Running from source directory\n"
 msgstr "Běží ze zdrojového adresáře\n"
 
-#: ../src/main.c:110
+#: ../src/main.c:138
 #, fuzzy, c-format
 msgid "setting '%s' to '%s'\n"
 msgstr "Používám '%s'\n"
 
-#: ../src/main.c:173
+#: ../src/main.c:219
 #, c-format
 msgid "No config file navit.xml, navit.xml.local found\n"
 msgstr ""
 
-#: ../src/main.c:177
+#: ../src/main.c:223
 #, c-format
 msgid "Error parsing '%s': %s\n"
 msgstr "Chyba parsování '%s': %s\n"
 
-#: ../src/main.c:180
+#: ../src/main.c:226
 #, c-format
 msgid "Using '%s'\n"
 msgstr "Používám '%s'\n"
 
-#: ../src/main.c:183
+#: ../src/main.c:229
 #, c-format
 msgid "No instance has been created, exiting\n"
 msgstr "Nebyla vytvořena instance, končím\n"
 
-#: ../src/navigation.c:173
+#: ../src/navigation.c:162
 #, c-format
 msgid "%d m"
 msgstr "%d m"
 
-#: ../src/navigation.c:175
+#: ../src/navigation.c:164
 #, c-format
 msgid "in %d m"
 msgstr "za %d m"
 
-#: ../src/navigation.c:179
+#: ../src/navigation.c:168
 #, c-format
 msgid "%d meters"
 msgstr "%d metrů"
 
-#: ../src/navigation.c:181
+#: ../src/navigation.c:170
 #, c-format
 msgid "in %d meters"
 msgstr "za %d metrů"
 
-#: ../src/navigation.c:187
+#: ../src/navigation.c:176
 #, c-format
 msgid "%d.%d kilometer"
 msgstr "%d.%d kilometrů"
 
-#: ../src/navigation.c:189
+#: ../src/navigation.c:178
 #, c-format
 msgid "in %d.%d kilometers"
 msgstr "za %d.%d kilometrů"
 
-#: ../src/navigation.c:193
+#: ../src/navigation.c:182
 #, fuzzy, c-format
 msgid "one kilometer"
 msgid_plural "%d kilometers"
@@ -85,7 +85,7 @@ msgstr[0] "jeden kilometr "
 msgstr[1] "jeden kilometr "
 msgstr[2] "jeden kilometr "
 
-#: ../src/navigation.c:195
+#: ../src/navigation.c:184
 #, fuzzy, c-format
 msgid "in one kilometer"
 msgid_plural "in %d kilometers"
@@ -93,114 +93,137 @@ msgstr[0] "za jeden kilometr "
 msgstr[1] "za jeden kilometr "
 msgstr[2] "za jeden kilometr "
 
-#: ../src/navigation.c:399
+#: ../src/navigation.c:402
 msgid "right"
 msgstr "vpravo"
 
-#: ../src/navigation.c:406
+#: ../src/navigation.c:409
 msgid "left"
 msgstr "vlevo"
 
-#: ../src/navigation.c:410
+#: ../src/navigation.c:413
 msgid "easily "
 msgstr "mírně"
 
-#: ../src/navigation.c:414
+#: ../src/navigation.c:417
 msgid "strongly "
 msgstr "silně"
 
-#: ../src/navigation.c:417
+#: ../src/navigation.c:420
 msgid "unknown "
 msgstr "neurčitě"
 
-#: ../src/navigation.c:423
+#: ../src/navigation.c:426
 msgid "When possible, please turn around"
 msgstr "Až to bude možné, otočte se "
 
-#: ../src/navigation.c:430
+#: ../src/navigation.c:433
 #, c-format
 msgid "Follow the road for the next %s"
 msgstr "Pokračujte po další %s"
 
-#: ../src/navigation.c:434
+#: ../src/navigation.c:437
 msgid "soon"
 msgstr "brzy"
 
-#: ../src/navigation.c:440
+#: ../src/navigation.c:443
 msgid "now"
 msgstr "nyní"
 
-#: ../src/navigation.c:443
+#: ../src/navigation.c:446
 msgid "error"
 msgstr "chyba"
 
 #. TRANSLATORS: The first argument is strength, the second direction and the third distance
-#: ../src/navigation.c:447
+#: ../src/navigation.c:450
 #, fuzzy, c-format
 msgid "Turn %1$s%2$s %3$s"
 msgstr "%s zabočte %s %s"
 
-#: ../src/navigation.c:450
+#: ../src/navigation.c:453
 #, c-format
 msgid "You have reached your destination %s"
 msgstr "Dorazili jste do cíle %s"
 
-#: ../src/navit.c:614 ../src/gui/gtk/gui_gtk_action.c:185
+#: ../src/navit.c:663 ../src/gui/gtk/gui_gtk_action.c:197
 msgid "Layout"
 msgstr "Rozvržení"
 
-#: ../src/navit.c:630
+#: ../src/navit.c:679
 msgid "Projection"
 msgstr "Projekce"
 
-#: ../src/navit.c:685
+#: ../src/navit.c:734
 #, fuzzy
 msgid "Former Destinations"
 msgstr "Cíl"
 
-#: ../src/navit.c:695
+#: ../src/navit.c:744
 msgid "Bookmarks"
 msgstr ""
 
-#: ../src/navit.c:733
+#: ../src/navit.c:782
 msgid "Vehicle"
 msgstr ""
 
-#: ../src/navit.c:768
+#: ../src/navit.c:832
 #, fuzzy
 msgid "Command"
 msgstr "Polsko"
 
-#: ../src/navit.c:773
+#: ../src/navit.c:837
 msgid "Length"
 msgstr ""
 
-#: ../src/navit.c:778
+#: ../src/navit.c:843
 msgid "Time"
 msgstr ""
 
-#: ../src/navit.c:783
+#: ../src/navit.c:848
 #, fuzzy
 msgid "Destination Length"
 msgstr "Cíl"
 
-#: ../src/navit.c:788
+#: ../src/navit.c:854
 #, fuzzy
 msgid "Destination Time"
 msgstr "Cíl"
 
-#: ../src/navit.c:810 ../src/gui/gtk/gui_gtk_action.c:189
+#: ../src/navit.c:877 ../src/gui/gtk/gui_gtk_action.c:201
 msgid "Roadbook"
 msgstr "Itinerář"
 
-#: ../src/navit.c:1030 ../src/gui/gtk/destination.c:365
-#: ../src/gui/gtk/gui_gtk_action.c:184
+#: ../src/navit.c:1110 ../src/gui/gtk/destination.c:515
+#: ../src/gui/gtk/gui_gtk_action.c:196
 msgid "Map"
 msgstr "Mapa"
 
-#: ../src/navit.c:1037 ../src/gui/gtk/gui_gtk_action.c:183
+#: ../src/navit.c:1117 ../src/gui/gtk/gui_gtk_action.c:195
 msgid "Route"
 msgstr "Trasa"
+
+#: ../src/popup.c:236
+#, c-format
+msgid "Point 0x%x 0x%x"
+msgstr ""
+
+#: ../src/popup.c:237
+#, c-format
+msgid "Screen %d %d"
+msgstr ""
+
+#: ../src/popup.c:246
+msgid "Set as position"
+msgstr ""
+
+#: ../src/popup.c:247
+#, fuzzy
+msgid "Set as destination"
+msgstr "Cíl"
+
+#: ../src/popup.c:248
+msgid "Add as bookmark"
+msgstr ""
 
 #: ../src/country.c:24
 msgid "Czech Republic"
@@ -450,151 +473,151 @@ msgstr "Západní Sahara"
 msgid "Svalbard and Jan Mayen"
 msgstr "Svalbard a Jan Mayen"
 
-#: ../src/gui/gtk/destination.c:99 ../src/gui/gtk/destination.c:100
-#: ../src/gui/gtk/destination.c:101 ../src/gui/gtk/destination.c:102
+#: ../src/gui/gtk/destination.c:100
 #, fuzzy
 msgid "Car"
 msgstr "Vyčistit"
 
-#: ../src/gui/gtk/destination.c:99
+#: ../src/gui/gtk/destination.c:100
 msgid "Iso2"
 msgstr ""
 
-#: ../src/gui/gtk/destination.c:99
+#: ../src/gui/gtk/destination.c:100
 msgid "Iso3"
 msgstr ""
 
-#: ../src/gui/gtk/destination.c:99 ../src/gui/gtk/destination.c:331
+#: ../src/gui/gtk/destination.c:100 ../src/gui/gtk/destination.c:101
+#: ../src/gui/gtk/destination.c:102 ../src/gui/gtk/destination.c:103
+#: ../src/gui/gtk/destination.c:104 ../src/gui/gtk/destination.c:472
 msgid "Country"
 msgstr "Země"
 
-#: ../src/gui/gtk/destination.c:100 ../src/gui/gtk/destination.c:101
-#: ../src/gui/gtk/destination.c:102
-#, fuzzy
-msgid "Postal"
-msgstr "Portugalsko"
-
-#: ../src/gui/gtk/destination.c:100 ../src/gui/gtk/destination.c:101
-#: ../src/gui/gtk/destination.c:102
-msgid "Town"
-msgstr ""
-
-#: ../src/gui/gtk/destination.c:100 ../src/gui/gtk/destination.c:101
-#: ../src/gui/gtk/destination.c:102
+#: ../src/gui/gtk/destination.c:101 ../src/gui/gtk/destination.c:102
+#: ../src/gui/gtk/destination.c:103 ../src/gui/gtk/destination.c:104
 #, fuzzy
 msgid "District"
 msgstr "Kraj/Okres"
 
-#: ../src/gui/gtk/destination.c:101 ../src/gui/gtk/destination.c:102
-#: ../src/gui/gtk/destination.c:340
+#: ../src/gui/gtk/destination.c:102 ../src/gui/gtk/destination.c:103
+#: ../src/gui/gtk/destination.c:104
+#, fuzzy
+msgid "Postal"
+msgstr "Portugalsko"
+
+#: ../src/gui/gtk/destination.c:102 ../src/gui/gtk/destination.c:103
+#: ../src/gui/gtk/destination.c:104
+msgid "Town"
+msgstr ""
+
+#: ../src/gui/gtk/destination.c:103 ../src/gui/gtk/destination.c:104
+#: ../src/gui/gtk/destination.c:481
 msgid "Street"
 msgstr "Ulice"
 
-#: ../src/gui/gtk/destination.c:102 ../src/gui/gtk/destination.c:342
+#: ../src/gui/gtk/destination.c:104 ../src/gui/gtk/destination.c:483
 msgid "Number"
 msgstr "Číslo"
 
-#: ../src/gui/gtk/destination.c:326
+#: ../src/gui/gtk/destination.c:467
 #, fuzzy
 msgid "Enter Destination"
 msgstr "Cíl"
 
-#: ../src/gui/gtk/destination.c:333
+#: ../src/gui/gtk/destination.c:474
 msgid "Zip Code"
 msgstr "PSČ"
 
-#: ../src/gui/gtk/destination.c:335
+#: ../src/gui/gtk/destination.c:476
 msgid "City"
 msgstr "Město"
 
-#: ../src/gui/gtk/destination.c:337
+#: ../src/gui/gtk/destination.c:478
 msgid "District/Township"
 msgstr "Kraj/Okres"
 
-#: ../src/gui/gtk/destination.c:366
+#: ../src/gui/gtk/destination.c:516
 msgid "Bookmark"
 msgstr ""
 
-#: ../src/gui/gtk/destination.c:367 ../src/gui/gtk/gui_gtk_action.c:195
+#: ../src/gui/gtk/destination.c:517 ../src/gui/gtk/gui_gtk_action.c:207
 msgid "Destination"
 msgstr "Cíl"
 
-#: ../src/gui/gtk/gui_gtk_action.c:182
+#: ../src/gui/gtk/gui_gtk_action.c:194
 msgid "Display"
 msgstr "Zobrazit"
 
-#: ../src/gui/gtk/gui_gtk_action.c:186
+#: ../src/gui/gtk/gui_gtk_action.c:198
 msgid "ZoomOut"
 msgstr "Zmenšit"
 
-#: ../src/gui/gtk/gui_gtk_action.c:187
+#: ../src/gui/gtk/gui_gtk_action.c:199
 msgid "ZoomIn"
 msgstr "Zvětšit"
 
-#: ../src/gui/gtk/gui_gtk_action.c:188
+#: ../src/gui/gtk/gui_gtk_action.c:200
 msgid "Refresh"
 msgstr "Obnovit"
 
-#: ../src/gui/gtk/gui_gtk_action.c:191 ../src/gui/gtk/gui_gtk_action.c:193
+#: ../src/gui/gtk/gui_gtk_action.c:203 ../src/gui/gtk/gui_gtk_action.c:205
 msgid "Info"
 msgstr "Informace"
 
-#: ../src/gui/gtk/gui_gtk_action.c:196
+#: ../src/gui/gtk/gui_gtk_action.c:208
 msgid "Clear"
 msgstr "Vyčistit"
 
-#: ../src/gui/gtk/gui_gtk_action.c:197
+#: ../src/gui/gtk/gui_gtk_action.c:209
 msgid "Test"
 msgstr "Vyzkoušet"
 
-#: ../src/gui/gtk/gui_gtk_action.c:198
+#: ../src/gui/gtk/gui_gtk_action.c:210
 msgid "_Quit"
 msgstr "_Konec"
 
-#: ../src/gui/gtk/gui_gtk_action.c:205
+#: ../src/gui/gtk/gui_gtk_action.c:217
 msgid "Cursor"
 msgstr "Kurzor"
 
-#: ../src/gui/gtk/gui_gtk_action.c:206
+#: ../src/gui/gtk/gui_gtk_action.c:218
 msgid "Tracking"
 msgstr "Stopování"
 
-#: ../src/gui/gtk/gui_gtk_action.c:207
+#: ../src/gui/gtk/gui_gtk_action.c:219
 msgid "Orientation"
 msgstr "Orientace"
 
-#: ../src/gui/gtk/gui_gtk_action.c:209 ../src/gui/gtk/gui_gtk_action.c:211
+#: ../src/gui/gtk/gui_gtk_action.c:221 ../src/gui/gtk/gui_gtk_action.c:223
 msgid "Fullscreen"
 msgstr "Celá obrazovka"
 
-#: ../src/gui/gtk/gui_gtk_action.c:219
+#: ../src/gui/gtk/gui_gtk_action.c:231
 msgid "Data"
 msgstr "Data"
 
-#: ../src/gui/gtk/gui_gtk_action.c:220
+#: ../src/gui/gtk/gui_gtk_action.c:232
 msgid "VisibleBlocks"
 msgstr "Viditelné bloky"
 
-#: ../src/gui/gtk/gui_gtk_action.c:221
+#: ../src/gui/gtk/gui_gtk_action.c:233
 msgid "VisibleTowns"
 msgstr "Viditelné města"
 
-#: ../src/gui/gtk/gui_gtk_action.c:222
+#: ../src/gui/gtk/gui_gtk_action.c:234
 msgid "VisiblePolys"
 msgstr "Viditelné mnohoúhelníky"
 
-#: ../src/gui/gtk/gui_gtk_action.c:223
+#: ../src/gui/gtk/gui_gtk_action.c:235
 msgid "VisibleStreets"
 msgstr "Viditelné silnice"
 
-#: ../src/gui/gtk/gui_gtk_action.c:224
+#: ../src/gui/gtk/gui_gtk_action.c:236
 msgid "VisiblePoints"
 msgstr "Viditelné body"
 
-#: ../src/gui/gtk/gui_gtk_action.c:225
 #, fuzzy
-msgid "RouteGraph"
-msgstr "Trasa"
+#~ msgid "RouteGraph"
+#~ msgstr "Trasa"
 
 #~ msgid "two kilometers"
 #~ msgstr "dva kilometry "

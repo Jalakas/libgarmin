@@ -8,6 +8,7 @@
 #define M_FAILED	3
 
 struct navit_module {
+	char *module_name;
 	int (*module_load)(void);
 	int (*module_reconfigure)(void);
 	int (*module_unload)(void);
@@ -16,3 +17,11 @@ struct navit_module {
 
 void navit_modules_init(void);
 int navit_request_module(const char *name);
+
+#define NAVIT_MODULE(l,r,u)			\
+struct navit_module navit_module = {		\
+	.module_name = MODNAME,			\
+	.module_load = l,			\
+	.module_reconfigure = r,		\
+	.module_unload = u,			\
+}

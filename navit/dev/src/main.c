@@ -37,6 +37,7 @@ char *navit_libdir;
 char *navit_sharedir;
 char *navit_libprefix;
 char *navit_localedir;
+int fromsrcdir;
 
 static void sigchld(int sig)
 {
@@ -125,6 +126,7 @@ int main(int argc, char **argv)
 		setenv("NAVIT_LOCALEDIR", s, 0);
 		navit_localedir = strdup(s);
 		g_free(s);
+		fromsrcdir = 1;
 	} else {
 		navit_prefix = getenv("NAVIT_PREFIX");
 		if (!navit_prefix) {

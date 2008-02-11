@@ -19,11 +19,7 @@ struct module {
 	char *alias;
 	char *name;
 	int flags;
-	// FIXME make this a struct module_
-	// struct navit_module *mod;
-	int (*module_load)(void);
-	int (*module_reconfigure)(void);
-	int (*module_unload)(void);
+	struct navit_module *mod;
 };
 
 static int autoload;
@@ -68,16 +64,17 @@ static int navit_load_module(struct module *m)
 		flags = RTLD_LOCAL;
 	flags |= RTLD_NOW;
 	debug(5, "Loading: %s\n", m->name);
-	sprintf(path, "%s/modules/navit_%s", navit_libdir, m->name);
+	if (fromsrcdir)
+		sprintf(path, "%s/modules/.libs/%s", navit_libdir, m->name);
+	else
+		sprintf(path, "%s/modules/%s", navit_libdir, m->name);
 	handle = dlopen(path, flags);
 	if (!handle) {
 		debug(0, "Error loading module: %s(%s)\n", m->name,dlerror());
 		m->flags &= ~MF_ACTIVE;
 		return -1;
 	}
-	m->module_load = dlsym(handle, "module_load");
-	m->module_reconfigure = dlsym(handle, "module_reconfigure");
-	m->module_unload = dlsym(handle, "module_unload");
+	m->mod = dlsym(handle, "navit_module");
 	return 0;
 }
 
@@ -110,8 +107,8 @@ static void navit_modules_start(void)
 	list_for_entry(m, &lmodules, l) {
 		if (!(m->flags&MF_ACTIVE) || m->flags&MF_ONDEMAND)
 			continue;
-		if (m->module_load)
-			m->module_load();
+		if (m->mod->module_load)
+			m->mod->module_load();
 		else
 			debug(0, "Warning no module_load function!\n");
 	}

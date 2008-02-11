@@ -430,6 +430,7 @@ src/xpm/Makefile
 src/maps/Makefile
 intl/Makefile
 po/Makefile
+src/modules/Makefile
 ])
 
 AC_OUTPUT
