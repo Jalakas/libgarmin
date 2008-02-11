@@ -135,16 +135,27 @@ AC_SUBST(SDL_CFLAGS)
 AC_SUBST(SDL_LIBS)
 
 PKG_CHECK_MODULES(
-        [CEGUI],
-        [CEGUI-OPENGL >= 0.5.0],
-        [
-                AC_DEFINE(
-                        [HAVE_CEGUI],
-                        [],
-                        [Define to 1 if you have the @<:@CEGUI/CEGUI.h@:>@ header file.])
-                cegui=yes
-        ],
-        [AC_MSG_WARN([*** CEGUI not found -- SDL support disabled])]
+	[CEGUI],
+	[CEGUI-OPENGL >= 0.5.0],
+	[
+		AC_DEFINE(
+			[HAVE_CEGUI],
+			[],
+			[Define to 1 if you have the @<:@CEGUI/CEGUI.h@:>@ header file.])
+		cegui=yes
+	],
+	[AC_MSG_WARN([*** CEGUI not found -- SDL support disabled])]
+)
+
+AC_CHECK_HEADER(
+		X11/Xmu/Xmu.h,
+		AC_DEFINE(
+		[HAVE_XMU],
+		[],
+		Define to 1 if you have the <X11/Xmu/Xmu.h> header file.
+		)
+		xmu=yes,
+		AC_MSG_WARN([*** no X11/Xmu/Xmu.h -- opengl and SDL support disabled])
 )
 
 AC_CHECK_HEADER(
@@ -270,7 +281,7 @@ if test x"$cegui" = xyes
 AC_SUBST(CEGUI_CFLAGS)
 AC_SUBST(CEGUI_LIBS)
 
-AM_CONDITIONAL(GUI_SDL, [test "x$sdl" = "xyes" -a "x$cegui" = "xyes" -a "x$opengl" = "xyes" -a "x$glc" = "xyes" ])
+AM_CONDITIONAL(GUI_SDL, [test "x$sdl" = "xyes" -a "x$cegui" = "xyes" -a "x$opengl" = "xyes" -a "x$glc" = "xyes" -a "x$xmu" = "xyes" ])
 AM_CONDITIONAL(GRAPHICS_OPENGL, [test "x$opengl" = "xyes" -a "x$glc" = "xyes" ])
 
 
@@ -431,6 +442,7 @@ src/maps/Makefile
 intl/Makefile
 po/Makefile
 src/modules/Makefile
+src/lib/Makefile
 ])
 
 AC_OUTPUT
