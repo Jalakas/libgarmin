@@ -306,7 +306,7 @@ static int elements_activate(struct color_scheme *cs, struct itemtype *it)
 					e->colorname);
 			}
 		} else {
-			cs_parse_color(e->colorname, &e->color);
+			parse_color(e->colorname, &e->color);
 		}
 		es=g_list_next(es);
 	}

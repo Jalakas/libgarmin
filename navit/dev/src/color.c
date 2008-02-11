@@ -43,7 +43,7 @@ struct color *cs_lookup_color(struct color_scheme *cs, char *name)
 	return NULL;
 }
 
-int cs_parse_color(char *def, struct color *color)
+int parse_color(const char *def, struct color *color)
 {
 	int r,g,b,a;
 
@@ -73,7 +73,7 @@ int cs_resolve_color(char *scheme, char *name, struct color *color)
 	struct color *c;
 
 	if (*name == '#')
-		return cs_parse_color(name, color);
+		return parse_color(name, color);
 	cs = cs_lookup(scheme);
 	if (!cs)
 		return -1;
@@ -97,7 +97,7 @@ static struct color_def *cs_add_color_def(struct color_scheme *cs, char *name,
 		free(cd);
 		return NULL;
 	}
-	if (cs_parse_color(value, &cd->color) < 0) {
+	if (parse_color(value, &cd->color) < 0) {
 		free(cd->name);
 		free(cd);
 		return NULL;

@@ -75,23 +75,8 @@ attr_new_from_text(const char *name, const char *value)
 		}
 		if (attr >= attr_type_color_begin && attr <= attr_type_color_end) {
 			struct color *color=g_new0(struct color, 1);
-			int r,g,b,a;
 			ret->u.color=color;
-			if(strlen(value)==7){
-				sscanf(value,"#%02x%02x%02x", &r, &g, &b);
-				color->r = (r << 8) | r;
-				color->g = (g << 8) | g;
-				color->b = (b << 8) | b;
-				color->a = (65535);
-			} else if(strlen(value)==9){
-				sscanf(value,"#%02x%02x%02x%02x", &r, &g, &b, &a);
-				color->r = (r << 8) | r;
-				color->g = (g << 8) | g;
-				color->b = (b << 8) | b;
-				color->a = (a << 8) | a;
-			} else {
-				dbg(0,"color %s has unknown format\n",value);
-			}
+			parse_color(value, color);
 			break;
 		}
 		if (attr >= attr_type_coord_geo_start && attr <= attr_type_coord_geo_end) {

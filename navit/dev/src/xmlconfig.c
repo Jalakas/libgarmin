@@ -19,6 +19,7 @@
 #include "gui.h"
 #include "osd.h"
 #include "log.h"
+#include "color.h"
 #include "xmlconfig.h"
 #include "config.h"
 
@@ -80,27 +81,11 @@ static int
 find_color(struct xmlstate *state, int required, struct color *color)
 {
 	const char *value;
-	int r,g,b,a;
 
 	value=find_attribute(state, "color", required);
 	if (! value)
 		return 0;
-	if(strlen(value)==7){
-		sscanf(value,"#%02x%02x%02x", &r, &g, &b);
-		color->r = (r << 8) | r;
-		color->g = (g << 8) | g;
-		color->b = (b << 8) | b;
-		color->a = (65535);
-	} else if(strlen(value)==9){
-		sscanf(value,"#%02x%02x%02x%02x", &r, &g, &b, &a);
-		color->r = (r << 8) | r;
-		color->g = (g << 8) | g;
-		color->b = (b << 8) | b;
-		color->a = (a << 8) | a;
-	} else {
-		dbg(0,"color %i has unknown format\n",value);
-	}
-	return 1;
+	return parse_color(value, color);
 }
 
 static int
