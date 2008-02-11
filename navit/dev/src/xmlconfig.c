@@ -19,7 +19,6 @@
 #include "gui.h"
 #include "osd.h"
 #include "log.h"
-#include "color.h"
 #include "xmlconfig.h"
 #include "config.h"
 
@@ -127,6 +126,13 @@ static int
 convert_number(const char *val)
 {
 	return g_ascii_strtoull(val,NULL,0);
+}
+
+static int
+xmlconfig_config(struct xmlstate *state)
+{
+	state->element_object = 1;
+	return 1;
 }
 
 static int
@@ -415,10 +421,15 @@ static int
 xmlconfig_layout(struct xmlstate *state)
 {
 	const char *name=find_attribute(state, "name", 1);
+	struct layout *l;
+	struct color color = {0xffff, 0xefef, 0xb7b7, 0xffff};
 
 	if (! name)
 		return 0;
-	state->element_object = layout_new(name);
+	find_color(state, 0, &color);
+	l = layout_new(name);
+	l->bgcolor = color;
+	state->element_object = l;
 	if (! state->element_object)
 		return 0;
 	navit_add_layout(state->parent->element_object, state->element_object);
@@ -579,8 +590,9 @@ struct element_func {
 	char *parent;
 	int (*func)(struct xmlstate *state);
 } elements[] = {
-	{ "debug", NULL, xmlconfig_debug},
-	{ "navit", NULL, xmlconfig_navit},
+	{ "config", NULL, xmlconfig_config},
+	{ "debug", "config", xmlconfig_debug},
+	{ "navit", "config", xmlconfig_navit},
 	{ "graphics", "navit", xmlconfig_graphics},
 	{ "gui", "navit", xmlconfig_gui},
 	{ "layout", "navit", xmlconfig_layout},
@@ -604,7 +616,7 @@ struct element_func {
 	{ "vehicle", "navit", xmlconfig_vehicle},
 	{ "log", "vehicle", xmlconfig_log},
 	{ "window_items", "navit", xmlconfig_window_items},
-	{ "plugins", NULL, xmlconfig_plugins},
+	{ "plugins", "config", xmlconfig_plugins},
 	{ "plugin", "plugins", xmlconfig_plugin},
 	{},
 };
@@ -637,8 +649,8 @@ start_element (GMarkupParseContext *context,
 	if ((parent_name && func->parent && g_ascii_strcasecmp(parent_name, func->parent)) || 
 	    (!parent_name && func->parent) || (parent_name && !func->parent)) {
 		g_set_error(error,G_MARKUP_ERROR,G_MARKUP_ERROR_INVALID_CONTENT,
-				"Element '%s' within unexpected context '%s'. Expected '%s'",
-				element_name, parent_name, func->parent);
+				"Element '%s' within unexpected context '%s'. Expected '%s'%s",
+				element_name, parent_name, func->parent, ! strcmp(func->parent,"config") ? "\nPlease add <config> </config> tags at the beginning/end of your navit.xml": "");
 		return;
 	}
 
@@ -744,7 +756,7 @@ gboolean config_load(char *filename, GError **error)
 	result = g_markup_parse_context_parse (context, contents, len, error);
 	if (result && curr) {
 		g_set_error(error,G_MARKUP_ERROR,G_MARKUP_ERROR_PARSE, "element '%s' not closed", curr->element);
-		result=FALSE;
+		result=FALSE;	
 	}
 	if (!result && error && *error) {
 		g_markup_parse_context_get_position(context, &line, &chr);

@@ -1,4 +1,5 @@
 #include <glib.h>
+#include <string.h>
 #include "item.h"
 #include "attr.h"
 #include "track.h"

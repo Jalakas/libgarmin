@@ -228,7 +228,7 @@ map_search_mg_convert_special(char *str)
 
 
 static struct map_search_priv *
-map_search_new_mg(struct map_priv *map, struct attr_group *ag,struct item *item, struct attr *search, int partial)
+map_search_new_mg(struct map_priv *map, struct item *item, struct attr *search, int partial)
 {
 	struct map_rect_priv *mr=g_new0(struct map_rect_priv, 1);
 	dbg(1,"id_lo=0x%x\n", item->id_lo);

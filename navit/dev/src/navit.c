@@ -112,7 +112,12 @@ navit_add_mapset(struct navit *this_, struct mapset *ms)
 struct mapset *
 navit_get_mapset(struct navit *this_)
 {
-	return this_->mapsets->data;
+	if(this_->mapsets){
+		return this_->mapsets->data;
+	} else {
+		g_warning("No mapsets enabled! Is it on purpose? Navit can't draw a map. Please check your navit.xml\n");
+	}
+	exit(-1);
 }
 
 struct tracking *
@@ -588,6 +593,8 @@ navit_set_destination(struct navit *this_, struct pcoord *c, char *description)
 {
 	navit_append_coord(this_, "destination.txt", c, "former_destination", description, this_->destinations, NULL, callback_cast(navit_set_destination_from_destination));
 	if (this_->route) {
+		if (this_->navigation)
+			navigation_flush(this_->navigation);
 		route_set_destination(this_->route, c);
 		navit_draw(this_);
 	}

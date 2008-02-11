@@ -29,6 +29,7 @@ static GHashTable *dedupe_ways_hash;
 static int attr_debug_level=1;
 static int nodeid,wayid;
 static int report,phase;
+static int ignore_unkown = 0, coverage=0;
 
 static char *attrmap={
 	"n	historic\n"
@@ -37,7 +38,7 @@ static char *attrmap={
 	"n	amenity	atm		poi_bank\n"
 	"n	amenity	bank		poi_bank\n"
 	"n	amenity	pub		poi_bar\n"
-	"n	amenity	cafe		poi_bar\n"
+	"n	amenity	cafe		poi_cafe\n"
 	"n	amenity	bus_station	poi_bus_station\n"
 	"n	amenity	parking		poi_car_parking\n"
 	"n	amenity	cinema		poi_cinema\n"
@@ -59,8 +60,12 @@ static char *attrmap={
 	"n	amenity	college		poi_school\n"
 	"n	amenity	telephone	poi_telephone\n"
 	"n	amenity	theatre		poi_theater\n"
+	"n	highway	bus_stop	poi_bus_stop\n"
+	"n	highway	motorway_junction	highway_exit\n"
+	"n	highway	traffic_signals	traffic_signals\n"
 	"n	leisure	slipway		poi_boat_ramp\n"
 	"n	leisure	fishing		poi_fish\n"
+	"n	sport	golf	poi_golf\n"
 	"n	leisure	golf_course	poi_golf\n"
 	"n	leisure	marina		poi_marine\n"
 	"n	leisure	sports_centre	poi_sport\n"
@@ -86,10 +91,10 @@ static char *attrmap={
 	"n	military	barracks	poi_military\n"
 	"n	military	range		poi_military\n"
 	"n	military	danger_area	poi_danger_area\n"
-	"n	sport	golf		poi_golf\n"
 	"n	sport	swimming	poi_swimming\n"
 	"n	sport	skiing		poi_skiing\n"
 	"n	aeroway	aerodrome	poi_airport\n"
+	"n	aeroway	airport		poi_airport\n"
 	"n	aeroway	terminal	poi_airport\n"
 	"n	aeroway	helipad		poi_heliport\n"
 	"n	man_made	tower	poi_tower\n"
@@ -98,48 +103,86 @@ static char *attrmap={
 	"n	place	city		town_label_2e5\n"
 	"n	place	town		town_label_2e4\n"
 	"n	place	village		town_label_2e3\n"
-	"w	amenity	place_of_worship	building_poly\n"
+	"n	place	hamlet		town_label_2e2\n"
+	"w	amenity	place_of_worship	poly_building\n"
+	"w	building	glasshouse	poly_building\n"
+	"w	building	1	poly_building\n"
 	"w	building\n"
+	"w	aeroway	aerodrome	poly_airport\n"
+	"w	aeroway	apron		poly_apron\n"
+	"w	aeroway	runway		aeroway_runway\n"
+	"w	aeroway	taxiway		aeroway_taxiway\n"
+	"w	aeroway	terminal	poly_terminal\n"
+	"w	amenity	parking		poly_car_parking\n"
 	"w	highway	cycleway	street_nopass\n"
 	"w	highway	footway		street_nopass\n"
 	"w	highway	steps		street_nopass\n"
 	"w	highway	cyclepath	street_nopass\n"
 	"w	highway	track		street_nopass\n"
-	"w	highway	service		street_nopass\n"
-	"w	highway	pedestrian	street_nopass\n"
+	"w	highway	service		street_service\n"
+	"w	highway	pedestrian	street_pedestrian\n"
 	"w	highway	residential	street_1_city\n"
 	"w	highway	unclassified	street_1_city\n"
+	"w	highway	minor		street_1_land\n"
 	"w	highway	tertiary	street_2_city\n"
 	"w	highway	secondary	street_3_city\n"
-	"w	highway	pedestrian	street_nopass\n"
+	"w	highway	unsurfaced	street_nopass\n"
 	"w	highway	primary		street_4_city\n"
 	"w	highway	primary_link	ramp\n"
 	"w	highway	trunk		street_4_city\n"
 	"w	highway	trunk_link	ramp\n"
 	"w	highway	motorway	highway_city\n"
 	"w	highway	motorway_link	ramp\n"
-	"w	historic	town gate	building_poly\n"
-	"w	landuse	allotments	wood\n"
-	"w	landuse	cemetery	cemetery_poly\n"
-	"w	landuse	forest		wood\n"
-	"w	landuse	industrial	industry_poly\n"
-	"w	leisure	park		park_poly\n"
-	"w	natural	wood		wood\n"
-	"w	natural	water		water_poly\n"
-	"w	place		suburb		town_poly\n"
-	"w	place		town		town_poly\n"
+	"w	historic	town gate	poly_building\n"
+	"w	landuse	allotments	poly_wood\n"
+	"w	landuse	cemetery	poly_cemetery\n"
+	"w	landuse	forest		poly_wood\n"
+	"w	landuse	industrial	poly_industry\n"
+	"w	landuse	residential	poly_town\n"
+	"w	landuse	farm	poly_farm\n"
+	"w	leisure	park		poly_park\n"
+	"w	natural	wood		poly_wood\n"
+	"w	natural	water		poly_water\n"
+	"w	natural	coastline	water_line\n"
+	"w	place		suburb		poly_town\n"
+	"w	place		town		poly_town\n"
+	"w	power	line	powerline\n"
 	"w	railway	rail		rail\n"
-	"w	railway	station		building_poly\n"
+	"w	railway	narrow_gauge	rail\n"
+	"w	railway	station		poly_building\n"
 	"w	railway	subway		rail\n"
 	"w	railway	tram		rail\n"
+	"w	leisure	golf_course	poly_golf_course\n"
 	"w	waterway	canal		water_line\n"
 	"w	waterway	river		water_line\n"
 	"w	waterway	weir		water_line\n"
 	"w	waterway	stream		water_line\n"
 	"w	waterway	drain		water_line\n"
+	"w	waterway	riverbank	poly_water\n"
+	"w	boundary	administrative	border_country\n"
+	"w	route		ferry		ferry\n"
 };
 
 static GHashTable *way_key_hash, *node_key_hash;
+
+static GHashTable *strings_hash = NULL;
+
+
+static char* string_hash_lookup( const char* key )
+{
+	char* key_ptr = NULL;
+
+	if ( strings_hash == NULL ) {
+		strings_hash = g_hash_table_new(g_str_hash, g_str_equal);
+	}
+
+	if ( ( key_ptr = g_hash_table_lookup(strings_hash, key )) == NULL ) {
+		key_ptr = g_strdup( key );
+		g_hash_table_insert(strings_hash, key_ptr,  (gpointer)key_ptr );
+
+	}
+	return key_ptr;
+}
 
 static void
 build_attrmap_line(char *line)
@@ -178,11 +221,11 @@ build_attrmap_line(char *line)
 	value_hash=g_hash_table_lookup(key_hash, k);
 	if (! value_hash) {
 		value_hash=g_hash_table_new(g_str_hash, g_str_equal);
-		g_hash_table_insert(key_hash, g_strdup(k), value_hash);
+		g_hash_table_insert(key_hash, string_hash_lookup(k), value_hash);
 	}
 	if (v) {
 		data=(gpointer)item_from_name(i);
-		g_hash_table_insert(value_hash, g_strdup(v), data);
+		g_hash_table_insert(value_hash, string_hash_lookup(v), data);
 	}
 #if 0
 	fprintf(stderr,"'%s' '%s' '%s'\n", k, v, i);
@@ -259,7 +302,7 @@ pad_text_attr(struct attr_bin *a, char *buffer)
 {
 	int l;
 	l=strlen(buffer)+1;
-	while (l % 4) 
+	while (l % 4)
 		buffer[l++]='\0';
 	a->len=l/4+1;
 }
@@ -302,7 +345,7 @@ add_tag(char *k, char *v)
 		level=9;
 	if (! strcmp(k,"created_by"))
 		level=9;
-	if (! strncmp(k,"tiger:",6))
+	if (! strncmp(k,"tiger:",6) || !strcmp(k,"AND_nodes"))
 		level=9;
 	if (! strcmp(k,"converted_by") || ! strcmp(k,"source"))
 		level=8;
@@ -310,8 +353,10 @@ add_tag(char *k, char *v)
 		level=8;
 	if (! strcmp(k,"layer"))
 		level=7;
+	if (! strcasecmp(v,"true") || ! strcasecmp(v,"yes"))
+		v="1";
 	if (! strcmp(k,"oneway")) {
-		if (! strcmp(v,"true") || !strcmp(v,"yes")) {
+		if (!strcmp(v,"1")) {
 			flags_attr_value=AF_ONEWAY;
 			flags_attr.len=2;
 		}
@@ -339,7 +384,7 @@ add_tag(char *k, char *v)
 	if (! strcmp(k,"foot")) {
 		level=5;
 	}
-	if (! strcmp(k,"note")) 
+	if (! strcmp(k,"note"))
 		level=5;
 	if (! strcmp(k,"name")) {
 		if (in_way) {
@@ -368,11 +413,11 @@ add_tag(char *k, char *v)
 		sprintf(debug_attr_buffer+strlen(debug_attr_buffer), " %s=%s", k, v);
 		node_is_tagged=1;
 	}
-	if (level < 6) 
+	if (level < 6)
 		node_is_tagged=1;
 	if (level >= 5)
 		return;
-	if (in_way) 
+	if (in_way)
 		value_hash=g_hash_table_lookup(way_key_hash, k);
 	else
 		value_hash=g_hash_table_lookup(node_key_hash, k);
@@ -385,11 +430,25 @@ add_tag(char *k, char *v)
 	if (!type) {
 		if (report)
 			fprintf(stderr,"Unknown %s %d value of '%s' '%s'\n", in_way ? "way" : "node", in_way ? wayid:nodeid, k, v);
+		if ( ignore_unkown == 1 )
+			return;
 		type=in_way ? type_street_unkn : type_point_unkn;
-		g_hash_table_insert(value_hash, g_strdup(v), (gpointer)item.type);
+	        g_hash_table_insert(value_hash, string_hash_lookup( v ), (gpointer)item.type);
 	}
-	if (type != type_street_unkn && type != type_point_unkn)
-		item.type=type;
+	if ( (type != type_street_unkn ) && ( type != type_point_unkn )  )
+	{
+		if (coverage && type >= type_street_nopass && type <= type_ramp)
+			item.type=type_coverage;
+		else
+			item.type=type;
+	}
+	else
+	{
+        	if ( ignore_unkown == 1 )
+		{
+		    level = 10;
+		}
+	}
 }
 
 static int
@@ -408,13 +467,13 @@ parse_tag(char *p)
 
 struct buffer {
 	int malloced_step;
-	int malloced;
+	size_t malloced;
 	unsigned char *base;
-	int size;
+	size_t size;
 };
 
 static struct tile_head {
-	int size;
+	int num_subtiles;
 	int total_size;
 	char *name;
 	char *zip_data;
@@ -422,7 +481,7 @@ static struct tile_head {
 	int zipnum;
 	int process;
 	struct tile_head *next;
-	char subtiles[0];
+	// char subtiles[0];
 } *tile_head_root;
 
 
@@ -455,13 +514,23 @@ static struct buffer node_buffer = {
 };
 
 
+static char** th_get_subtile( const struct tile_head* th, int idx )
+{
+	char* subtile_ptr = NULL;
+	subtile_ptr = (char*)th + sizeof( struct tile_head ) + idx * sizeof( char *);
+	return (char**)subtile_ptr;
+}
+
 static void
 extend_buffer(struct buffer *b)
 {
 	b->malloced+=b->malloced_step;
 	b->base=realloc(b->base, b->malloced);
-	assert(b->base != NULL);
-	
+	if (b->base == NULL) {
+		fprintf(stderr,"realloc of %d bytes failed\n",b->malloced);
+		exit(1);
+	}
+
 }
 
 int nodeid_last;
@@ -472,7 +541,7 @@ node_buffer_to_hash(void)
 {
 	int i,count=node_buffer.size/sizeof(struct node_item);
 	struct node_item *ni=(struct node_item *)node_buffer.base;
-	for (i = 0 ; i < count ; i++) 
+	for (i = 0 ; i < count ; i++)
 		g_hash_table_insert(node_hash, (gpointer)(ni[i].id), (gpointer)i);
 }
 
@@ -481,7 +550,7 @@ static struct node_item *ni;
 static void
 add_node(int id, double lat, double lon)
 {
-	if (node_buffer.size + sizeof(struct node_item) > node_buffer.malloced) 
+	if (node_buffer.size + sizeof(struct node_item) > node_buffer.malloced)
 		extend_buffer(&node_buffer);
 	node_is_tagged=0;
 	nodeid=id;
@@ -507,7 +576,7 @@ add_node(int id, double lat, double lon)
 			node_buffer_to_hash();
 		}
 	} else
-		if (!g_hash_table_lookup(node_hash, (gpointer)(ni->id))) 
+		if (!g_hash_table_lookup(node_hash, (gpointer)(ni->id)))
 			g_hash_table_insert(node_hash, (gpointer)(ni->id), (gpointer)(ni-(struct node_item *)node_buffer.base));
 		else {
 			node_buffer.size-=sizeof(struct node_item);
@@ -648,9 +717,9 @@ end_way(FILE *out)
 	if (street_name_systematic_attr.len)
 		alen+=street_name_systematic_attr.len+1;
 	if (debug_attr.len)
-		alen+=debug_attr.len+1;	
+		alen+=debug_attr.len+1;
 	if (flags_attr.len)
-		alen+=flags_attr.len+1;	
+		alen+=flags_attr.len+1;
 	item.clen=coord_count*2;
 	item.len=item.clen+2+alen;
 	fwrite(&item, sizeof(item), 1, out);
@@ -669,9 +738,9 @@ end_node(FILE *out)
 		return;
 	pad_text_attr(&debug_attr, debug_attr_buffer);
 	if (label_attr.len)
-		alen+=label_attr.len+1;	
+		alen+=label_attr.len+1;
 	if (debug_attr.len)
-		alen+=debug_attr.len+1;	
+		alen+=debug_attr.len+1;
 	item.clen=2;
 	item.len=item.clen+2+alen;
 	fwrite(&item, sizeof(item), 1, out);
@@ -698,7 +767,7 @@ add_nd(char *p, int ref)
 	} else {
 		len=strlen(p);
 		if (len > 0 && p[len-1]=='\n')
-			p[len-1]='\0';	
+			p[len-1]='\0';
 		fprintf(stderr,"WARNING: way %d: node %d not found (%s)\n",wayid,ref,p);
 	}
 	if (coord_count > 65536) {
@@ -720,7 +789,7 @@ parse_nd(char *p)
 
 static void
 save_buffer(char *filename, struct buffer *b)
-{	
+{
 	FILE *f;
 	f=fopen(filename,"wb+");
 	fwrite(b->base, b->size, 1, f);
@@ -731,7 +800,7 @@ static void
 load_buffer(char *filename, struct buffer *b)
 {
 	FILE *f;
-	if (b->base) 
+	if (b->base)
 		free(b->base);
 	b->malloced=0;
 	f=fopen(filename,"rb");
@@ -762,24 +831,24 @@ phase1(FILE *in, FILE *out_ways, FILE *out_nodes)
 		} else if (!strncmp(p, "<osm ",5)) {
 		} else if (!strncmp(p, "<bound ",7)) {
 		} else if (!strncmp(p, "<node ",6)) {
-			if (!parse_node(p)) 
+			if (!parse_node(p))
 				fprintf(stderr,"WARNING: failed to parse %s\n", buffer);
 			in_node=1;
 			processed_nodes++;
 		} else if (!strncmp(p, "<tag ",5)) {
-			if (!parse_tag(p)) 
+			if (!parse_tag(p))
 				fprintf(stderr,"WARNING: failed to parse %s\n", buffer);
 		} else if (!strncmp(p, "<way ",5)) {
 			in_way=1;
-			if (!parse_way(p)) 
+			if (!parse_way(p))
 				fprintf(stderr,"WARNING: failed to parse %s\n", buffer);
 			processed_ways++;
 		} else if (!strncmp(p, "<nd ",4)) {
-			if (!parse_nd(p)) 
+			if (!parse_nd(p))
 				fprintf(stderr,"WARNING: failed to parse %s\n", buffer);
 		} else if (!strncmp(p, "<relation ",10)) {
 			in_relation=1;
-			if (!parse_relation(p)) 
+			if (!parse_relation(p))
 				fprintf(stderr,"WARNING: failed to parse %s\n", buffer);
 			processed_relations++;
 		} else if (!strncmp(p, "<member ",8)) {
@@ -801,14 +870,14 @@ phase1(FILE *in, FILE *out_ways, FILE *out_nodes)
 	return 1;
 }
 
-static char buffer[65536];
+static char buffer[131072];
 
 int bytes_read=0;
 
 static struct item_bin *
 read_item(FILE *in)
 {
-	struct item_bin *ib=(struct item_bin *) buffer;	
+	struct item_bin *ib=(struct item_bin *) buffer;
 	int r,s;
 	r=fread(ib, sizeof(*ib), 1, in);
 	if (r != 1)
@@ -828,9 +897,9 @@ bbox(struct coord *c, int count, struct rect *r)
 	if (! count)
 		return;
 	r->l=*c;
-	r->h=*c;	
-	c++;
+	r->h=*c;
 	while (--count) {
+		c++;
 		if (c->x < r->l.x)
 			r->l.x=c->x;
 		if (c->y < r->l.y)
@@ -866,7 +935,7 @@ struct rect world_bbox = {
 };
 
 static void
-tile(struct rect *r, char *ret)
+tile(struct rect *r, char *ret, int max)
 {
 	int x0,x1,x2,x3,x4;
 	int y0,y1,y2,y3,y4;
@@ -875,7 +944,7 @@ tile(struct rect *r, char *ret)
 	y0=world_bbox.l.y;
 	x4=world_bbox.h.x;
 	y4=world_bbox.h.y;
-	for (i = 0 ; i < 14 ; i++) {
+	for (i = 0 ; i < max ; i++) {
 		x2=(x0+x4)/2;
                 y2=(y0+y4)/2;
                 x1=(x0+x2)/2;
@@ -898,7 +967,7 @@ tile(struct rect *r, char *ret)
 			strcat(ret,"a");
                         x0=x2;
                         y0=y2;
-		} else 
+		} else
 			return;
 	}
 }
@@ -937,35 +1006,39 @@ GHashTable *tile_hash;
 GHashTable *tile_hash2;
 
 static void
-tile_extend(char *tile, struct item_bin *ib)
+tile_extend(char *tile, struct item_bin *ib, GList **tiles_list)
 {
 	struct tile_head *th=NULL;
-	if (debug_tile(tile)) 
+	if (debug_tile(tile))
 		fprintf(stderr,"Tile:Writing %d bytes to '%s' (%p,%p)\n", (ib->len+1)*4, tile, g_hash_table_lookup(tile_hash, tile), tile_hash2 ? g_hash_table_lookup(tile_hash2, tile) : NULL);
 	if (tile_hash2)
 		th=g_hash_table_lookup(tile_hash2, tile);
 	if (!th)
 		th=g_hash_table_lookup(tile_hash, tile);
 	if (! th) {
-		th=malloc(sizeof(*th)+strlen(tile)+1);
+		th=malloc(sizeof(struct tile_head)+ sizeof( char* ) );
 		assert(th != NULL);
-		strcpy(th->subtiles, tile);
-		th->size=strlen(tile)+1;
+		// strcpy(th->subtiles, tile);
+		th->num_subtiles=1;
 		th->total_size=0;
 		th->total_size_used=0;
 		th->zipnum=0;
 		th->zip_data=NULL;
-		th->name=g_strdup(tile);
+		th->name=string_hash_lookup(tile);
+		*th_get_subtile( th, 0 ) = th->name;
+
 		if (tile_hash2)
-			g_hash_table_insert(tile_hash2, th->name, th);
+			g_hash_table_insert(tile_hash2, string_hash_lookup( th->name ), th);
+		if (tiles_list)
+			*tiles_list=g_list_append(*tiles_list, string_hash_lookup( th->name ) );
 		processed_tiles++;
-		if (debug_tile(tile)) 
+		if (debug_tile(tile))
 			fprintf(stderr,"new '%s'\n", tile);
 	}
 	th->total_size+=ib->len*4+4;
-	if (debug_tile(tile)) 
+	if (debug_tile(tile))
 		fprintf(stderr,"New total size of %s(%p):%d\n", th->name, th, th->total_size);
-	g_hash_table_insert(tile_hash, th->name, th);
+	g_hash_table_insert(tile_hash, string_hash_lookup( th->name ), th);
 }
 
 static int
@@ -986,24 +1059,22 @@ merge_tile(char *base, char *sub)
 	ths=g_hash_table_lookup(tile_hash, sub);
 	if (! ths)
 		return 0;
-	if (debug_tile(base) || debug_tile(sub)) 
+	if (debug_tile(base) || debug_tile(sub))
 		fprintf(stderr,"merging '%s'(%p) (%d) with '%s'(%p) (%d)\n", base, thb, thb ? thb->total_size : 0, sub, ths, ths->total_size);
 	if (! thb) {
 		thb=ths;
 		g_hash_table_remove(tile_hash, sub);
-		g_free(thb->name);
-		thb->name=g_strdup(base);
-		g_hash_table_insert(tile_hash, thb->name, thb);
-		
+		thb->name=string_hash_lookup(base);
+		g_hash_table_insert(tile_hash, string_hash_lookup( thb->name ), thb);
+
 	} else {
-		thb=realloc(thb, sizeof(*thb)+ths->size+thb->size);
+		thb=realloc(thb, sizeof(struct tile_head)+( ths->num_subtiles+thb->num_subtiles ) * sizeof( char*) );
 		assert(thb != NULL);
-		memcpy(thb->subtiles+thb->size, ths->subtiles, ths->size);
-		thb->size+=ths->size;
+		memcpy( th_get_subtile( thb, thb->num_subtiles ), th_get_subtile( ths, 0 ), ths->num_subtiles * sizeof( char*) );
+		thb->num_subtiles+=ths->num_subtiles;
 		thb->total_size+=ths->total_size;
-		g_hash_table_insert(tile_hash, thb->name, thb);
+		g_hash_table_insert(tile_hash, string_hash_lookup( thb->name ), thb);
 		g_hash_table_remove(tile_hash, sub);
-		g_free(ths->name);
 		g_free(ths);
 	}
 	return 1;
@@ -1054,9 +1125,13 @@ write_item(char *tile, struct item_bin *ib)
 	if (! th)
 		th=g_hash_table_lookup(tile_hash, tile);
 	if (th) {
+		if (th->process != 0 && th->process != 1) {
+			fprintf(stderr,"error with tile '%s' of length %d\n", tile, strlen(tile));
+			abort();
+		}
 		if (! th->process)
 			return;
-		if (debug_tile(tile)) 
+		if (debug_tile(tile))
 			fprintf(stderr,"Data:Writing %d bytes to '%s' (%p,%p)\n", (ib->len+1)*4, tile, g_hash_table_lookup(tile_hash, tile), tile_hash2 ? g_hash_table_lookup(tile_hash2, tile) : NULL);
 		size=(ib->len+1)*4;
 		if (th->total_size_used+size > th->total_size) {
@@ -1136,6 +1211,8 @@ phase34_process_file(int phase, FILE *in)
 	struct item_bin *ib;
 	struct rect r;
 	char buffer[1024];
+	int max;
+
 	while ((ib=read_item(in))) {
 		if (ib->type < 0x80000000)
 			processed_nodes++;
@@ -1143,12 +1220,18 @@ phase34_process_file(int phase, FILE *in)
 			processed_ways++;
 		bbox((struct coord *)(ib+1), ib->clen/2, &r);
 		buffer[0]='\0';
-		tile(&r, buffer);
+		max=14;
+		if (ib->type == type_street_n_lanes || ib->type == type_highway_city || ib->type == type_highway_land || ib->type == type_ramp)
+			max=8;
+		if (ib->type == type_street_3_city || ib->type == type_street_4_city || ib->type == type_street_3_land || ib->type == type_street_4_land)
+			max=12;
+		
+		tile(&r, buffer, max);
 #if 0
 		fprintf(stderr,"%s\n", buffer);
 #endif
 		if (phase == 3)
-			tile_extend(buffer, ib);
+			tile_extend(buffer, ib, NULL);
 		else
 			write_item(buffer, ib);
 	}
@@ -1165,12 +1248,14 @@ struct index_item {
 };
 
 static void
-index_submap_add(int phase, struct tile_head *th)
+index_submap_add(int phase, struct tile_head *th, GList **tiles_list)
 {
 	struct index_item ii;
 	int len=strlen(th->name);
 	char index_tile[len+1];
 
+	ii.min=(len > 4) ? len-4 : 0;
+	ii.max=255;
 	strcpy(index_tile, th->name);
 	if (len > 6)
 		len=6;
@@ -1185,16 +1270,14 @@ index_submap_add(int phase, struct tile_head *th)
 
 	ii.attr_order_limit.len=2;
 	ii.attr_order_limit.type=attr_order_limit;
-	ii.min=0;
-	ii.max=0;
 
 	ii.attr_zipfile_ref.len=2;
 	ii.attr_zipfile_ref.type=attr_zipfile_ref;
 	ii.zipfile_ref=th->zipnum;
 
-	if (phase == 3) 
-		tile_extend(index_tile, (struct item_bin *)&ii);
-	else 
+	if (phase == 3)
+		tile_extend(index_tile, (struct item_bin *)&ii, tiles_list);
+	else
 		write_item(index_tile, (struct item_bin *)&ii);
 #if 0
 	unsigned int *c=(unsigned int *)&ii;
@@ -1202,31 +1285,34 @@ index_submap_add(int phase, struct tile_head *th)
 	for (i = 0 ; i < sizeof(ii)/4 ; i++) {
 		fprintf(stderr,"%08x ", c[i]);
 	}
-	fprintf(stderr,"\n");	
+	fprintf(stderr,"\n");
 #endif
 }
 
 static int
 add_tile_hash(struct tile_head *th)
 {
-	int dlen,len,maxnamelen=0;
-	char *data;
+	int idx,len,maxnamelen=0;
+	char **data;
 
 #if 0
-	g_hash_table_insert(tile_hash2, th->name, th);
+	g_hash_table_insert(tile_hash2, string_hash_lookup( th->name ), th);
 #endif
-	dlen=th->size;
-	data=th->subtiles;
-	while (dlen > 0) {
+	for( idx = 0; idx < th->num_subtiles; idx++ ) {
+
+        data = th_get_subtile( th, idx );
+
 		if (debug_tile(data) || debug_tile(th->name)) {
-			fprintf(stderr,"Parent for '%s' is '%s'\n", data, th->name);
+			fprintf(stderr,"Parent for '%s' is '%s'\n", *data, th->name);
 		}
-		g_hash_table_insert(tile_hash2, data, th);
-		len=strlen(data);
-		if (len > maxnamelen)
+
+		g_hash_table_insert(tile_hash2, *data, th);
+
+		len = strlen( *data );
+
+		if (len > maxnamelen) {
 			maxnamelen=len;
-		data+=len+1;
-		dlen-=len+1;
+		}
 	}
 	return maxnamelen;
 }
@@ -1249,7 +1335,7 @@ create_tile_hash(void)
 	return maxnamelen;
 }
 
-static void 
+static void
 create_tile_hash_list(GList *list)
 {
 	GList *next;
@@ -1271,7 +1357,7 @@ create_tile_hash_list(GList *list)
 
 static void
 destroy_tile_hash(void)
-{	
+{
 	g_hash_table_destroy(tile_hash2);
 	tile_hash2=NULL;
 }
@@ -1280,9 +1366,9 @@ destroy_tile_hash(void)
 static void
 write_tilesdir(int phase, int maxlen, FILE *out)
 {
-	int dlen,len,zipnum=0;
+	int idx,len,zipnum=0;
 	GList *tiles_list,*next;
-	char *data;
+	char **data;
 	struct tile_head *th,**last=NULL;
 
 	tiles_list=get_tiles_list();
@@ -1292,7 +1378,7 @@ write_tilesdir(int phase, int maxlen, FILE *out)
 	last=&tile_head_root;
 	if (! maxlen) {
 		while (next) {
-			if (strlen(next->data) > maxlen) 
+			if (strlen(next->data) > maxlen)
 				maxlen=strlen(next->data);
 			next=g_list_next(next);
 		}
@@ -1312,18 +1398,16 @@ write_tilesdir(int phase, int maxlen, FILE *out)
 					th->next=NULL;
 					th->zipnum=zipnum++;
 					fprintf(out,"%s:%d",(char *)next->data,th->total_size);
-					dlen=th->size;
-					data=th->subtiles;
-					while (dlen > 0) {
-						fprintf(out,":%s", data);
-						while (*data++) 
-							dlen--;
-						dlen--;
+
+					for ( idx = 0; idx< th->num_subtiles; idx++ ){
+                        data= th_get_subtile( th, idx );
+						fprintf(out,":%s", *data);
 					}
+
 					fprintf(out,"\n");
 				}
 				if (th->name[0])
-					index_submap_add(phase, th);
+					index_submap_add(phase, th, &tiles_list);
 				processed_tiles++;
 			}
 			next=g_list_next(next);
@@ -1341,7 +1425,7 @@ merge_tiles(void)
 	GList *tiles_list_sorted,*last;
 	int i,i_min,len,size_all,size[5],size_min,work_done;
 	long long zip_size;
-	
+
 	do {
 		tiles_list_sorted=get_tiles_list();
 		fprintf(stderr,"PROGRESS: sorting %d tiles\n", g_list_length(tiles_list_sorted));
@@ -1425,7 +1509,7 @@ phase34(int phase, int maxnamelen, FILE *ways_in, FILE *nodes_in, FILE *tilesdir
 	write_tilesdir(phase, maxnamelen, tilesdir_out);
 
 	return 0;
-		
+
 }
 
 static int
@@ -1632,7 +1716,7 @@ phase4(FILE *ways_in, FILE *nodes_in, FILE *out, FILE *dir_out, int compression_
 		size+=th->total_size;
 		th=th->next;
 	}
-	if (size) 
+	if (size)
 		fprintf(stderr,"Slice %d is of size %d\n", slices, size);
 	th=tile_head_root;
 	size=0;
@@ -1653,7 +1737,7 @@ phase4(FILE *ways_in, FILE *nodes_in, FILE *out, FILE *dir_out, int compression_
 		slices++;
 	}
 	fseek(dir_out, 0, SEEK_SET);
-	cat(dir_out, out);	
+	cat(dir_out, out);
 	eoc.zipenum=zipfiles;
 	eoc.zipecenn=zipfiles;
 	eoc.zipecsz=zipdir_size;
@@ -1661,7 +1745,7 @@ phase4(FILE *ways_in, FILE *nodes_in, FILE *out, FILE *dir_out, int compression_
 	fwrite(&eoc, sizeof(eoc), 1, out);
 	sig_alrm(0);
 	alarm(0);
-	return 0;	
+	return 0;
 }
 
 static void
@@ -1679,7 +1763,9 @@ usage(FILE *f)
 	fprintf(f,"-c (--dump-coordinates)  : dump coordinates after phase 1\n");
 	fprintf(f,"-e (--end)               : end at specified phase\n");
 	fprintf(f,"-k (--keep-tmpfiles)     : do not delete tmp files after processing. useful to reuse them\n\n");
+	fprintf(f,"-o (--coverage)          : map every street to item overage\n");
 	fprintf(f,"-s (--start)             : start at specified phase\n");
+	fprintf(f,"-i (--input-file)        : specify the input file name (OSM), overrules default stdin\n");
 	fprintf(f,"-w (--dedupe-ways)       : ensure no duplicate ways or nodes. useful when using several input files\n");
 	fprintf(f,"-z (--compression-level) : set the compression level\n");
 	exit(1);
@@ -1694,6 +1780,9 @@ int main(int argc, char **argv)
 	int process_nodes=1, process_ways=1;
 	int compression_level=9;
 	char *result;
+	FILE* input_file = stdin;
+
+
 	while (1) {
 #if 0
 		int this_option_optind = optind ? optind : 1;
@@ -1702,16 +1791,19 @@ int main(int argc, char **argv)
 		static struct option long_options[] = {
 			{"attr-debug-level", 1, 0, 'a'},
 			{"compression-level", 1, 0, 'z'},
+			{"coverage", 0, 0, 'o'},
 			{"dedupe-ways", 0, 0, 'w'},
 			{"end", 1, 0, 'e'},
 			{"help", 0, 0, 'h'},
 			{"keep-tmpfiles", 0, 0, 'k'},
 			{"nodes-only", 0, 0, 'N'},
 			{"start", 1, 0, 's'},
+			{"input-file", 1, 0, 'i'},
+			{"ignore-unknown", 0, 0, 'n'},
 			{"ways-only", 0, 0, 'W'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long (argc, argv, "NWa:ce:hks:w", long_options, &option_index);
+		c = getopt_long (argc, argv, "Nni:Wa:ce:hks:w", long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -1733,15 +1825,30 @@ int main(int argc, char **argv)
 		case 'h':
 			usage(stdout);
 			break;
+		case 'n':
+			fprintf(stderr,"I will IGNORE unknown types\n");
+			ignore_unkown=1;
+			break;
 		case 'k':
 			fprintf(stderr,"I will KEEP tmp files\n");
 			keep_tmpfiles=1;
+			break;
+		case 'o':
+			coverage=1;
 			break;
 		case 's':
 			start=atoi(optarg);
 			break;
 		case 'w':
 			dedupe_ways_hash=g_hash_table_new(NULL, NULL);
+			break;
+		case 'i':
+			input_file = fopen( optarg, "r" );
+			if ( input_file ==  NULL )
+			{
+			    fprintf( stderr, "\nInput file (%s) not found\n", optarg );
+			    exit( -1 );
+			}
 			break;
 		case 'z':
 			compression_level=atoi(optarg);
@@ -1751,10 +1858,10 @@ int main(int argc, char **argv)
 			break;
 		default:
 			fprintf(stderr,"c=%d\n", c);
-		}	
+		}
 
 	}
-	if (optind != argc-1) 
+	if (optind != argc-1)
 		usage(stderr);
 	result=argv[optind];
 	build_attrmap(map);
@@ -1767,17 +1874,17 @@ int main(int argc, char **argv)
 			nodes=fopen("nodes.tmp","wb+");
 		phase=1;
 		fprintf(stderr,"PROGRESS: Phase 1: collecting data\n");
-		phase1(stdin,ways,nodes);
+		phase1(input_file,ways,nodes);
 		if (ways)
 			fclose(ways);
 		if (nodes)
 			fclose(nodes);
 	}
-	if (end == 1 || dump_coordinates) 
+	if (end == 1 || dump_coordinates)
 		save_buffer("coords.tmp",&node_buffer);
 	if (end == 1)
 		exit(0);
-	if (start == 2) 
+	if (start == 2)
 		load_buffer("coords.tmp",&node_buffer);
 	if (start <= 2) {
 		if (process_ways) {
@@ -1790,7 +1897,7 @@ int main(int argc, char **argv)
 			fclose(ways);
 			if(!keep_tmpfiles)
 				remove("ways.tmp");
-		} else 
+		} else
 			fprintf(stderr,"PROGRESS: Skipping Phase 2\n");
 	}
 	free(node_buffer.base);

@@ -25,7 +25,7 @@ struct layout * layout_new(const char *name)
 		list_append(&l->l, &llayouts);
 	}
 	// setup default colors
-	l->bgcolor = (struct color) { 0xffff, 0xefef, 0xb7b7 };
+	l->bgcolor = (struct color) { 0xffff, 0xefef, 0xb7b7, 0xffff };
 	l->textbg = (struct color) { 0x0000, 0x0000, 0x0000 };
 	l->textfg = (struct color) { 0xffff, 0xffff, 0xffff };
 	return l;

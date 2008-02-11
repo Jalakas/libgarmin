@@ -69,8 +69,12 @@ log_open(struct log *this_)
 	if (this_->overwrite)
 		mode="w";
 	else
-		mode="a";
+		mode="r+";
 	this_->f=fopen(this_->filename_ex2, mode);
+	if (! this_->f)
+		this_->f=fopen(this_->filename_ex2, "w");
+	if (!this_->overwrite) 
+		fseek(this_->f, 0, SEEK_END);
 	this_->empty = !ftell(this_->f);
 }
 
@@ -78,7 +82,7 @@ static void
 log_close(struct log *this_)
 {
 	if (this_->trailer.len) 
-		fwrite(this_->header.data, 1, this_->trailer.len, this_->f);
+		fwrite(this_->trailer.data, 1, this_->trailer.len, this_->f);
 	fflush(this_->f);
 	fclose(this_->f);
 	this_->f=NULL;
@@ -87,6 +91,7 @@ log_close(struct log *this_)
 static void
 log_flush(struct log *this_)
 {
+	long pos;
 	if (this_->empty) {
 		if (this_->header.len) 
 			fwrite(this_->header.data, 1, this_->header.len, this_->f);
@@ -94,6 +99,14 @@ log_flush(struct log *this_)
 			this_->empty=0;
 	}
 	fwrite(this_->data.data, 1, this_->data.len, this_->f);
+	if (this_->trailer.len) {
+		pos=ftell(this_->f);
+		if (pos > 0) {
+			fwrite(this_->trailer.data, 1, this_->trailer.len, this_->f);
+			fseek(this_->f, pos, SEEK_SET);	
+		}
+	}
+	
 	fflush(this_->f);
 	g_free(this_->data.data);
 	this_->data.data=NULL;
@@ -133,9 +146,9 @@ log_timer(gpointer data)
 	int delta;
 	gettimeofday(&tv, NULL);
 	delta=(tv.tv_sec-this_->last_flush.tv_sec)*1000+(tv.tv_usec-this_->last_flush.tv_usec)/1000;
+	dbg(0,"delta=%d flush_time=%d\n", delta, this_->flush_time);
 	if (this_->flush_time && delta > this_->flush_time*1000)
 		log_flush(this_);
-	
 	return TRUE;
 }
 
@@ -159,10 +172,13 @@ log_new(struct attr **attrs)
 	flush_time=attr_search(attrs, NULL, attr_flush_time);
 	if (flush_time)
 		ret->flush_time=flush_time->u.num;
-	if (ret->flush_time) 
+	if (ret->flush_time) {
+		dbg(0,"interval %d\n", ret->flush_time*1000);
 		ret->timer=g_timeout_add(ret->flush_time*1000, log_timer, ret);
+	}
 	expand_filenames(ret);
 	log_open(ret);
+	gettimeofday(&ret->last_flush, NULL);
 	return ret;
 }
 

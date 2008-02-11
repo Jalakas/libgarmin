@@ -22,6 +22,8 @@ int navigation_register_callback(struct navigation *this_, enum attr_type type, 
 void navigation_unregister_callback(struct navigation *this_, enum attr_type type, struct callback *cb);
 struct map * navigation_get_map(struct navigation *this_);
 void navigation_init(void);
+void navigation_flush(struct navigation *this_);
+
 /* end of prototypes */
 #ifdef __cplusplus
 }
