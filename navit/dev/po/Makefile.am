@@ -1,6 +1,6 @@
 CATALOGS = @MOFILES@
 
-CLEANFILES = $(CATALOGS) navit.pot
+CLEANFILES = $(CATALOGS) navit.pot *.po
 
 # keep this sorted
 EXTRA_DIST = @POFILES@
