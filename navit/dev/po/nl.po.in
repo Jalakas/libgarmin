@@ -7,19 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Navit 0.0.4\n"
 "Report-Msgid-Bugs-To: \n"
-<<<<<<< nl.po
-<<<<<<< nl.po
-<<<<<<< nl.po
 "POT-Creation-Date: 2008-01-08 22:10+0200\n"
-=======
-"POT-Creation-Date: 2008-01-14 23:23+0100\n"
->>>>>>> 1.2
-=======
-"POT-Creation-Date: 2008-01-16 23:15+0100\n"
->>>>>>> 1.3
-=======
-"POT-Creation-Date: 2008-01-24 10:49+0100\n"
->>>>>>> 1.4
 "PO-Revision-Date: 2007-07-10 21:53+0200\n"
 "Last-Translator: afaber <afaber_at_sourceforge_dot._net>\n"
 "Language-Team: afaber\n"
@@ -150,25 +138,12 @@ msgstr "error"
 msgid "Turn %1$s%2$s %3$s"
 msgstr "%3$s %1$s%2$s afslaan"
 
-<<<<<<< nl.po
 #: ../src/navigation.c:453
-=======
-# over 200 meter links aanhouden
-#: ../src/navigation.c:453
->>>>>>> 1.2
 #, c-format
 msgid "You have reached your destination %s"
 msgstr "%s bestemming bereikt"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:652 ../src/gui/gtk/gui_gtk_action.c:197
-=======
 #: ../src/navit.c:652 ../src/gui/gtk/gui_gtk_action.c:198
->>>>>>> 1.2
-=======
-#: ../src/navit.c:654 ../src/gui/gtk/gui_gtk_action.c:198
->>>>>>> 1.4
 msgid "Layout"
 msgstr "Layout"
 
@@ -208,41 +183,15 @@ msgstr "Afstand"
 msgid "Destination Time"
 msgstr "Aankomsttijd"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:866 ../src/gui/gtk/gui_gtk_action.c:201
-=======
-#: ../src/navit.c:866 ../src/gui/gtk/gui_gtk_action.c:202
->>>>>>> 1.2
-=======
 #: ../src/navit.c:868 ../src/gui/gtk/gui_gtk_action.c:202
->>>>>>> 1.4
 msgid "Roadbook"
 msgstr "Route"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
 #: ../src/navit.c:1099 ../src/gui/gtk/destination.c:368
-#: ../src/gui/gtk/gui_gtk_action.c:196
-=======
-#: ../src/navit.c:1099 ../src/gui/gtk/destination.c:368
-=======
-#: ../src/navit.c:1101 ../src/gui/gtk/destination.c:368
->>>>>>> 1.4
-#: ../src/gui/gtk/gui_gtk_action.c:197
->>>>>>> 1.2
 msgid "Map"
 msgstr "Kaart"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
 #: ../src/navit.c:1106 ../src/gui/gtk/gui_gtk_action.c:195
-=======
-#: ../src/navit.c:1106 ../src/gui/gtk/gui_gtk_action.c:196
->>>>>>> 1.2
-=======
-#: ../src/navit.c:1108 ../src/gui/gtk/gui_gtk_action.c:196
->>>>>>> 1.4
 msgid "Route"
 msgstr "Route"
 
@@ -581,159 +530,82 @@ msgstr "Gebied"
 msgid "Bookmark"
 msgstr "Markeren"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/destination.c:370 ../src/gui/gtk/gui_gtk_action.c:207
-=======
 #: ../src/gui/gtk/destination.c:370 ../src/gui/gtk/gui_gtk_action.c:208
->>>>>>> 1.2
 msgid "Destination"
 msgstr "Bestemming"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:194
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:195
->>>>>>> 1.2
 msgid "Display"
 msgstr "Tonen"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:198
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:199
->>>>>>> 1.2
 msgid "ZoomOut"
 msgstr "Verkleinen"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:199
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:200
->>>>>>> 1.2
 msgid "ZoomIn"
 msgstr "Vergroten"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:200
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:201
->>>>>>> 1.2
 msgid "Refresh"
 msgstr "Verversen"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:203 ../src/gui/gtk/gui_gtk_action.c:205
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:204 ../src/gui/gtk/gui_gtk_action.c:206
->>>>>>> 1.2
 msgid "Info"
 msgstr "Info"
 
-<<<<<<< nl.po
 #: ../src/gui/gtk/gui_gtk_action.c:208
-=======
-#: ../src/gui/gtk/gui_gtk_action.c:209
->>>>>>> 1.2
 msgid "Clear"
 msgstr "Wissen"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:209
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:210
->>>>>>> 1.2
 msgid "Test"
 msgstr "Test"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:210
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:211
->>>>>>> 1.2
 msgid "_Quit"
 msgstr "Beëindigen"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:217
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:218
->>>>>>> 1.2
 msgid "Cursor"
 msgstr "Cursor"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:218
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:219
->>>>>>> 1.2
 msgid "Tracking"
 msgstr "Volgen"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:219
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:220
->>>>>>> 1.2
 msgid "Orientation"
 msgstr "Oriëntatie"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:221 ../src/gui/gtk/gui_gtk_action.c:223
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:222 ../src/gui/gtk/gui_gtk_action.c:224
->>>>>>> 1.2
 msgid "Fullscreen"
 msgstr "Beeldvullend"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:231
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:232
->>>>>>> 1.2
 msgid "Data"
 msgstr "Data"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:232
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:233
->>>>>>> 1.2
 msgid "VisibleBlocks"
 msgstr "Toon blokken"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:233
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:234
->>>>>>> 1.2
 msgid "VisibleTowns"
 msgstr "Sichtbare Städte"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:234
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:235
->>>>>>> 1.2
 msgid "VisiblePolys"
 msgstr "Toon polygonen"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:235
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:236
->>>>>>> 1.2
 msgid "VisibleStreets"
 msgstr "Toon straten"
 
-<<<<<<< nl.po
-#: ../src/gui/gtk/gui_gtk_action.c:236
-=======
 #: ../src/gui/gtk/gui_gtk_action.c:237
->>>>>>> 1.2
 msgid "VisiblePoints"
 msgstr "Toon punten"
 
-<<<<<<< nl.po
 #~ msgid "RouteGraph"
 #~ msgstr "Route-Graph"
 
@@ -760,7 +632,7 @@ msgstr "Toon punten"
 
 #~ msgid "in %d kilometers"
 #~ msgstr "in %d Kilometers"
-=======
+
 #: ../src/gui/gtk/gui_gtk_statusbar.c:48 ../src/gui/gtk/gui_gtk_statusbar.c:83
 msgid "N"
 msgstr "N"
@@ -801,4 +673,3 @@ msgstr "Route %4.0fkm    %02d:%02d Aankomsttijd"
 #: ../src/gui/gtk/gui_gtk_statusbar.c:156
 msgid "Route 0000km  0+00:00 ETA"
 msgstr "Route 0000km  0+00:00 Aankomsttijd"
->>>>>>> 1.2

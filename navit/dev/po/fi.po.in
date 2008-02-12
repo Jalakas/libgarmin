@@ -7,15 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Navit 0.0.4\n"
 "Report-Msgid-Bugs-To: \n"
-<<<<<<< fi.po
-<<<<<<< fi.po
 "POT-Creation-Date: 2008-01-15 01:11+0200\n"
-=======
-"POT-Creation-Date: 2008-01-16 23:15+0100\n"
->>>>>>> 1.5
-=======
-"POT-Creation-Date: 2008-01-24 10:49+0100\n"
->>>>>>> 1.6
 "PO-Revision-Date: 2007-07-10 21:53+0200\n"
 "Last-Translator: Ossi Berg <o.berg@mail.com>\n"
 "Language-Team: Ossi Berg <o.berg@mail.com>\n"
@@ -618,10 +610,6 @@ msgstr "Näkyvät kadut"
 msgid "VisiblePoints"
 msgstr "Näkyvät pisteet"
 
-<<<<<<< fi.po
-#~ msgid "RouteGraph"
-#~ msgstr "Tiepiirros"
-=======
 #: ../src/gui/gtk/gui_gtk_statusbar.c:48 ../src/gui/gtk/gui_gtk_statusbar.c:83
 msgid "N"
 msgstr ""
@@ -662,10 +650,6 @@ msgstr ""
 #: ../src/gui/gtk/gui_gtk_statusbar.c:156
 msgid "Route 0000km  0+00:00 ETA"
 msgstr ""
-
-#~ msgid "RouteGraph"
-#~ msgstr "Tiepiirros"
->>>>>>> 1.5
 
 #~ msgid "two kilometers"
 #~ msgstr "kaksi kilometriä"

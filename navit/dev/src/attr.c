@@ -115,7 +115,7 @@ attr_to_text(struct attr *attr, struct map *map, int pretty)
 	}
 	if (type >= attr_type_int_begin && type <= attr_type_int_end) 
 		return g_strdup_printf("%d", attr->u.num);
-	return g_strdup("(no text)");	
+	return g_strdup("(no text)");
 }
 
 struct attr *
