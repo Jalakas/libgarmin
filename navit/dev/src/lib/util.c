@@ -2,6 +2,18 @@
 #include <ctype.h>
 #include "util.h"
 
+char *
+convert2utf8(const char *charset, char *str)
+{
+	return g_convert(str, -1,"utf-8",charset,NULL,NULL,NULL);
+}
+
+void
+freeutf8(char *str)
+{
+	g_free(str);
+}
+
 void
 strtoupper(char *dest, const char *src)
 {

@@ -31,6 +31,7 @@
 #include "track.h"
 #include "vehicle.h"
 #include "color.h"
+#include "layout.h"
 
 #define _(STRING)    gettext(STRING)
 /**
@@ -1205,6 +1206,8 @@ int
 navit_set_attr(struct navit *this_, struct attr *attr)
 {
 	int dir=0, orient_old=0, attr_updated=0;
+	GList *layouts;
+	struct layout *l;
 
 	switch (attr->type) {
 	case attr_cursor:
@@ -1233,6 +1236,17 @@ navit_set_attr(struct navit *this_, struct attr *attr)
 		if (orient_old != this_->orient_north_flag) {
 			navit_draw(this_);
 			attr_updated=1;
+		}
+		break;
+	case attr_layout:
+		layouts = this_->layouts;
+		while (layouts) {
+			l=layouts->data;
+			if(!strcmp(attr->u.str,l->name) && this_->layout_current!=l) {
+				this_->layout_current=l;
+				attr_updated=1;
+			}
+			layouts=g_list_next(layouts);
 		}
 		break;
 	default:
