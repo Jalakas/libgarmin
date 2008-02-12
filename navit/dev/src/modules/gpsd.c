@@ -4,100 +4,110 @@
 #include <glib.h>
 #include <math.h>
 #include "debug.h"
-#include "callback.h"
-#include "plugin.h"
+#include "module.h"
 #include "coord.h"
-#include "item.h"
-#include "vehicle.h"
+#include "notify.h"
+#include "gpssource.h"
 
-static struct vehicle_priv {
-	char *source;
-	struct callback_list *cbl;
+#define IOFLAGS (G_IO_IN | G_IO_ERR | G_IO_HUP)
+
+static list_head(lgpsd)
+
+struct gpsd_priv {
+	list_t l;
+	struct gps_source *src;
 	GIOChannel *iochan;
 	guint watch;
 	struct gps_data_t *gps;
-	struct coord_geo geo;
-	double speed;
-	double direction;
-	double height;
-	int status;
-	int sats;
-	int sats_used;
-} *vehicle_last;
+	struct gps_data data;
+	int good_speed;
+	int backoff;
+	char *url;
+};
 
-static gboolean vehicle_gpsd_io(GIOChannel * iochan,
-				GIOCondition condition, gpointer t);
+static struct gpsd_priv *polled_priv;
 
-
+static gboolean gpsd_io(GIOChannel * iochan, GIOCondition condition, gpointer t);
 
 static void
-vehicle_gpsd_callback(struct gps_data_t *data, char *buf, size_t len,
+gpsd_callback(struct gps_data_t *data, char *buf, size_t len,
 		      int level)
 {
-	struct vehicle_priv *priv = vehicle_last;
-	// If data->fix.speed is NAN, then the drawing gets jumpy. 
-	if (isnan(data->fix.speed)) {
-		return;
-	}
+	struct gpsd_priv * priv = polled_priv;
 
-	if (data->set & SPEED_SET) {
-		priv->speed = data->fix.speed * 3.6;
-		data->set &= ~SPEED_SET;
-	}
-	if (data->set & TRACK_SET) {
-		priv->direction = data->fix.track;
-		data->set &= ~TRACK_SET;
-	}
-	if (data->set & ALTITUDE_SET) {
-		priv->height = data->fix.altitude;
-		data->set &= ~ALTITUDE_SET;
-	}
-	if (data->set & SATELLITE_SET) {
-		priv->sats_used = data->satellites_used;
-		priv->sats = data->satellites;
-		data->set &= ~SATELLITE_SET;
-	}
-	if (data->set & STATUS_SET) {
-		priv->status = data->status;
-		data->set &= ~STATUS_SET;
-	}
-	if (data->set & PDOP_SET) {
-		dbg(0, "pdop : %g\n", data->pdop);
-		data->set &= ~PDOP_SET;
-	}
-	if (data->set & LATLON_SET) {
-		priv->geo.lat = data->fix.latitude;
-		priv->geo.lng = data->fix.longitude;
-		dbg(1,"lat=%f lng=%f\n", priv->geo.lat, priv->geo.lng);
-		callback_list_call_0(priv->cbl);
-		data->set &= ~LATLON_SET;
+	if (priv->gps) {
+		priv->data.fix = data.fix.mode;
+
+		// If data->fix.speed is NAN, then the drawing gets jumpy. 
+		if (isnan(data->fix.speed)) {
+			priv->good_speed = 0;
+			return;
+		}
+		priv->good_speed++;
+
+		if (data->set & SPEED_SET) {
+			priv->data.speed = data->fix.speed * MPS_TO_KPH;
+			data->set &= ~SPEED_SET;
+		}
+		if (data->set & TRACK_SET) {
+			if (priv->good_speed > 2)
+				priv->data.direction = data->fix.track;
+			else
+				priv->data.direction = NAN;
+			data->set &= ~TRACK_SET;
+		}
+		if (data->set & ALTITUDE_SET) {
+			priv->data.height = data->fix.altitude;
+			data->set &= ~ALTITUDE_SET;
+		}
+		if (data->set & SATELLITE_SET) {
+			priv->data.sats_used = data->satellites_used;
+			priv->data.sats = data->satellites;
+			data->set &= ~SATELLITE_SET;
+		}
+		if (data->set & STATUS_SET) {
+			priv->data.status = data->status;
+			data->set &= ~STATUS_SET;
+		}
+		if (data->set & PDOP_SET) {
+			dbg(0, "pdop : %g\n", data->pdop);
+			data->set &= ~PDOP_SET;
+		}
+		if (data->set & LATLON_SET) {
+			priv->data.geo.lat = data->fix.latitude;
+			priv->data.geo.lng = data->fix.longitude;
+			dbg(1,"lat=%f lng=%f\n", priv->geo.lat, priv->geo.lng);
+			data->set &= ~LATLON_SET;
+			gps_source_data(priv->src, &priv->data);
+		}
+	} else {
+		priv->data.fix = GPS_NONE;
+		gps_source_data(priv->src, &priv->data);
 	}
 }
 
 static int
-vehicle_gpsd_open(struct vehicle_priv *priv)
+gpsd_open(struct gpsd_priv *priv)
 {
-	char *source = g_strdup(priv->source);
+	char *source = strdup(priv->url);
 	char *colon = index(source + 7, ':');
 	if (colon) {
 		*colon = '\0';
 		priv->gps = gps_open(source + 7, colon + 1);
 	} else
 		priv->gps = gps_open(source + 7, NULL);
-	g_free(source);
+	free(source);
 	if (!priv->gps)
 		return 0;
 	gps_query(priv->gps, "w+x\n");
-	gps_set_raw_hook(priv->gps, vehicle_gpsd_callback);
+	gps_set_raw_hook(priv->gps, gpsd_callback);
 	priv->iochan = g_io_channel_unix_new(priv->gps->gps_fd);
-	priv->watch =
-	    g_io_add_watch(priv->iochan, G_IO_IN | G_IO_ERR | G_IO_HUP,
-			   vehicle_gpsd_io, priv);
+	priv->watch = g_io_add_watch(priv->iochan, IOFLAGS, gpsd_io, priv);
 	return 1;
 }
 
 static void
-vehicle_gpsd_close(struct vehicle_priv *priv)
+gpsd_close(struct gpsd_priv *priv)
 {
 	GError *error = NULL;
 
@@ -116,74 +126,64 @@ vehicle_gpsd_close(struct vehicle_priv *priv)
 }
 
 static gboolean
-vehicle_gpsd_io(GIOChannel * iochan, GIOCondition condition, gpointer t)
+gpsd_io(GIOChannel * iochan, GIOCondition condition, gpointer t)
 {
-	struct vehicle_priv *priv = t;
+	struct gpsd_priv *priv = t;
 
-	dbg(1, "enter condition=%d\n", condition);
+	debug(10, "enter condition=%d\n", condition);
 	if (condition == G_IO_IN) {
 		if (priv->gps) {
-			vehicle_last = priv;
-			gps_poll(priv->gps);
+			polled_priv = priv;
+			if (gps_poll(priv->gps) !=0) {
+				goto err;
+			}
 		}
 		return TRUE;
 	}
+err:
+	gpsd_close(priv);
+	gpsd_start_reconnect(priv);
 	return FALSE;
 }
 
 static void
-vehicle_gpsd_destroy(struct vehicle_priv *priv)
+gpsd_destroy(struct vehicle_priv *priv)
 {
-	vehicle_gpsd_close(priv);
+	gpsd_close(priv);
 	if (priv->source)
 		g_free(priv->source);
 	g_free(priv);
 }
 
-static int
-vehicle_gpsd_position_attr_get(struct vehicle_priv *priv,
-			       enum attr_type type, struct attr *attr)
+static gboolean
+gpsd_reconnect(gpointer data)
 {
-	switch (type) {
-	case attr_position_height:
-		attr->u.numd = &priv->height;
-		break;
-	case attr_position_speed:
-		attr->u.numd = &priv->speed;
-		break;
-	case attr_position_direction:
-		attr->u.numd = &priv->direction;
-		break;
-	case attr_position_sats:
-		attr->u.num = priv->sats;
-		break;
-	case attr_position_sats_used:
-		attr->u.num = priv->sats_used;
-		break;
-	case attr_position_coord_geo:
-		attr->u.coord_geo = &priv->geo;
-		break;
-	default:
-		return 0;
-	}
-	attr->type = type;
-	return 1;
+	struct gpsd_priv *priv = data;
+	if (priv->gps)
+		return FALSE;
+	if (gpsd_open(priv))
+		return FALSE;
+	polled_priv = priv;
+	gpsd_callback(NULL, NULL, 0, 0);
+	return TRUE;
 }
 
-struct vehicle_methods vehicle_gpsd_methods = {
-	vehicle_gpsd_destroy,
-	vehicle_gpsd_position_attr_get,
-};
+static void
+gpsd_start_reconnect(struct gpsd_priv *priv)
+{
+	priv->backoff = 1;
+	g_timeout_add_seconds(priv->backoff, gpsd_reconnect, priv); 
+}
 
 static struct vehicle_priv *
 vehicle_gpsd_new_gpsd(struct vehicle_methods
-		      *meth, struct callback_list
-		      *cbl, struct attr **attrs)
+			*meth, struct callback_list
+			*cbl, struct attr **attrs)
 {
 	struct vehicle_priv *ret;
 	struct attr *source;
 
-	dbg(1, "enter\n");
+	ENTER();
 	source = attr_search(attrs, NULL, attr_source);
 	ret = g_new0(struct vehicle_priv, 1);
 	ret->source = g_strdup(source->u.str);
@@ -191,14 +191,65 @@ vehicle_gpsd_new_gpsd(struct vehicle_methods
 	*meth = vehicle_gpsd_methods;
 	if (vehicle_gpsd_open(ret))
 		return ret;
-	dbg(0, "Failed to open '%s'\n", ret->source);
+	gpsd_start_reconnect(priv);
 	vehicle_gpsd_destroy(ret);
 	return NULL;
 }
 
-void
-plugin_init(void)
+static 
+int gpsd_create(char *name, int id, char *url)
 {
-	dbg(1, "enter\n");
-	plugin_register_vehicle_type("gpsd", vehicle_gpsd_new_gpsd);
+	struct gps_source *src;
+	struct gpsd_priv *priv;
+
+	priv = calloc(1, sizeof(*priv));
+	if (!priv)
+		return -1;
+	priv->url = strdup(url);
+	if (!priv->url) {
+		free(priv);
+		return NULL;
+	}
+	src = gps_source_alloc(name);
+	if (!src) {
+		free(priv);
+		return -1;
+	}
+	src->id = id;
+	priv->src = src;
+	list_append(&priv->l, &lgpsd);
+	gps_register_source(src);
+	gpsd_reconnect(priv);
+	return 1;
 }
+
+
+#define MODNAME		"gpsd"
+
+static int load_config(int reload)
+{
+	
+}
+
+static int gpsd_load(void)
+{
+	ENTER();
+	load_config(0);
+	return M_OK;
+}
+
+static int gpsd_reconfigure(void)
+{
+	ENTER();
+	load_config(1);
+	return M_OK;
+}
+
+static int gpsd_unload(void)
+{
+	ENTER();
+	return M_OK;
+}
+
+NAVIT_MODULE(gpsd_load,gpsd_reconfigure,gpsd_unload);
+

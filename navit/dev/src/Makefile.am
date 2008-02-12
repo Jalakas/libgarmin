@@ -24,7 +24,7 @@ navit_SOURCES = attr.c callback.c compass.c coord.c country.c cursor.c data_wind
 	param.h plugin.h point.h plugin_def.h projection.h popup.h route.h profile.h search.h speech.h statusbar.h \
 	transform.h track.h util.h vehicle.h xmlconfig.h \
 	notify.c notify.h module.c module.h \
-	color.c
+	color.c gpssource.c gpssource.h
 
 osm2navit_SOURCES = osm2navit.c item.c debug.c zipfile.h
 

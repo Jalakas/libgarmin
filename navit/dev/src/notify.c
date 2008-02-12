@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include "list.h"
-
-typedef int (*notify_fn)(unsigned int what, void *data);
+#include "notify.h"
 
 static list_head(llisteners);
 
