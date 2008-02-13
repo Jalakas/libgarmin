@@ -1243,7 +1243,8 @@ navit_set_attr(struct navit *this_, struct attr *attr)
 		while (layouts) {
 			l=layouts->data;
 			if(!strcmp(attr->u.str,l->name) && this_->layout_current!=l) {
-				this_->layout_current=l;
+				layout_activate(l);
+				navit_set_layout(this_, l);
 				attr_updated=1;
 			}
 			layouts=g_list_next(layouts);
