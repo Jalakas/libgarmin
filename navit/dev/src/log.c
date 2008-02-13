@@ -69,7 +69,7 @@ log_open(struct log *this_)
 	if (this_->overwrite)
 		mode="w";
 	else
-		mode="r+";
+		mode="a+";
 	this_->f=fopen(this_->filename_ex2, mode);
 	if (! this_->f)
 		this_->f=fopen(this_->filename_ex2, "w");
