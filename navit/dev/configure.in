@@ -398,6 +398,14 @@ AC_SUBST(POFILES)
 AM_GNU_GETTEXT_VERSION
 AM_GNU_GETTEXT
 
+PKG_CHECK_MODULES(DBUS, [dbus], [dbus_pkgconfig=yes], [dbus_pkgconfig=no])
+if test "x$dbus_pkgconfig" = "xyes"; then
+   AC_DEFINE(HAVE_DBUS, 1, [Define to 1 if you have dbus])
+fi
+AC_SUBST(DBUS_CFLAGS)
+AC_SUBST(DBUS_LIBS)
+AM_CONDITIONAL(HAVEDBUS, [test "x$dbus_pkgconfig" = "xyes"])
+
 LIBS="$LIBS -lm -rdynamic"
 
 PACKAGE=navit

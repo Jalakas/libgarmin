@@ -11,3 +11,11 @@ gpsd_la_SOURCES = gpsd.c
 gpsd_la_LIBADD = @GPSD_LIBS@
 gpsd_la_LDFLAGS =  -module
 endif
+
+if HAVEDBUS
+lib_LTLIBRARIES += dbusgps.la
+AM_CPPFLAGS += @DBUS_CFLAGS@
+dbusgps_la_SOURCES = dbusgps.c
+dbusgps_la_LIBADD = @DBUS_LIBS@
+dbusgps_la_LDFLAGS =  -module
+endif
