@@ -5,7 +5,7 @@
 #include "callback.h"
 
 struct callback {
-	void (*func)(void);
+	void (*func)();
 	int pcount;
 	enum attr_type type;
 	void *p[0];

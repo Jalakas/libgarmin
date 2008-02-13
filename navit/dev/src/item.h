@@ -51,6 +51,7 @@ int item_coord_get(struct item *it, struct coord *c, int count);
 int item_coord_is_segment(struct item *it);
 void item_attr_rewind(struct item *it);
 int item_attr_get(struct item *it, enum attr_type attr_type, struct attr *attr);
+int item_attr_getgroup(struct item *it, struct attr_group *group);
 struct item *item_new(char *type, int zoom);
 enum item_type item_from_name(const char *name);
 char *item_to_name(enum item_type item);
