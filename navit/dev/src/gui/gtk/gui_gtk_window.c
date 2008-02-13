@@ -4,6 +4,7 @@
 #if !defined(GDK_Book) || !defined(GDK_Calendar)
 #include <X11/XF86keysym.h>
 #endif
+#include <string.h>
 #include <libintl.h>
 #include <gtk/gtk.h>
 #include "config.h"

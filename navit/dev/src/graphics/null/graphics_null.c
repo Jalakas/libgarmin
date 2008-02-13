@@ -71,8 +71,8 @@ static struct graphics_gc_methods gc_methods = {
 	gc_destroy,
 	gc_set_linewidth,
 	gc_set_dashes,	
-	gc_set_foreground,	
-	gc_set_background	
+	gc_set_foreground,
+	gc_set_background
 };
 
 static struct graphics_gc_priv *gc_new(struct graphics_priv *gr, struct graphics_gc_methods *meth)
@@ -83,7 +83,7 @@ static struct graphics_gc_priv *gc_new(struct graphics_priv *gr, struct graphics
 
 
 static struct graphics_image_priv *
-image_new(struct graphics_priv *gr, struct graphics_image_methods *meth, char *name, int *w, int *h)
+image_new(struct graphics_priv *gr, struct graphics_image_methods *meth, char *name, int *w, int *h, struct point *hot)
 {
 	return &graphics_image_priv;
 }

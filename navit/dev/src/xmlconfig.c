@@ -131,7 +131,7 @@ convert_number(const char *val)
 static int
 xmlconfig_config(struct xmlstate *state)
 {
-	state->element_object = 1;
+	state->element_object = (void *)1;
 	return 1;
 }
 

@@ -288,7 +288,7 @@ static int gui_run_main_loop(struct gui_priv *this_)
 		SDL_GL_SwapBuffers();
 	}
 	g_source_destroy(timeout);
-
+	return 1;
 }
 
 static struct menu_priv *
@@ -379,7 +379,7 @@ bool BookmarkGo(const char * name)
 		}
 		bookmark_search=bookmark_search->next;
 	}
-
+	return TRUE;
 }
 
 bool FormerDestGo(const char * name)
@@ -394,7 +394,7 @@ bool FormerDestGo(const char * name)
 		}
 		former_dest_search=former_dest_search->next;
 	}
-
+	return TRUE;
 }
 static struct menu_priv *
 gui_sdl_toolbar_new(struct gui_priv *this_, struct menu_methods *meth)
@@ -478,6 +478,7 @@ bool ToggleView(const CEGUI::EventArgs& event)
 {
 	VIEW_MODE=!VIEW_MODE;
 	init_GL();
+	return TRUE;
 }
 
 bool MoveCamera(const CEGUI::EventArgs& event){
@@ -488,6 +489,7 @@ bool MoveCamera(const CEGUI::EventArgs& event){
 	if (eyeZ>-100){
 		eyeZ=-100;
 	}
+	return TRUE;
 }
 
 

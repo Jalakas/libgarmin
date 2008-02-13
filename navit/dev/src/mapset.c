@@ -1,5 +1,6 @@
 #include <glib.h>
 #include <glib/gprintf.h>
+#include <string.h>
 #include "debug.h"
 #include "item.h"
 #include "mapset.h"

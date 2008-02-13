@@ -14,7 +14,7 @@
 #include "coord.h"
 #include "country.h"
 #include "string.h"
-
+#define TRUE 1
 // Library for window switching (-> nGhost)
 #include "wmcontrol.h"
 
@@ -103,6 +103,7 @@ bool Handle_Virtual_Key_Down(const CEGUI::EventArgs& event){
 			break;
 	}
 	handle_destination_change();
+	return TRUE;
 }
 
 bool handleItemSelect(int r)
