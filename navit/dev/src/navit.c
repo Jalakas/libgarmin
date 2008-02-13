@@ -32,6 +32,7 @@
 #include "vehicle.h"
 #include "color.h"
 #include "layout.h"
+#include "notify.h"
 
 #define _(STRING)    gettext(STRING)
 /**
@@ -1055,6 +1056,103 @@ navit_add_menu_windows_items(struct navit *this_, struct menu *men)
 	}
 }
 
+static int
+navit_set_attributes(unsigned int what, void *priv, void *data)
+{
+	struct navit *this_ = priv;
+	struct attr_group *ag = data;
+	int dir=0, orient_old=0;
+	GList *layouts;
+	struct layout *l;
+	struct attr *attr;
+	int i;
+
+	for (i=0; i < ag->count; i++) {
+		attr = attr_group_get(ag, i);
+		if (!attr)
+			continue;
+		switch (attr->type) {
+		case attr_cursor:
+			if (this_->cursor_flag != !!attr->u.num) {
+				this_->cursor_flag=!!attr->u.num;
+			}
+			break;
+		case attr_tracking:
+			if (this_->tracking_flag != !!attr->u.num) {
+				this_->tracking_flag=!!attr->u.num;
+			}
+			break;
+		case attr_orientation:
+			orient_old=this_->orient_north_flag;
+			this_->orient_north_flag=!!attr->u.num;
+			if (this_->orient_north_flag) {
+				dir = 0;
+			} else {
+				if (this_->vehicle) {
+					dir = this_->vehicle->dir;
+				}
+			}
+			transform_set_angle(this_->trans, dir);
+			if (orient_old != this_->orient_north_flag) {
+				navit_draw(this_);
+			}
+			break;
+		case attr_layout:
+			layouts = this_->layouts;
+			while (layouts) {
+				l=layouts->data;
+				if(!strcmp(attr->u.str,l->name) && this_->layout_current!=l) {
+					layout_activate(l);
+					navit_set_layout(this_, l);
+					navit_draw(this_);
+					break;
+				}
+				layouts=g_list_next(layouts);
+			}
+			break;
+		default:
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int
+navit_get_attributes(unsigned int what, void *priv, void *data)
+{
+	struct navit *this_ = priv;
+	struct attr_group *ag = data;
+	struct attr *attr;
+	int i;
+	for (i=0; i < ag->count; i++) {
+		attr = attr_group_get_attr(ag, i);
+		if (!attr)
+			continue;
+		switch (attr->type) {
+		case attr_cursor:
+			attr_group_set_intvalue(ag, attr_cursor, this_->cursor_flag); 
+			break;
+		case attr_tracking:
+			attr_group_set_intvalue(ag, attr_cursor, this_->tracking_flag); 
+			break;
+		case attr_orientation:
+			attr_group_set_intvalue(ag, attr_cursor, this_->orient_north_flag); 
+			break;
+		default:
+			break;
+		}
+	}
+	notify(NOTIFY_NAVIT_ATTRS, ag);
+	return 1;
+}
+
+static void
+navit_register_notifications(struct navit *nav)
+{
+	listen_for(NOTIFY_NAVIT_SET, navit_set_attributes, nav); 
+	listen_for(NOTIFY_NAVIT_GET, navit_get_attributes, nav); 
+}
+
 void
 navit_init(struct navit *this_)
 {
@@ -1063,6 +1161,9 @@ navit_init(struct navit *this_)
 	struct map *map;
 	GList *l;
 	struct navit_vehicle *nv;
+
+	// FIXME correct order
+	navit_register_notifications(this_);
 
 	if (!this_->gui) {
 		g_warning("failed to instantiate gui '%s'\n",this_->gui_type);

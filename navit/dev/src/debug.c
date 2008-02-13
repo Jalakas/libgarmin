@@ -84,7 +84,7 @@ debug_printf(int level, const char *module, const int mlen,const char *function,
 }
 
 
-
+void 
 debug_log(int level, const char *module, const char *function, const char *fmt, ...)
 {
 	

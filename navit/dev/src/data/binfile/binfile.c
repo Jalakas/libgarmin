@@ -359,7 +359,8 @@ map_rect_get_item_byid_binfile(struct map_rect_priv *mr, int id_hi, int id_lo)
 
 static struct map_methods map_methods_binfile = {
 	projection_mg,
-	"utf-8",
+//	"utf-8",
+	NULL,
 	map_destroy_binfile,
 	map_rect_new_binfile,
 	map_rect_destroy_binfile,

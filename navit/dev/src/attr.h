@@ -70,6 +70,7 @@ struct map;
 char *attr_to_text(struct attr *attr, struct map *map, int pretty);
 int attr_group_set_intvalue(struct attr_group *ag, enum attr_type type, int val);
 int attr_group_clear(struct attr_group *ag, enum attr_type type);
+struct attr *attr_group_get_attr(struct attr_group *ag, int idx);
 
 /* end of prototypes */
 #endif

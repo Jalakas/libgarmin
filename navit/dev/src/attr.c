@@ -263,6 +263,14 @@ attr_group_get(struct attr_group *ag, int idx)
 }
 
 struct attr *
+attr_group_get_attr(struct attr_group *ag, int idx)
+{
+	if (idx >= ag->count)
+		return NULL;
+	return &ag->attrs[idx];
+}
+
+struct attr *
 attr_group_gettype(struct attr_group *ag, enum attr_type type)
 {
 	int i;

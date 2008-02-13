@@ -9,6 +9,7 @@
 #include "file.h"
 #include "item.h"
 #include "debug.h"
+#include "text_buffer.h"
 #include "log.h"
 
 struct log_data {
@@ -224,3 +225,52 @@ log_destroy(struct log *this_)
 	log_close(this_);
 	g_free(this_);
 }
+
+#define LF_OVERWRITE	(1<<0)
+#define LF_ROTATE	(1<<1)
+#define LF_BUFFERED	(1<<2)
+#define LF_REOPEN	(1<<3)
+
+struct log_file {
+	FILE *logfp;
+	int flags;
+	int (*prefix_fn)(int level);
+	char *filename;
+	ssize_t maxsize;
+	int flush_size;
+	int flush_time;
+	tb_t tbuf;
+};
+
+struct log_file *logfile_alloc(int flags, char *file, int (*prefix_fn)(int level),
+		ssize_t maxsize, int flush_size, int flush_time)
+{
+	struct log_file *lf;
+	lf = calloc(1, sizeof(*lf));
+	lf->filename = strdup(file);
+	if (!lf->filename) {
+		free(lf);
+		return NULL;
+	}
+	lf->flags = flags;
+	lf->prefix_fn = prefix_fn;
+	lf->maxsize = maxsize;
+	lf->flush_size = flush_size;
+	lf->flush_time = flush_time;
+	if (flags & LF_BUFFERED) {
+		tb_init(&lf->tbuf, flush_size ? : 4096, TB_CLEAR_ON_GET);
+	}
+	return lf;
+}
+
+int logfile_open(struct log_file *lf)
+{
+	char *mode = "a";
+	if (lf->flags&LF_OVERWRITE)
+		mode = "w";
+	lf->logfp = fopen(lf->filename, mode);
+	if (lf->logfp)
+		return 1;
+	return -1;
+}
+
