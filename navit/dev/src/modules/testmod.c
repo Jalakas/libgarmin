@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "module.h"
 
-#define MODNAME		"testmod"
+#define MODNAME		testmod
 
 static int test_load(void)
 {
@@ -21,5 +21,5 @@ static int test_unload(void)
 	return M_OK;
 }
 
-NAVIT_MODULE(test_load,test_reconfigure,test_unload);
+NAVIT_MODULE(MODNAME, test_load,test_reconfigure,test_unload);
 

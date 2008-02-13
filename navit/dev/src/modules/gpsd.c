@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <config.h>
 #include <gps.h>
 #include <string.h>
@@ -5,13 +6,15 @@
 #include <math.h>
 #include "debug.h"
 #include "module.h"
+#include "list.h"
 #include "coord.h"
 #include "notify.h"
 #include "gpssource.h"
+#include "cfg.h"
 
 #define IOFLAGS (G_IO_IN | G_IO_ERR | G_IO_HUP)
 
-static list_head(lgpsd)
+static list_head(lgpsd);
 
 struct gpsd_priv {
 	list_t l;
@@ -23,11 +26,25 @@ struct gpsd_priv {
 	int good_speed;
 	int backoff;
 	char *url;
+	GSource *timeout;
+	guint tag;
+	time_t lastdata;
 };
 
 static struct gpsd_priv *polled_priv;
 
 static gboolean gpsd_io(GIOChannel * iochan, GIOCondition condition, gpointer t);
+
+static gboolean gpsd_timeout_cb(gpointer data);
+
+static void
+gpsd_restart_timeout(struct gpsd_priv *priv)
+{
+	g_source_destroy(priv->timeout);
+	priv->timeout = g_timeout_source_new(2000);
+	g_source_set_callback(priv->timeout, gpsd_timeout_cb, priv, NULL);
+	priv->tag = g_source_attach(priv->timeout, NULL);
+}
 
 static void
 gpsd_callback(struct gps_data_t *data, char *buf, size_t len,
@@ -35,8 +52,8 @@ gpsd_callback(struct gps_data_t *data, char *buf, size_t len,
 {
 	struct gpsd_priv * priv = polled_priv;
 
-	if (priv->gps) {
-		priv->data.fix = data.fix.mode;
+	if (priv->gps && data) {
+		priv->data.fix = data->fix.mode;
 
 		// If data->fix.speed is NAN, then the drawing gets jumpy. 
 		if (isnan(data->fix.speed)) {
@@ -76,14 +93,30 @@ gpsd_callback(struct gps_data_t *data, char *buf, size_t len,
 		if (data->set & LATLON_SET) {
 			priv->data.geo.lat = data->fix.latitude;
 			priv->data.geo.lng = data->fix.longitude;
-			dbg(1,"lat=%f lng=%f\n", priv->geo.lat, priv->geo.lng);
+			debug(1,"lat=%f lng=%f\n", priv->data.geo.lat, priv->data.geo.lng);
 			data->set &= ~LATLON_SET;
+			g_source_remove(priv->tag);
 			gps_source_data(priv->src, &priv->data);
+			gpsd_restart_timeout(priv);
+			priv->lastdata = time(0);
 		}
 	} else {
 		priv->data.fix = GPS_NONE;
 		gps_source_data(priv->src, &priv->data);
 	}
+}
+
+static gboolean
+gpsd_timeout_cb(gpointer data)
+{
+	struct gpsd_priv *p = data;
+	time_t now = time(0);
+	if (p->lastdata < now) {
+		debug(10, "Timeout\n");
+		polled_priv = p;
+		gpsd_callback(NULL, NULL, 0, 0);
+	}
+	return TRUE;
 }
 
 static int
@@ -99,10 +132,13 @@ gpsd_open(struct gpsd_priv *priv)
 	free(source);
 	if (!priv->gps)
 		return 0;
-	gps_query(priv->gps, "w+x\n");
-	gps_set_raw_hook(priv->gps, gpsd_callback);
 	priv->iochan = g_io_channel_unix_new(priv->gps->gps_fd);
 	priv->watch = g_io_add_watch(priv->iochan, IOFLAGS, gpsd_io, priv);
+	priv->timeout = g_timeout_source_new(1500);
+	g_source_set_callback(priv->timeout, gpsd_timeout_cb, priv, NULL);
+	priv->tag = g_source_attach(priv->timeout, NULL);
+	gps_query(priv->gps, "w+x\n");
+	gps_set_raw_hook(priv->gps, gpsd_callback);
 	return 1;
 }
 
@@ -123,36 +159,10 @@ gpsd_close(struct gpsd_priv *priv)
 		gps_close(priv->gps);
 		priv->gps = NULL;
 	}
-}
-
-static gboolean
-gpsd_io(GIOChannel * iochan, GIOCondition condition, gpointer t)
-{
-	struct gpsd_priv *priv = t;
-
-	debug(10, "enter condition=%d\n", condition);
-	if (condition == G_IO_IN) {
-		if (priv->gps) {
-			polled_priv = priv;
-			if (gps_poll(priv->gps) !=0) {
-				goto err;
-			}
-		}
-		return TRUE;
+	if (priv->timeout) {
+		g_source_destroy(priv->timeout);
+		priv->timeout = NULL;
 	}
-err:
-	gpsd_close(priv);
-	gpsd_start_reconnect(priv);
-	return FALSE;
-}
-
-static void
-gpsd_destroy(struct vehicle_priv *priv)
-{
-	gpsd_close(priv);
-	if (priv->source)
-		g_free(priv->source);
-	g_free(priv);
 }
 
 static gboolean
@@ -172,9 +182,42 @@ static void
 gpsd_start_reconnect(struct gpsd_priv *priv)
 {
 	priv->backoff = 1;
-	g_timeout_add_seconds(priv->backoff, gpsd_reconnect, priv); 
+	g_timeout_add(1000*priv->backoff, gpsd_reconnect, priv); 
 }
 
+static gboolean
+gpsd_io(GIOChannel * iochan, GIOCondition condition, gpointer t)
+{
+	struct gpsd_priv *priv = t;
+
+//	debug(10, "enter condition=%d\n", condition);
+	if (condition == G_IO_IN) {
+		if (priv->gps) {
+			polled_priv = priv;
+			if (gps_poll(priv->gps) !=0) {
+				goto err;
+			}
+		}
+		return TRUE;
+	}
+err:
+	gpsd_close(priv);
+	gpsd_start_reconnect(priv);
+	return FALSE;
+}
+
+static void
+gpsd_destroy(struct gpsd_priv *priv)
+{
+	gps_unregister_source(priv->src);
+	gpsd_close(priv);
+	if (priv->url)
+		g_free(priv->url);
+	g_free(priv);
+	
+}
+
+#if 0
 static struct vehicle_priv *
 vehicle_gpsd_new_gpsd(struct vehicle_methods
 			*meth, struct callback_list
@@ -195,7 +238,7 @@ vehicle_gpsd_new_gpsd(struct vehicle_methods
 	vehicle_gpsd_destroy(ret);
 	return NULL;
 }
-
+#endif
 static 
 int gpsd_create(char *name, int id, char *url)
 {
@@ -208,7 +251,7 @@ int gpsd_create(char *name, int id, char *url)
 	priv->url = strdup(url);
 	if (!priv->url) {
 		free(priv);
-		return NULL;
+		return -1;
 	}
 	src = gps_source_alloc(name);
 	if (!src) {
@@ -219,23 +262,55 @@ int gpsd_create(char *name, int id, char *url)
 	priv->src = src;
 	list_append(&priv->l, &lgpsd);
 	gps_register_source(src);
-	gpsd_reconnect(priv);
+	gpsd_start_reconnect(priv);
 	return 1;
 }
 
 
-#define MODNAME		"gpsd"
+#define MODNAME		gpsd
+#define GPSD_CFG	"sources.conf"
 
 static int load_config(int reload)
 {
-	
+	struct navit_cfg *cfg;
+	struct cfg_varval *var;
+	struct cfg_category *cat = NULL;
+	int id = 0;
+	int ret = 0;
+
+	cfg = navit_cfg_load(GPSD_CFG);
+	if (!cfg)
+		return -1;
+	while ((cat = navit_cfg_cats_walk(cfg, cat))) {
+		var = navit_cat_find_var(cat, "type");
+		if (var && !strcmp(cfg_var_value(var), "gpsd")) {
+			var = navit_cat_find_var(cat, "active");
+			if (!var || !cfg_var_true(var))
+				continue;
+			id = 0;
+			var = navit_cat_find_var(cat, "id");
+			if (var)
+				id = cfg_var_intvalue(var);
+			var = navit_cat_find_var(cat, "url");
+			if (var) {
+				if (gpsd_create(cfg_cat_name(cat), id,
+					cfg_var_value(var)) > 0)
+						ret ++;
+			}
+		}
+	}
+	navit_cfg_free(cfg);
+	return ret;
+
 }
 
 static int gpsd_load(void)
 {
 	ENTER();
-	load_config(0);
-	return M_OK;
+	if (load_config(0))
+		return M_OK;
+	// we do not have any sources 
+	return M_OK_UNLOAD;
 }
 
 static int gpsd_reconfigure(void)
@@ -251,5 +326,5 @@ static int gpsd_unload(void)
 	return M_OK;
 }
 
-NAVIT_MODULE(gpsd_load,gpsd_reconfigure,gpsd_unload);
+NAVIT_MODULE(MODNAME, gpsd_load,gpsd_reconfigure,gpsd_unload);
 

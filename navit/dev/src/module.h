@@ -14,14 +14,23 @@ struct navit_module {
 	int (*module_unload)(void);
 };
 
-
 void navit_modules_init(void);
 int navit_request_module(const char *name);
 
-#define NAVIT_MODULE(l,r,u)			\
-struct navit_module navit_module = {		\
-	.module_name = MODNAME,			\
+#ifndef STATIC
+#define NAVIT_MODULE(n,l,r,u)			\
+struct navit_module navit_module = {	\
+	.module_name = #n,			\
 	.module_load = l,			\
 	.module_reconfigure = r,		\
 	.module_unload = u,			\
 }
+#else
+#define NAVIT_MODULE(n,l,r,u)			\
+struct navit_module n##_navit_module = {	\
+	.module_name = #n,			\
+	.module_load = l,			\
+	.module_reconfigure = r,		\
+	.module_unload = u,			\
+}
+#endif

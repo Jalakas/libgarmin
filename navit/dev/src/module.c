@@ -19,6 +19,7 @@ struct module {
 	char *alias;
 	char *name;
 	int flags;
+	void *handle;
 	struct navit_module *mod;
 };
 
@@ -74,6 +75,7 @@ static int navit_load_module(struct module *m)
 		m->flags &= ~MF_ACTIVE;
 		return -1;
 	}
+	m->handle = handle;
 	m->mod = dlsym(handle, "navit_module");
 	return 0;
 }
@@ -107,9 +109,9 @@ static void navit_modules_start(void)
 	list_for_entry(m, &lmodules, l) {
 		if (!(m->flags&MF_ACTIVE) || m->flags&MF_ONDEMAND)
 			continue;
-		if (m->mod->module_load)
+		if (m->mod->module_load) {
 			m->mod->module_load();
-		else
+		} else
 			debug(0, "Warning no module_load function!\n");
 	}
 }

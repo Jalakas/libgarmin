@@ -23,7 +23,7 @@ void debug_printf(int level, const char *module, const int mlen, const char *fun
 
 #define debug(l,f...) fprintf(stderr, ## f)
 
-#define ENTER()		debug(10, "ENTER:%s", __FUNCTION__)
+#define ENTER()		debug(10, "ENTER:%s\n", __FUNCTION__)
 #ifdef __cplusplus
 }
 #endif
