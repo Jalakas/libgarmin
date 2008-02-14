@@ -54,7 +54,6 @@ gui_gtk_datawindow_add(struct datawindow_priv *win, struct param_list *param, in
 	GtkCellRenderer *cell;
 	GtkTreeIter iter;
 	GType types[count];
-	gchar *utf8;
 
 	if (! win->treeview) {
 		win->treeview=gtk_tree_view_new();
@@ -101,8 +100,7 @@ gui_gtk_datawindow_add(struct datawindow_priv *win, struct param_list *param, in
 		if (param[i].name && !strcmp(param[i].name, "Distance")) {
 			gtk_list_store_set(win->liststore,&iter,i,atoi(param[i].value),-1);
 		} else {
-			utf8=g_locale_to_utf8(param[i].value,-1,NULL,NULL,NULL);
-			gtk_list_store_set(win->liststore,&iter,i,utf8,-1);
+			gtk_list_store_set(win->liststore,&iter,i,param[i].value,-1);
 		}
 	}
 }

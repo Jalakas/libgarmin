@@ -103,6 +103,7 @@ attr_to_text(struct attr *attr, struct map *map, int pretty)
 		struct item *item=attr->u.item;
 		if (! item)
 			return g_strdup("(nil)");
+		// FIXME: Can not use %p, map id
 		return g_strdup_printf("type=0x%x id=0x%x,0x%x map=%p (%s:%s)", item->type, item->id_hi, item->id_lo, item->map, item->map ? map_get_type(item->map) : "", item->map ? map_get_filename(item->map) : "");
 	}
 	if (type >= attr_type_string_begin && type <= attr_type_string_end) {
@@ -115,6 +116,13 @@ attr_to_text(struct attr *attr, struct map *map, int pretty)
 	}
 	if (type >= attr_type_int_begin && type <= attr_type_int_end) 
 		return g_strdup_printf("%d", attr->u.num);
+
+	if (type >= attr_type_color_begin && type <= attr_type_color_end) 
+		return g_strdup_printf("#%02x%02x%02x%02x", 
+					attr->u.color->r&0xff,
+					attr->u.color->g&0xff,
+					attr->u.color->b&0xff,
+					attr->u.color->a&0xff);
 	return g_strdup("(no text)");
 }
 
