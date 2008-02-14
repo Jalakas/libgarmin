@@ -312,7 +312,7 @@ map_new_textfile(struct map_methods *meth, struct attr **attrs)
 
 	wexp=file_wordexp_new(data->u.str);
 	wexp_data=file_wordexp_get_array(wexp);
-	dbg(1,"map_new_textfile %s\n", data->u.str);	
+	dbg(1,"map_new_textfile %s\n", data->u.str);
 	*meth=map_methods_textfile;
 
 	m=g_new0(struct map_priv, 1);

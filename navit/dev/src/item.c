@@ -11,7 +11,7 @@ struct item_name {
 };
 
 
-struct item_name item_names[]={
+static struct item_name item_names[]={
 #define ITEM2(x,y) ITEM(y)
 #define ITEM(x) { type_##x, #x },
 #include "item_def.h"
