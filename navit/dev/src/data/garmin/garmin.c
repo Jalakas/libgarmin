@@ -438,6 +438,7 @@ static struct item_methods methods_garmin_point = {
 	point_coord_get,
 	attr_rewind,
 	point_attr_get,
+	NULL
 };
 
 static struct item_methods methods_garmin_poly = {

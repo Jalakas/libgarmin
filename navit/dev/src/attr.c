@@ -123,6 +123,13 @@ attr_to_text(struct attr *attr, struct map *map, int pretty)
 					attr->u.color->g&0xff,
 					attr->u.color->b&0xff,
 					attr->u.color->a&0xff);
+	if (type >= attr_type_coord_geo_start && type <= attr_type_coord_geo_end) {
+		struct coord c;
+		transform_from_geo(projection_mg, attr->u.coord_geo, &c);
+		return g_strdup_printf("mg:0x%x 0x%x",
+					c.x, c.y);
+
+	}
 	return g_strdup("(no text)");
 }
 
