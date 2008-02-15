@@ -38,6 +38,8 @@ char *navit_sharedir;
 char *navit_libprefix;
 char *navit_localedir;
 int fromsrcdir;
+char *config_file;
+char *config_dir;
 
 static void sigchld(int sig)
 {
@@ -94,10 +96,46 @@ main_remove_navit(struct navit *nav)
 	}
 }
 
+static void find_config_file(void)
+{
+	if (! config_file) {
+		config_file=g_strjoin(NULL,get_home_directory(), "/.navit/navit.xml" , NULL);
+		if (!file_exists(config_file)) {
+			g_free(config_file);
+			config_file=NULL;
+			}
+	}
+	if (! config_file) {
+		if (file_exists("navit.xml.local"))
+			config_file="navit.xml.local";
+	}
+	if (! config_file) {
+		if (file_exists("navit.xml"))
+			config_file="navit.xml";
+	}
+	if (! config_file) {
+		config_file=g_strjoin(NULL,navit_sharedir, "/navit.xml.local" , NULL);
+		if (!file_exists(config_file)) {
+			g_free(config_file);
+			config_file=NULL;
+		}
+	}
+	if (! config_file) {
+		config_file=g_strjoin(NULL,navit_sharedir, "/navit.xml" , NULL);
+		if (!file_exists(config_file)) {
+			g_free(config_file);
+			config_file=NULL;
+		}
+	}
+	if (!config_file) {
+		printf(_("No config file navit.xml, navit.xml.local found\n"));
+		exit(1);
+	}
+}
 int main(int argc, char **argv)
 {
 	GError *error = NULL;
-	char *config_file = NULL;
+//	char *config_file = NULL;
 	char *s;
 	int l;
 
@@ -178,57 +216,29 @@ int main(int argc, char **argv)
 	if (s) {
 		setenv("SDL_WINDOWID", s, 1);
 	}
-	navit_modules_init();
-	cscheme_init();
-	layout_init();
-	route_init();
-	navigation_init();
 	config_file=NULL;
 	if (argc > 1)
 		config_file=argv[1];
-	if (! config_file) {
-		config_file=g_strjoin(NULL,get_home_directory(), "/.navit/navit.xml" , NULL);
-		if (!file_exists(config_file)) {
-			g_free(config_file);
-			config_file=NULL;
-			}
-	}
-	if (! config_file) {
-		if (file_exists("navit.xml.local"))
-			config_file="navit.xml.local";
-	}
-	if (! config_file) {
-		if (file_exists("navit.xml"))
-			config_file="navit.xml";
-	}
-	if (! config_file) {
-		config_file=g_strjoin(NULL,navit_sharedir, "/navit.xml.local" , NULL);
-		if (!file_exists(config_file)) {
-			g_free(config_file);
-			config_file=NULL;
-		}
-	}
-	if (! config_file) {
-		config_file=g_strjoin(NULL,navit_sharedir, "/navit.xml" , NULL);
-		if (!file_exists(config_file)) {
-			g_free(config_file);
-			config_file=NULL;
-		}
-	}
-	if (!config_file) {
-		printf(_("No config file navit.xml, navit.xml.local found\n"));
-		exit(1);
-	}
+	if (!config_file)
+		find_config_file();
+#if 0
 	if (!config_load(config_file, &error)) {
 		printf(_("Error parsing '%s': %s\n"), config_file, error->message);
 		exit(1);
 	} else {
 		printf(_("Using '%s'\n"), config_file);
 	}
+#endif
+	cscheme_init();
+	layout_init();
+	route_init();
+	navigation_init();
+	navit_modules_init();
 	if (! navit) {
 		printf(_("No instance has been created, exiting\n"));
 		exit(1);
 	}
+
 	if (main_loop_gui) {
 		gui_run_main_loop(main_loop_gui);
 	} else {

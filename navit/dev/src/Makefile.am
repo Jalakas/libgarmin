@@ -17,7 +17,7 @@ navit_SOURCES = attr.c callback.c compass.c coord.c country.c cursor.c data_wind
 	file.c graphics.c gui.c item.c layout.c log.c main.c map.c \
 	mapset.c maptype.c menu.c navit.c navigation.c osd.c param.c plugin.c popup.c \
 	profile.c route.c search.c speech.c transform.c track.c \
-	vehicle.c xmlconfig.c attr.h attr_def.h callback.h color.h compass.h coord.h country.h \
+	vehicle.c attr.h attr_def.h callback.h color.h compass.h coord.h country.h \
 	cursor.h data.h data_window.h data_window_int.h debug.h destination.h draw_info.h \
 	file.h graphics.h gui.h item.h item_def.h log.h layer.h layout.h main.h map.h\
 	mapset.h maptype.h menu.h navigation.h navit.h osd.h \

@@ -1,3 +1,4 @@
+#if 0
 #include <sys/types.h>
 #include <string.h>
 #include <stdlib.h>
@@ -208,3 +209,4 @@ int main (int argc, char** argv) {
 	g_main_loop_run (mainloop);
 	return 0;
 }
+#endif

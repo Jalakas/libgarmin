@@ -5,6 +5,10 @@ testmod_la_SOURCES = testmod.c
 #testmod_la_LDADD =
 testmod_la_LDFLAGS =  -module
 
+lib_LTLIBRARIES += xmlconfig.la
+xmlconfig_la_SOURCES = xmlconfig.c
+xmlconfig_la_LDFLAGS =  -module
+
 if VEHICLE_GPSD
 lib_LTLIBRARIES += gpsd.la
 gpsd_la_SOURCES = gpsd.c

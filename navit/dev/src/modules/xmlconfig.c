@@ -1,6 +1,8 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <string.h>
+#include <stdlib.h>
+#include <libintl.h>
 #include "debug.h"
 #include "coord.h"
 #include "layout.h"
@@ -21,7 +23,10 @@
 #include "log.h"
 #include "xmlconfig.h"
 #include "config.h"
+#include "module.h"
+#include "globals.h"
 
+#define _(STRING)    gettext(STRING)
 
 struct xmlstate {
 	const gchar **attribute_names;
@@ -794,4 +799,38 @@ gboolean config_load(char *filename, GError **error)
 
 	return result;
 }
+
+
+#define MODNAME		xmlconfig
+
+static int xmlconfig_load(void)
+{
+	GError *error = NULL;
+	ENTER();
+	if (!config_file) {
+		return M_FAILED;
+	}
+	if (!config_load(config_file, &error)) {
+		printf(_("Error parsing '%s': %s\n"), config_file, error->message);
+		exit(1);
+	} else {
+		printf(_("Using '%s'\n"), config_file);
+	}
+
+	return M_OK;
+}
+
+static int xmlconfig_reconfigure(void)
+{
+	ENTER();
+	return M_OK;
+}
+
+static int xmlconfig_unload(void)
+{
+	ENTER();
+	return M_OK;
+}
+
+NAVIT_MODULE(MODNAME, xmlconfig_load,xmlconfig_reconfigure,xmlconfig_unload);
 

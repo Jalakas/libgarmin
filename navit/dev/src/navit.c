@@ -346,13 +346,14 @@ navit_new(struct attr **attrs)
 	this_->init_cbl=callback_list_new();
 	this_->attr_cbl=callback_list_new();
 
+#ifdef MAKEACONFIGOPTION
 	f=popen("pidof /usr/bin/ipaq-sleep","r");
 	if (f) {
 		fscanf(f,"%d",&this_->pid);
 		dbg(1,"ipaq_sleep pid=%d\n", this_->pid);
 		pclose(f);
 	}
-
+#endif
 	this_->bookmarks_hash=g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
 	this_->cursor_flag=1;

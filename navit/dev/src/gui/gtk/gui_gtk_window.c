@@ -36,7 +36,7 @@ keypress(GtkWidget *widget, GdkEventKey *event, struct gui_priv *this)
 	if (event->type != GDK_KEY_PRESS)
 		return FALSE;
 	dbg(1,"keypress 0x%x\n", event->keyval);
-        transform_get_size(navit_get_trans(this->nav), &w, &h);
+	transform_get_size(navit_get_trans(this->nav), &w, &h);
 	switch (event->keyval) {
 	case GDK_KP_Enter:
 		gtk_menu_shell_select_first(GTK_MENU_SHELL(this->menubar), TRUE);
@@ -103,7 +103,7 @@ gui_gtk_add_bookmark(struct gui_priv *gui, struct pcoord *c, char *description)
 {
         GtkWidget *button_ok,*button_cancel,*label,*vbox,*hbox;
 
-	gui->dialog_coord=*c;	
+	gui->dialog_coord=*c;
 	gui->dialog_win=gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	vbox=gtk_vbox_new(FALSE, 0);
 	gtk_container_add (GTK_CONTAINER (gui->dialog_win), vbox);
@@ -191,7 +191,6 @@ plugin_init(void)
 {
 	gtk_init(&gtk_argc, &gtk_argv);
 	gtk_set_locale();
-
 
 	plugin_register_gui_type("gtk", gui_gtk_new);
 }

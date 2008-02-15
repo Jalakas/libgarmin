@@ -1,7 +1,9 @@
 #include <string.h>
 #include <stdio.h>
+#include "log.h"
 
 struct tf_log {
+	struct log *log;
 	int id;
 	FILE *fp;
 };
