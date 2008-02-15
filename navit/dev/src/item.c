@@ -1,13 +1,14 @@
 #include <string.h>
 #include <glib.h>
+#include <stdlib.h>
 #include "coord.h"
 #include "debug.h"
 #include "item.h"
 #include "attr.h"
 
 struct item_name {
-        enum item_type item;
-        char *name;
+	enum item_type item;
+	char *name;
 };
 
 
@@ -67,10 +68,17 @@ struct item * item_new(char *type, int zoom)
 	struct item * it;
 
 	it = g_new0(struct item, 1);
-
+	if (it)
+		it->flags |= ITEM_ALLOCATED;
 	/* FIXME evaluate arguments */
 
 	return it;
+}
+
+void item_free(struct item *itm)
+{
+	if (itm->flags&ITEM_ALLOCATED)
+		free(itm);
 }
 
 enum item_type

@@ -34,6 +34,15 @@ struct xmlstate {
 } *xmlstate_root;
 
 
+static void attrs_free(struct attr **attrs)
+{
+	int i=0;
+	while(attrs[i]) {
+		attr_free(attrs[i]);
+		i++;
+	}
+}
+
 static struct attr ** convert_to_attrs(struct xmlstate *state)
 {
 	const gchar **attribute_name=state->attribute_names;
@@ -197,6 +206,7 @@ xmlconfig_navit(struct xmlstate *state)
 
 	attrs=convert_to_attrs(state);
 	state->element_object = navit_new(attrs);
+	attrs_free(attrs);
 	if (! state->element_object)
 		return 0;
 	return 1;
@@ -211,6 +221,8 @@ xmlconfig_graphics(struct xmlstate *state)
 		return 0;
 	attrs=convert_to_attrs(state);
 	state->element_object = graphics_new(type, attrs);
+	attrs_free(attrs);
+
 	if (! state->element_object)
 		return 0;
 	navit_set_graphics(state->parent->element_object, state->element_object, type);
@@ -226,6 +238,7 @@ xmlconfig_gui(struct xmlstate *state)
 		return 0;
 	attrs=convert_to_attrs(state);
 	state->element_object = gui_new(state->parent->element_object, type, attrs);
+	attrs_free(attrs);
 	if (! state->element_object)
 		return 0;
 	navit_set_gui(state->parent->element_object, state->element_object, type);
@@ -239,9 +252,12 @@ xmlconfig_vehicle(struct xmlstate *state)
 	attrs=convert_to_attrs(state);
 
 	state->element_object = vehicle_new(attrs);
-	if (! state->element_object)
+	if (! state->element_object) {
+		attrs_free(attrs);
 		return 0;
+	}
 	navit_add_vehicle(state->parent->element_object, state->element_object, attrs);
+	attrs_free(attrs);
 	return 1;
 }
 
@@ -252,12 +268,17 @@ xmlconfig_log(struct xmlstate *state)
 	struct attr **attrs;
 	attrs=convert_to_attrs(state);
 	state->element_object = log_new(attrs);
-	if (! state->element_object)
+	if (! state->element_object) {
+		attrs_free(attrs);
 		return 0;
+	}
 	attr.type=attr_log;
 	attr.u.log=state->element_object;
-	if (vehicle_add_attr(state->parent->element_object, &attr, attrs))
+	if (vehicle_add_attr(state->parent->element_object, &attr, attrs)) {
+		attrs_free(attrs);
 		return 0;
+	}
+	attrs_free(attrs);
 	return 1;
 }
 
@@ -353,6 +374,8 @@ xmlconfig_osd(struct xmlstate *state)
 		return 0;
 	attrs=convert_to_attrs(state);
 	state->element_object = osd_new(state->parent->element_object, type, attrs);
+	attrs_free(attrs);
+
 	return 1;
 }
 
@@ -408,6 +431,8 @@ xmlconfig_map(struct xmlstate *state)
 		return 0;
 	attrs=convert_to_attrs(state);
 	state->element_object = map_new(type, attrs);
+	attrs_free(attrs);
+
 	if (! state->element_object)
 		return 0;
 	if (!find_boolean(state, "active", 1, 0))

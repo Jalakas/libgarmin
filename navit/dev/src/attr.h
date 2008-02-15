@@ -23,9 +23,12 @@ enum attr_type {
 #define AF_ONEWAYMASK	(AF_ONEWAY|AF_ONEWAYREV)
 #define AF_SEGMENTED	(1<<2)
 
+#define ATTR_ALLOCATED	(1<<0)
+#define ATTR_ALLOCDATA	(1<<1)
 
 struct attr {
 	enum attr_type type;
+	int flags;
 	union {
 		char *str;
 		int num;

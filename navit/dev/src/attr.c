@@ -90,6 +90,8 @@ attr_new_from_text(const char *name, const char *value)
 		g_free(ret);
 		ret=NULL;
 	}
+	if (ret)
+		ret->flags |= (ATTR_ALLOCATED|ATTR_ALLOCDATA);
 	return ret;
 }
 
@@ -194,8 +196,10 @@ attr_free_data(struct attr *attr)
 void
 attr_free(struct attr *attr)
 {
-	attr_free_data(attr);
-	g_free(attr);
+	if (attr->flags&ATTR_ALLOCDATA)
+		attr_free_data(attr);
+	if (attr->flags&ATTR_ALLOCATED)
+		g_free(attr);
 }
 
 void

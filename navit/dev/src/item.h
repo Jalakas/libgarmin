@@ -29,12 +29,15 @@ struct item_methods {
 	int (*item_coord_is_segment)(void *priv_data);
 };
 
+#define ITEM_ALLOCATED	(1<<0)
+
 struct item {
 	enum item_type type;
+	int flags;
 	int id_hi;
 	int id_lo;
 	struct map *map;
-	struct item_methods *meth;	
+	struct item_methods *meth;
 	void *priv_data;
 };
 
@@ -53,6 +56,7 @@ void item_attr_rewind(struct item *it);
 int item_attr_get(struct item *it, enum attr_type attr_type, struct attr *attr);
 int item_attr_getgroup(struct item *it, struct attr_group *group);
 struct item *item_new(char *type, int zoom);
+void item_free(struct item *item);
 enum item_type item_from_name(const char *name);
 char *item_to_name(enum item_type item);
 struct item_hash *item_hash_new(void);
