@@ -125,7 +125,7 @@ popup_show_attr_val(struct map *map, void *menu, struct attr *attr)
 	char *attr_name=attr_to_name(attr->type);
 	char *str;
 
-	str=attr_to_text(attr, map, 1);
+	str=attr_to_text(attr, /*map,*/ 1);
 	popup_printf(menu, menu_type_menu, "%s: %s", attr_name, str);
 	g_free(str);
 }

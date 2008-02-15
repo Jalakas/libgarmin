@@ -96,7 +96,7 @@ attr_new_from_text(const char *name, const char *value)
 }
 
 char *
-attr_to_text(struct attr *attr, struct map *map, int pretty)
+attr_to_text(struct attr *attr, int pretty)
 {
 	char *ret;
 	enum attr_type type=attr->type;
@@ -106,14 +106,17 @@ attr_to_text(struct attr *attr, struct map *map, int pretty)
 		if (! item)
 			return g_strdup("(nil)");
 		// FIXME: Can not use %p, map id
-		return g_strdup_printf("type=0x%x id=0x%x,0x%x map=%p (%s:%s)", item->type, item->id_hi, item->id_lo, item->map, item->map ? map_get_type(item->map) : "", item->map ? map_get_filename(item->map) : "");
+		return g_strdup_printf("type=0x%x id=0x%x,0x%x map=%p (%s:%s) ", item->type, item->id_hi, item->id_lo, item->map, item->map ? map_get_type(item->map) : "", item->map ? map_get_filename(item->map) : "");
 	}
 	if (type >= attr_type_string_begin && type <= attr_type_string_end) {
+#if 0
+		FIXME: all strings in utf8
 		if (map) {
 			char *mstr=map_convert_string(map, attr->u.str);
 			ret=g_strdup(mstr);
 		} else
-			ret=g_strdup(attr->u.str);
+#endif
+		ret=g_strdup(attr->u.str);
 		return ret;
 	}
 	if (type >= attr_type_int_begin && type <= attr_type_int_end) 

@@ -274,3 +274,9 @@ int logfile_open(struct log_file *lf)
 	return -1;
 }
 
+int logfile_close(struct log_file *lf)
+{
+	if (lf->logfp)
+		fclose(lf->logfp);
+}
+
