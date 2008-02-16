@@ -6,29 +6,31 @@ static list_head(llisteners);
 
 struct listener {
 	list_t l;
-	unsigned int what;
+	unsigned int group;
+	int mask;
 	notify_fn callback;
 	void *priv;
 };
 
 static struct listener *
-alloc_listener(int what, notify_fn callback, void *priv)
+alloc_listener(unsigned int group, int mask, notify_fn callback, void *priv)
 {
 	struct listener *l;
 	l = calloc(1, sizeof(*l));
 	if (!l)
 		return NULL;
 	list_init(&l->l);
-	l->what = what;
+	l->group = group;
+	l->mask = mask;
 	l->callback = callback;
 	l->priv = priv;
 	return l;
 }
 
-int listen_for(int what, notify_fn callback, void *priv)
+int listen_for(unsigned int group, int mask, notify_fn callback, void *priv)
 {
 	struct listener *l;
-	l = alloc_listener(what, callback, priv);
+	l = alloc_listener(group, mask, callback, priv);
 	if (l) {
 		list_append(&l->l, &llisteners);
 		return 0;
@@ -36,13 +38,13 @@ int listen_for(int what, notify_fn callback, void *priv)
 	return -1;
 }
 
-void notify(int what, void *data)
+void notify(unsigned int group, int mask, void *data)
 {
 	struct listener *l;
 
 	list_for_entry(l, &llisteners, l) {
-		if (l->what == what)
-			l->callback(what, l->priv, data);
+		if (l->group == group)
+			l->callback(group, mask, l->priv, data);
 	}
 }
 

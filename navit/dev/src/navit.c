@@ -1058,7 +1058,7 @@ navit_add_menu_windows_items(struct navit *this_, struct menu *men)
 }
 
 static int
-navit_set_attributes(unsigned int what, void *priv, void *data)
+navit_set_attributes(unsigned int what, int mask, void *priv, void *data)
 {
 	struct navit *this_ = priv;
 	struct attr_group *ag = data;
@@ -1119,7 +1119,7 @@ navit_set_attributes(unsigned int what, void *priv, void *data)
 }
 
 static int
-navit_get_attributes(unsigned int what, void *priv, void *data)
+navit_get_attributes(unsigned int what, int mask, void *priv, void *data)
 {
 	struct navit *this_ = priv;
 	struct attr_group *ag = data;
@@ -1143,15 +1143,15 @@ navit_get_attributes(unsigned int what, void *priv, void *data)
 			break;
 		}
 	}
-	notify(NOTIFY_NAVIT_ATTRS, ag);
+	notify(NOTIFY_NAVIT, NAVIT_ATTRS, ag);
 	return 1;
 }
 
 static void
 navit_register_notifications(struct navit *nav)
 {
-	listen_for(NOTIFY_NAVIT_SET, navit_set_attributes, nav); 
-	listen_for(NOTIFY_NAVIT_GET, navit_get_attributes, nav); 
+	listen_for(NOTIFY_NAVIT, NAVIT_SET, navit_set_attributes, nav); 
+	listen_for(NOTIFY_NAVIT, NAVIT_GET, navit_get_attributes, nav); 
 }
 
 void

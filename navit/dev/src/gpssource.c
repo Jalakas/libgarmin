@@ -46,18 +46,18 @@ int gps_register_source(struct gps_source *source)
 
 void gps_unregister_source(struct gps_source *source)
 {
-	debug(10, "Unegistered source:id=%d [%s]\n",
+	debug(10, "Unregistered source:id=%d [%s]\n",
 		source->id, source->name);
 	list_remove(&source->l);
 }
 
 void gps_source_data(struct gps_source *src, struct gps_data *data)
 {
-	debug(10, "Data from: [%d:%s]\n", src->id, src->name);
+	debug(11, "Data from: [%d:%s]\n", src->id, src->name);
 	if (src->flags & GS_ACTIVE) {
-		notify(NOTIFY_ACTIVEGPS, data);
+		notify(NOTIFY_GPS, GPS_ACTIVE, data);
 	} else {
-		notify(NOTIFY_GPS, data);
+		notify(NOTIFY_GPS, GPS_DATA, data);
 	}
 }
 

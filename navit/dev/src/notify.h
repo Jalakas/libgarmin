@@ -1,12 +1,20 @@
 
 #define NOTIFY_GPS		1
-#define NOTIFY_ACTIVEGPS	2
+#define NOTIFY_NAVIT		2
 #define NOTIFY_ROUTE		3
-#define NOTIFY_NAVIT_SET	4
-#define NOTIFY_NAVIT_GET	5
-#define NOTIFY_NAVIT_ATTRS	6
 
-typedef int (*notify_fn)(unsigned int what, void *priv, void *data);
+#define GPS_ACTIVE		(1<<0)
+#define GPS_DATA		(1<<1)
+#define GPS_NMEA		(1<<2)
 
-int listen_for(int what, notify_fn callback, void *priv);
-void notify(int what, void *data);
+#define NAVIT_GET		(1<<0)
+#define NAVIT_SET		(1<<1)
+#define NAVIT_ATTRS		(1<<2)
+
+#define ROUTE_SETPOS		(1<<0)
+#define ROUTE_SETDEST		(1<<1)
+
+typedef int (*notify_fn)(unsigned int group, int mask, void *priv, void *data);
+
+int listen_for(unsigned int group, int mask, notify_fn callback, void *priv);
+void notify(unsigned int group, int mask, void *data);
