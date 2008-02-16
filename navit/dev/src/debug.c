@@ -170,7 +170,8 @@ void logfile_log(struct log_file *lf, int l, const char *file, const int line, c
 //	va_end(ap);
 	if (lf->flags&LF_REOPEN) {
 		logfile_close(lf);
-	}
+	} else 
+		fflush(lf->logfp);
 }
 
 
@@ -206,5 +207,5 @@ debug_init(void)
 	signal(SIGSEGV, sigsegv);
 #endif
 	debug_hash=g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-	debuglf = logfile_alloc(0, "navit.log", prefix_debug, 0, 0, 0);
+	debuglf = logfile_alloc(LF_OVERWRITE, "navit.log", prefix_debug, 0, 0, 0);
 }
