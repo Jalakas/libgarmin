@@ -42,4 +42,4 @@ builtin.c:
 	ls $(top_builddir)/src/*/*/*.la | sed -e "s/.la/_init();/" -e "s/.*lib/	module_/" >>builtin.c
 	echo "}" >>builtin.c
 
-osm2navit_LDADD = @NAVIT_LIBS@  @ZLIB_LIBS@
+osm2navit_LDADD = @NAVIT_LIBS@  @ZLIB_LIBS@ -Llib -lnavit

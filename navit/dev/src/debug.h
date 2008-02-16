@@ -21,9 +21,27 @@ void debug_vprintf(int level, const char *module, const int mlen, const char *fu
 void debug_printf(int level, const char *module, const int mlen, const char *function, const int flen, int prefix, const char *fmt, ...);
 /* end of prototypes */
 
-#define debug(l,f...) fprintf(stderr, ## f)
+#define LF_OVERWRITE	(1<<0)
+#define LF_ROTATE	(1<<1)
+#define LF_BUFFERED	(1<<2)
+#define LF_REOPEN	(1<<3)
+struct log_file;
+typedef int (*log_prefix_fn)(FILE *fp, const int level, const char *file, const int line, const char *function);
+struct log_file *logfile_alloc(int flags, char *file, log_prefix_fn prefix_fn, int maxsize, int flush_size, int flush_time);
+void logfile_free(struct log_file *lf);
+void logfile_log(struct log_file *lf, int l, const char *file, const int line, const char *function, const char *fmt, va_list ap);
 
-#define ENTER()		debug(10, "ENTER:%s\n", __FUNCTION__)
+void 
+debug_log(const int level, const char *file, const int line, const char *function, const char *fmt, ...);
+extern int navit_debug_level;
+
+#define debug(l,f...)								\
+	do {									\
+		if (l<=navit_debug_level)					\
+			debug_log(l, __FILE__, __LINE__, __FUNCTION__, ## f);	\
+	} while(0)
+
+#define ENTER()		debug(10, "ENTER\n")
 #ifdef __cplusplus
 }
 #endif
