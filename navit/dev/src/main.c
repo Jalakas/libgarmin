@@ -22,7 +22,6 @@
 #include "main.h"
 #include "navit.h"
 #include "gui.h"
-#include "xmlconfig.h"
 #include "item.h"
 #include "coord.h"
 #include "route.h"

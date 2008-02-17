@@ -214,7 +214,6 @@ static struct graphics_gc_priv *gc_new(struct graphics_priv *gr, struct graphics
 	return gc;
 }
 
-
 static struct graphics_image_priv *
 image_new(struct graphics_priv *gr, struct graphics_image_methods *meth, char *name, int *w, int *h, struct point *hot)
 {
@@ -250,7 +249,7 @@ static void
 image_free(struct graphics_priv *gr, struct graphics_image_priv *priv)
 {
 	if (priv->pixbuf)
-		gdk_pixbuf_unref(priv->pixbuf);
+		g_object_unref(priv->pixbuf);
 	g_free(priv);
 }
 

@@ -21,7 +21,6 @@
 #include "gui.h"
 #include "osd.h"
 #include "log.h"
-#include "xmlconfig.h"
 #include "config.h"
 #include "module.h"
 #include "globals.h"
@@ -766,7 +765,7 @@ static const GMarkupParser parser = {
 };
 
 
-gboolean config_load(char *filename, GError **error)
+static gboolean config_load(char *filename, GError **error)
 {
 	GMarkupParseContext *context;
 	char *contents;

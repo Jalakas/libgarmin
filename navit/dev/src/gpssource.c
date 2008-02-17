@@ -54,6 +54,8 @@ void gps_unregister_source(struct gps_source *source)
 void gps_source_data(struct gps_source *src, struct gps_data *data)
 {
 	debug(11, "Data from: [%d:%s]\n", src->id, src->name);
+//extern struct navit *global_navit;
+//	navit_draw(global_navit);
 	if (src->flags & GS_ACTIVE) {
 		notify(NOTIFY_GPS, GPS_ACTIVE, data);
 	} else {

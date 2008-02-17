@@ -52,6 +52,7 @@ static struct displaytype *
 alloc_displaytype(unsigned int type)
 {
 	struct displaytype *t;
+
 	t = malloc(sizeof(*t));
 	if (!t)
 		return NULL;
@@ -189,6 +190,7 @@ void
 graphics_gc_destroy(struct graphics_gc *gc)
 {
 	gc->meth.gc_destroy(gc->priv);
+	g_free(gc);
 }
 
 void
@@ -392,7 +394,7 @@ xdisplay_draw_elements(struct graphics *gra, struct displaylist *displaylist, st
 	struct element *e;
 	GList *es,*types;
 	enum item_type type;
-	struct graphics_gc *gc;
+	struct graphics_gc *gc = NULL;
 	struct graphics_image *img;
 	struct point p;
 	struct displaytype *dt;
@@ -407,6 +409,8 @@ xdisplay_draw_elements(struct graphics *gra, struct displaylist *displaylist, st
 			dt = display_list_get_type(displaylist,  type);
 			if (!dt)
 				continue;
+			if (gc)
+				graphics_gc_destroy(gc);
 			gc=NULL;
 			img=NULL;
 			list_for_entry(di, &dt->litems,l) {
@@ -471,6 +475,8 @@ xdisplay_draw_elements(struct graphics *gra, struct displaylist *displaylist, st
 		}
 		es=g_list_next(es);
 	}
+	if (gc)
+		graphics_gc_destroy(gc);
 }
 
 static void
