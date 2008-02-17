@@ -223,6 +223,13 @@ graphics_image_new(struct graphics *gra, char *path)
 	return this_;
 }
 
+void graphics_image_free(struct graphics *gra, struct graphics_image *img)
+{
+	if (gra->meth.image_free)
+		gra->meth.image_free(gra->priv, img->priv);
+	g_free(img);
+}
+
 void
 graphics_draw_restore(struct graphics *this_, struct point *p, int w, int h)
 {
@@ -447,6 +454,8 @@ xdisplay_draw_elements(struct graphics *gra, struct displaylist *displaylist, st
 						p.x=di->pnt[0].x - img->hot.x;
 						p.y=di->pnt[0].y - img->hot.y;
 						gra->meth.draw_image(gra->priv, gra->gc[GC_BG]->priv, &p, img->priv);
+						graphics_image_free(gra, img);
+						img = NULL;
 					}
 					break;
 				case element_image:
