@@ -45,6 +45,7 @@ static void attrs_free(struct attr **attrs)
 		attr_free(attrs[i]);
 		i++;
 	}
+	g_free(attrs);
 }
 
 static struct attr ** convert_to_attrs(struct xmlstate *state)

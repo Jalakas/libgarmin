@@ -21,6 +21,10 @@ char *cfg_var_name(struct cfg_varval *v);
 int cfg_var_true(struct cfg_varval *v);
 int cfg_var_intvalue(struct cfg_varval *v);
 char *cfg_var_value(struct cfg_varval *v);
+struct attr;
+void navit_cfg_attrs_free(struct attr **attrs);
+struct attr **navit_cfg_cat2attrs(struct cfg_category *cat);
+
 
 int navit_cfg_save(struct navit_cfg *cfg, char *file);
 

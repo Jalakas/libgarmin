@@ -5,6 +5,8 @@
 #include "globals.h"
 #include "debug.h"
 #include "cfg.h"
+#include "item.h"
+#include "attr.h"
 
 struct cfg_varval {
 	char *name;
@@ -275,4 +277,40 @@ int navit_cfg_save(struct navit_cfg *cfg, char *file)
 char *cfg_cat_name(struct cfg_category *cat)
 {
 	return cat->name;
+}
+
+void navit_cfg_attrs_free(struct attr **attrs)
+{
+	int i=0;
+	while(attrs[i]) {
+		attr_free(attrs[i]);
+		i++;
+	}
+	free(attrs);
+}
+
+struct attr **navit_cfg_cat2attrs(struct cfg_category *cat)
+{
+	int c = 0;
+	struct cfg_varval *v;
+	struct attr **ret;
+	v = cat->vars;
+	while(v) {
+		c++;
+		v = v->next;
+	}
+	if (!c)
+		return NULL;
+	ret = calloc(c+1, sizeof(struct attr *));
+	if (!ret)
+		return NULL;
+	c = 0;
+	v = cat->vars;
+	while(v) {
+		ret[c] = attr_new_from_text(v->name, v->value);
+		if (ret[c])
+			c++;
+		v = v->next;
+	}
+	return ret;
 }

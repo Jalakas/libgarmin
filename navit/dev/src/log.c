@@ -183,7 +183,7 @@ log_new(struct attr **attrs)
 }
 
 void
-log_set_header(struct log *this_, char *data, int len)
+log_set_header(struct log *this_, const char *data, int len)
 {
 	this_->header.data=g_malloc(len);
 	this_->header.max_len=this_->header.len=len;
@@ -191,7 +191,7 @@ log_set_header(struct log *this_, char *data, int len)
 }
 
 void
-log_set_trailer(struct log *this_, char *data, int len)
+log_set_trailer(struct log *this_, const char *data, int len)
 {
 	this_->trailer.data=g_malloc(len);
 	this_->trailer.max_len=this_->trailer.len=len;

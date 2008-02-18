@@ -5,6 +5,10 @@ testmod_la_SOURCES = testmod.c
 #testmod_la_LDADD =
 testmod_la_LDFLAGS =  -module
 
+lib_LTLIBRARIES += tflog.la
+tflog_la_SOURCES = tflog.c
+tflog_la_LDFLAGS =  -module
+
 lib_LTLIBRARIES += xmlconfig.la
 xmlconfig_la_SOURCES = xmlconfig.c
 xmlconfig_la_LDFLAGS =  -module
