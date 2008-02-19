@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "list.h"
-#include "notify.h"
 #include "debug.h"
 #include "item.h"
 #include "attr.h"
+#include "notify.h"
 
 static list_head(llisteners);
 
@@ -64,7 +64,7 @@ struct attr_query {
 	query_fn attr_get;
 };
 
-int attr_query_get_id(char *name)
+static int attr_query_get_id(char *name)
 {
 	struct attr_query *aq;
 	list_for_entry(aq, &lattrq, l) {
@@ -72,6 +72,36 @@ int attr_query_get_id(char *name)
 			return aq->id;
 	}
 	return -1;
+}
+
+static struct attr_query *attr_query_find_name(char *name)
+{
+	struct attr_query *aq;
+	list_for_entry(aq, &lattrq, l) {
+		if (!strcmp(aq->name, name))
+			return aq;
+	}
+	return NULL;
+}
+
+static struct attr_query *attr_query_find_group(unsigned int group)
+{
+	struct attr_query *aq;
+	list_for_entry(aq, &lattrq, l) {
+		if (aq->group == group)
+			return aq;
+	}
+	return NULL;
+}
+
+static struct attr_query *attr_query_find_id(int id)
+{
+	struct attr_query *aq;
+	list_for_entry(aq, &lattrq, l) {
+		if (aq->id == id)
+			return aq;
+	}
+	return NULL;
 }
 
 int attr_query_register(unsigned int group, char *name, query_fn query, void *data)
@@ -96,12 +126,34 @@ int attr_query_register(unsigned int group, char *name, query_fn query, void *da
 	return aq_id;
 }
 
+static int attr_query_do(struct attr_query *aq, enum attr_type type, struct attr *attr)
+{
+	return aq->attr_get(aq->data, type, attr);
+}
+
 int attr_query_byid(unsigned int id, enum attr_type type, struct attr *attr)
 {
+	struct attr_query *aq;
+	aq = attr_query_find_id(id);
+	if (aq)
+		return attr_query_do(aq, type, attr);
 	return 0;
 }
 
 int attr_query_byname(char *name, enum attr_type type, struct attr *attr)
 {
+	struct attr_query *aq;
+	aq = attr_query_find_name(name);
+	if (aq)
+		return attr_query_do(aq, type, attr);
+	return 0;
+}
+
+int attr_query_bygroup(unsigned int group, enum attr_type type, struct attr *attr)
+{
+	struct attr_query *aq;
+	aq = attr_query_find_group(group);
+	if (aq)
+		return attr_query_do(aq, type, attr);
 	return 0;
 }
