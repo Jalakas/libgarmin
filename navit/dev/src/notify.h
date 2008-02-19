@@ -18,3 +18,5 @@ typedef int (*notify_fn)(unsigned int group, int mask, void *priv, void *data);
 
 int listen_for(unsigned int group, int mask, notify_fn callback, void *priv);
 void notify(unsigned int group, int mask, void *data);
+typedef int (*query_fn)(void *data, enum attr_type type, struct attr *attr);
+
