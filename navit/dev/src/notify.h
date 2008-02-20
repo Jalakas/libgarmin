@@ -1,3 +1,5 @@
+#include "item.h"
+#include "attr.h"
 
 #define NOTIFY_GPS		1
 #define NOTIFY_NAVIT		2
@@ -18,5 +20,10 @@ typedef int (*notify_fn)(unsigned int group, int mask, void *priv, void *data);
 
 int listen_for(unsigned int group, int mask, notify_fn callback, void *priv);
 void notify(unsigned int group, int mask, void *data);
+
 typedef int (*query_fn)(void *data, enum attr_type type, struct attr *attr);
+int attr_query_register(unsigned int group, char *name, query_fn query, void *data);
+int attr_query_byid(unsigned int id, enum attr_type type, struct attr *attr);
+int attr_query_byname(char *name, enum attr_type type, struct attr *attr);
+int attr_query_bygroup(unsigned int group, enum attr_type type, struct attr *attr);
 
