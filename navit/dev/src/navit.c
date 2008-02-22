@@ -1110,7 +1110,7 @@ static void
 navit_register_notifications(struct navit *nav)
 {
 	listen_for(NOTIFY_NAVIT, NAVIT_SET, navit_set_attributes, nav);
-	listen_for(NOTIFY_NAVIT, NAVIT_GET, navit_get_attributes, nav);
+//	listen_for(NOTIFY_NAVIT, NAVIT_GET, navit_get_attributes, nav);
 	attr_query_register(NOTIFY_NAVIT, "navit", navit_get_attr, nav);
 }
 

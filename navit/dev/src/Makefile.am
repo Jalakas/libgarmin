@@ -6,7 +6,7 @@ if BUILD_SAMPLEMAP
 endif
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/lib -I$(top_srcdir)/src/fib-1.1 @NAVIT_CFLAGS@ -DPREFIX=\"@prefix@\" -DMODULE=navit
-BUILT_SOURCES=osm2navit
+# BUILT_SOURCES=osm2navit
 bin_PROGRAMS = navit osm2navit
 
 pkgdata_DATA = navit.xml
