@@ -17,6 +17,10 @@
 #include "zipfile.h"
 #include "config.h"
 
+#define BUFFER_SIZE 1280
+
+/* #define GENERATE_INDEX */
+
 #if 1
 #define debug_tile(x) 0
 #else
@@ -163,6 +167,40 @@ static char *attrmap={
 	"w	route		ferry		ferry\n"
 };
 
+struct coord {
+	int x;
+	int y;
+} coord_buffer[65536];
+
+#define IS_REF(c) ((c).x >= (1 << 30))
+#define REF(c) ((c).y)
+#define SET_REF(c,ref) do { (c).x = 1 << 30; (c).y = ref ; } while(0)
+
+struct rect {
+	struct coord l,h;
+};
+
+static void bbox_extend(struct coord *c, struct rect *r);
+
+#ifdef GENERATE_INDEX
+
+static GHashTable *aux_tile_hash;
+GList *aux_tile_list;
+
+struct country_table {
+	int countryid;
+	char *names;
+	FILE *file;
+	int size;
+	int count;
+	struct rect r;
+} country_table[] = {
+	{276,"Germany,Deutschland,Bundesrepublik Deutschland"},
+};
+
+static GHashTable *country_table_hash;
+#endif
+
 static GHashTable *way_key_hash, *node_key_hash;
 
 static GHashTable *strings_hash = NULL;
@@ -248,6 +286,26 @@ build_attrmap(char *map)
 	}
 }
 
+#ifdef GENERATE_INDEX
+static void
+build_countrytable(void)
+{
+	int i;
+	char *names,*str,*tok;
+	country_table_hash=g_hash_table_new(g_str_hash, g_str_equal);
+	for (i = 0 ; i < sizeof(country_table)/sizeof(struct country_table) ; i++) {
+		names=g_strdup(country_table[i].names);
+		str=names;
+		while ((tok=strtok(str, ","))) {
+			str=NULL;
+			g_hash_table_insert(country_table_hash, tok,  (gpointer)&country_table[i]);
+		}
+	}
+}
+#endif
+
+
+
 static int processed_nodes, processed_nodes_out, processed_ways, processed_relations, processed_tiles;
 static int in_way, in_node, in_relation;
 
@@ -275,27 +333,32 @@ struct attr_bin {
 struct attr_bin label_attr = {
 	0, attr_label
 };
-char label_attr_buffer[1024];
+char label_attr_buffer[BUFFER_SIZE];
 
 struct attr_bin street_name_attr = {
 	0, attr_street_name
 };
-char street_name_attr_buffer[1024];
+char street_name_attr_buffer[BUFFER_SIZE];
 
 struct attr_bin street_name_systematic_attr = {
 	0, attr_street_name_systematic
 };
-char street_name_systematic_attr_buffer[1024];
+char street_name_systematic_attr_buffer[BUFFER_SIZE];
 
 struct attr_bin debug_attr = {
 	0, attr_debug
 };
-char debug_attr_buffer[1024];
+char debug_attr_buffer[BUFFER_SIZE];
 
 struct attr_bin flags_attr = {
 	0, attr_flags
 };
 int flags_attr_value;
+
+char is_in_buffer[BUFFER_SIZE];
+
+
+static void write_zipmember(FILE *out, FILE *dir_out, char *name, int filelen, char *data, int data_size, int compression_level);
 
 static void
 pad_text_attr(struct attr_bin *a, char *buffer)
@@ -324,8 +387,10 @@ xml_get_attribute(char *xml, char *attribute, char *buffer, int buffer_size)
 	i=strchr(pos, s);
 	if (! i)
 		return 0;
-	if (i - pos > buffer_size)
+	if (i - pos > buffer_size) {
+		fprintf(stderr,"Buffer overflow %d vs %d\n", i-pos, buffer_size);
 		return 0;
+	}
 	strncpy(buffer, pos, i-pos);
 	buffer[i-pos]='\0';
 	return 1;
@@ -404,14 +469,20 @@ add_tag(char *k, char *v)
 		level=5;
 	}
 	if (! strcmp(k,"is_in")) {
+		strcpy(is_in_buffer, v);
 		level=5;
 	}
 	if (! strcmp(k,"lanes")) {
 		level=5;
 	}
 	if (attr_debug_level >= level) {
-		sprintf(debug_attr_buffer+strlen(debug_attr_buffer), " %s=%s", k, v);
-		node_is_tagged=1;
+		int bytes_left = sizeof( debug_attr_buffer ) - strlen(debug_attr_buffer) - 1;
+		if ( bytes_left > 0 )
+		{
+			snprintf(debug_attr_buffer+strlen(debug_attr_buffer), bytes_left,  " %s=%s", k, v);
+			debug_attr_buffer[ sizeof( debug_attr_buffer ) -  1 ] = '\0';
+			node_is_tagged=1;
+		}
 	}
 	if (level < 6)
 		node_is_tagged=1;
@@ -454,11 +525,11 @@ add_tag(char *k, char *v)
 static int
 parse_tag(char *p)
 {
-	char k_buffer[1024];
-	char v_buffer[1024];
-	if (!xml_get_attribute(p, "k", k_buffer, 1024))
+	char k_buffer[BUFFER_SIZE];
+	char v_buffer[BUFFER_SIZE];
+	if (!xml_get_attribute(p, "k", k_buffer, BUFFER_SIZE))
 		return 0;
-	if (!xml_get_attribute(p, "v", v_buffer, 1024))
+	if (!xml_get_attribute(p, "v", v_buffer, BUFFER_SIZE))
 		return 0;
 	add_tag(k_buffer, v_buffer);
 	return 1;
@@ -484,19 +555,6 @@ static struct tile_head {
 	// char subtiles[0];
 } *tile_head_root;
 
-
-struct coord {
-	int x;
-	int y;
-} coord_buffer[65536];
-
-#define IS_REF(c) ((c).x >= (1 << 30))
-#define REF(c) ((c).y)
-#define SET_REF(c,ref) do { (c).x = 1 << 30; (c).y = ref ; } while(0)
-
-struct rect {
-	struct coord l,h;
-};
 
 int coord_count;
 
@@ -557,6 +615,7 @@ add_node(int id, double lat, double lon)
 	item.type=type_point_unkn;
 	label_attr.len=0;
 	debug_attr.len=0;
+	is_in_buffer[0]='\0';
 	sprintf(debug_attr_buffer,"nodeid=%d", nodeid);
 	ni=(struct node_item *)(node_buffer.base+node_buffer.size);
 	ni->id=id;
@@ -588,14 +647,14 @@ add_node(int id, double lat, double lon)
 static int
 parse_node(char *p)
 {
-	char id_buffer[1024];
-	char lat_buffer[1024];
-	char lon_buffer[1024];
-	if (!xml_get_attribute(p, "id", id_buffer, 1024))
+	char id_buffer[BUFFER_SIZE];
+	char lat_buffer[BUFFER_SIZE];
+	char lon_buffer[BUFFER_SIZE];
+	if (!xml_get_attribute(p, "id", id_buffer, BUFFER_SIZE))
 		return 0;
-	if (!xml_get_attribute(p, "lat", lat_buffer, 1024))
+	if (!xml_get_attribute(p, "lat", lat_buffer, BUFFER_SIZE))
 		return 0;
-	if (!xml_get_attribute(p, "lon", lon_buffer, 1024))
+	if (!xml_get_attribute(p, "lon", lon_buffer, BUFFER_SIZE))
 		return 0;
 	add_node(atoi(id_buffer), atof(lat_buffer), atof(lon_buffer));
 	return 1;
@@ -676,8 +735,8 @@ add_way(int id)
 static int
 parse_way(char *p)
 {
-	char id_buffer[1024];
-	if (!xml_get_attribute(p, "id", id_buffer, 1024))
+	char id_buffer[BUFFER_SIZE];
+	if (!xml_get_attribute(p, "id", id_buffer, BUFFER_SIZE))
 		return 0;
 	add_way(atoi(id_buffer));
 	return 1;
@@ -734,6 +793,8 @@ static void
 end_node(FILE *out)
 {
 	int alen=0;
+	int conflict=0;
+	struct country_table *result=NULL, *lookup;
 	if (!out || ! node_is_tagged || ! nodeid)
 		return;
 	pad_text_attr(&debug_attr, debug_attr_buffer);
@@ -747,8 +808,116 @@ end_node(FILE *out)
 	fwrite(&ni->c, 1*sizeof(struct coord), 1, out);
 	write_attr(out, &label_attr, label_attr_buffer);
 	write_attr(out, &debug_attr, debug_attr_buffer);
+#ifdef GENERATE_INDEX
+	if (item.type >= type_town_label && item.type <= type_town_label_1e7 && label_attr.len) {
+		char *tok,*buf=is_in_buffer;
+		while ((tok=strtok(buf, ","))) {
+			while (*tok==' ')
+				tok++;
+			lookup=g_hash_table_lookup(country_table_hash,tok);
+			if (lookup) {
+				if (result && result->countryid != lookup->countryid) {
+					fprintf(stderr,"conflict for %s %s country %d vs %d\n", label_attr_buffer, debug_attr_buffer, lookup->countryid, result->countryid);
+					conflict=1;
+				} else
+					result=lookup;
+			}
+			buf=NULL;
+		}
+		if (result && !conflict) {
+			if (!result->file) {
+				char *name=g_strdup_printf("country_%d.bin.unsorted", result->countryid);
+				result->file=fopen(name,"w");
+				g_free(name);
+			}
+			if (result->file) {
+				item.clen=2;
+				item.len=item.clen+2+label_attr.len+1;
+				fwrite(&item, sizeof(item), 1, result->file);
+				fwrite(&ni->c, 1*sizeof(struct coord), 1, result->file);
+				write_attr(result->file, &label_attr, label_attr_buffer);
+				result->count++;
+				result->size+=(item.clen+3+label_attr.len+1)*4;
+			}
+			
+		}
+	}
+#endif
 	processed_nodes_out++;
 }
+
+static int
+sort_countries_compare(const void *p1, const void *p2)
+{
+	struct item_bin *ib1=*((struct item_bin **)p1),*ib2=*((struct item_bin **)p2);
+	struct attr_bin *attr1,*attr2;
+	char *s1,*s2;
+	assert(ib1->clen==2);
+	assert(ib2->clen==2);
+	attr1=(struct attr_bin *)((int *)(ib1+1)+ib1->clen);
+	attr2=(struct attr_bin *)((int *)(ib2+1)+ib1->clen);
+	assert(attr1->type == attr_label);
+	assert(attr2->type == attr_label);
+	s1=(char *)(attr1+1);
+	s2=(char *)(attr2+1);
+	return strcmp(s1, s2);
+#if 0
+	fprintf(stderr,"sort_countries_compare p1=%p p2=%p %s %s\n",p1,p2,s1,s2);
+#endif
+	return 0;
+}
+
+#ifdef GENERATE_INDEX
+static void
+sort_countries(void)
+{
+	int i,j;
+	struct country_table *co;
+	struct coord *c;
+	struct item_bin *ib;
+	FILE *f;
+	char *p,*buffer,**idx,*name;
+	for (i = 0 ; i < sizeof(country_table)/sizeof(struct country_table) ; i++) {
+		co=&country_table[i];
+		if (co->file) {
+			fclose(co->file);
+			co->file=NULL;
+		}
+		if (co->size) {
+			buffer=malloc(co->size);
+			assert(buffer != NULL);
+			idx=malloc(co->count*4);
+			assert(idx != NULL);
+			name=g_strdup_printf("country_%d.bin.unsorted", co->countryid);
+			f=fopen(name,"r");
+			assert(f != NULL);
+			fread(buffer, co->size, 1, f);
+			fclose(f);
+			unlink(name);
+			g_free(name);
+			p=buffer;
+			for (j = 0 ; j < co->count ; j++) {
+				idx[j]=p;
+				p+=(*((int *)p)+1)*4;
+			}
+			qsort(idx, co->count, 4, sort_countries_compare);
+			name=g_strdup_printf("country_%d.bin", co->countryid);
+			f=fopen(name,"w");
+			for (j = 0 ; j < co->count ; j++) {
+				ib=(struct item_bin *)(idx[j]);
+				c=(struct coord *)(ib+1);
+				fwrite(ib, (ib->len+1)*4, 1, f);
+				if (j) 
+					bbox_extend(c, &co->r);
+				else
+					co->r.l=*c;
+					co->r.h=*c;
+			}
+			fclose(f);
+		}
+	}
+}
+#endif
 
 static void
 add_nd(char *p, int ref)
@@ -779,8 +948,8 @@ add_nd(char *p, int ref)
 static int
 parse_nd(char *p)
 {
-	char ref_buffer[1024];
-	if (!xml_get_attribute(p, "ref", ref_buffer, 1024))
+	char ref_buffer[BUFFER_SIZE];
+	if (!xml_get_attribute(p, "ref", ref_buffer, BUFFER_SIZE))
 		return 0;
 	add_nd(p, atoi(ref_buffer));
 	return 1;
@@ -870,7 +1039,7 @@ phase1(FILE *in, FILE *out_ways, FILE *out_nodes)
 	return 1;
 }
 
-static char buffer[131072];
+static char buffer[150000];
 
 int bytes_read=0;
 
@@ -883,12 +1052,26 @@ read_item(FILE *in)
 	if (r != 1)
 		return NULL;
 	bytes_read+=r;
+	assert((ib->len+1) < sizeof(buffer));
 	s=(ib->len+1)*4-sizeof(*ib);
 	r=fread(ib+1, s, 1, in);
 	if (r != 1)
 		return NULL;
 	bytes_read+=r;
 	return ib;
+}
+
+static void
+bbox_extend(struct coord *c, struct rect *r)
+{
+	if (c->x < r->l.x)
+		r->l.x=c->x;
+	if (c->y < r->l.y)
+		r->l.y=c->y;
+	if (c->x > r->h.x)
+		r->h.x=c->x;
+	if (c->y > r->h.y)
+		r->h.y=c->y;
 }
 
 static void
@@ -900,14 +1083,7 @@ bbox(struct coord *c, int count, struct rect *r)
 	r->h=*c;
 	while (--count) {
 		c++;
-		if (c->x < r->l.x)
-			r->l.x=c->x;
-		if (c->y < r->l.y)
-			r->l.y=c->y;
-		if (c->x > r->h.x)
-			r->h.x=c->x;
-		if (c->y > r->h.y)
-			r->h.y=c->y;
+		bbox_extend(c, r);
 	}
 }
 
@@ -1080,6 +1256,7 @@ merge_tile(char *base, char *sub)
 	return 1;
 }
 
+
 static void
 get_tiles_list_func(char *key, struct tile_head *th, GList **list)
 {
@@ -1225,7 +1402,7 @@ phase34_process_file(int phase, FILE *in)
 			max=8;
 		if (ib->type == type_street_3_city || ib->type == type_street_4_city || ib->type == type_street_3_land || ib->type == type_street_4_land)
 			max=12;
-		
+
 		tile(&r, buffer, max);
 #if 0
 		fprintf(stderr,"%s\n", buffer);
@@ -1362,14 +1539,18 @@ destroy_tile_hash(void)
 	tile_hash2=NULL;
 }
 
+static int zipnum;
+
+static void write_countrydir(int phase, int maxnamelen);
 
 static void
 write_tilesdir(int phase, int maxlen, FILE *out)
 {
-	int idx,len,zipnum=0;
+	int idx,len;
 	GList *tiles_list,*next;
 	char **data;
 	struct tile_head *th,**last=NULL;
+	zipnum=0;
 
 	tiles_list=get_tiles_list();
 	if (phase == 3)
@@ -1388,6 +1569,10 @@ write_tilesdir(int phase, int maxlen, FILE *out)
 #if 0
 		fprintf(stderr,"PROGRESS: collecting tiles with len=%d\n", len);
 #endif
+#ifdef GENERATE_INDEX
+		if (! len)
+			write_countrydir(phase, maxlen);
+#endif
 		next=g_list_first(tiles_list);
 		while (next) {
 			if (strlen(next->data) == len) {
@@ -1396,7 +1581,7 @@ write_tilesdir(int phase, int maxlen, FILE *out)
 					*last=th;
 					last=&th->next;
 					th->next=NULL;
-					th->zipnum=zipnum++;
+					th->zipnum=zipnum;
 					fprintf(out,"%s:%d",(char *)next->data,th->total_size);
 
 					for ( idx = 0; idx< th->num_subtiles; idx++ ){
@@ -1408,6 +1593,7 @@ write_tilesdir(int phase, int maxlen, FILE *out)
 				}
 				if (th->name[0])
 					index_submap_add(phase, th, &tiles_list);
+				zipnum++;
 				processed_tiles++;
 			}
 			next=g_list_next(next);
@@ -1487,6 +1673,105 @@ merge_tiles(void)
 	} while (work_done);
 }
 
+struct country_index_item {
+	struct item_bin item;
+	struct attr_bin attr_country_id;
+	int country_id;
+	struct attr_bin attr_zipfile_ref;
+	int zipfile_ref;
+};
+
+static void
+index_country_add(int phase, int country_id, int zipnum)
+{
+	struct country_index_item ii;
+	char *index_tile="";
+
+	ii.item.len=sizeof(ii)/4-1;
+	ii.item.type=type_countryindex;
+	ii.item.clen=0;
+
+	ii.attr_country_id.len=2;
+	ii.attr_country_id.type=attr_country_id;
+	ii.country_id=country_id;
+
+	ii.attr_zipfile_ref.len=2;
+	ii.attr_zipfile_ref.type=attr_zipfile_ref;
+	ii.zipfile_ref=zipnum;
+
+	if (phase == 3)
+		tile_extend(index_tile, (struct item_bin *)&ii, NULL);
+	else 
+		write_item(index_tile, (struct item_bin *)&ii);
+}
+
+#ifdef GENERATE_INDEX
+struct aux_tile {
+	char *name;
+	char *filename;
+	int size;
+};
+
+static int
+add_aux_tile(int phase, char *name, char *filename, int size)
+{
+	struct aux_tile *at;
+	if (phase == 3) {
+		at=g_new0(struct aux_tile, 1);
+		at->name=g_strdup(name);
+		at->filename=g_strdup(filename);
+		at->size=size;
+		aux_tile_list=g_list_append(aux_tile_list, at);
+	}
+	return zipnum++;
+}
+
+static int
+write_aux_tiles(FILE *out, FILE *dir_out, int compression_level, int namelen)
+{
+	GList *l=aux_tile_list;
+	struct aux_tile *at;
+	char *buffer;
+	FILE *f;
+	int count=0;
+	
+	while (l) {
+		at=l->data;
+		buffer=malloc(at->size);
+		assert(buffer != NULL);
+		f=fopen(at->filename,"r");
+		assert(f != NULL);
+		fread(buffer, at->size, 1, f);
+		fclose(f);
+		write_zipmember(out, dir_out, at->name, namelen, buffer, at->size, compression_level);
+		count++;
+		l=g_list_next(l);
+	}
+	return count;
+}
+
+static void
+write_countrydir(int phase, int maxnamelen)
+{
+	int i,zipnum;
+	int max=11;
+	char tilename[32];
+	char searchtile[32];
+	char filename[32];
+	struct country_table *co;
+	for (i = 0 ; i < sizeof(country_table)/sizeof(struct country_table) ; i++) {
+		co=&country_table[i];
+		if (co->size) {
+			tilename[0]='\0';
+			tile(&co->r, tilename, max);
+			sprintf(searchtile,"%ss%d", tilename, 0);
+			sprintf(filename,"country_%d.bin", co->countryid);
+			zipnum=add_aux_tile(phase, searchtile, filename, co->size);
+			index_country_add(phase,co->countryid,zipnum);
+		}
+	}
+}
+#endif
 
 static int
 phase34(int phase, int maxnamelen, FILE *ways_in, FILE *nodes_in, FILE *tilesdir_out)
@@ -1656,14 +1941,19 @@ process_slice(FILE *ways_in, FILE *nodes_in, int size, int maxnamelen, FILE *out
 	th=tile_head_root;
 	while (th) {
 		if (th->process) {
+#ifdef GENERATE_INDEX
+			if (! strlen(th->name)) 
+				zipfiles+=write_aux_tiles(out, dir_out, compression_level, maxnamelen);
+#endif
 			if (th->total_size != th->total_size_used) {
 				fprintf(stderr,"Size error '%s': %d vs %d\n", th->name, th->total_size, th->total_size_used);
 				exit(1);
 			} else {
 				if (strlen(th->name))
 					write_zipmember(out, dir_out, th->name, maxnamelen, th->zip_data, th->total_size, compression_level);
-				else
+				else {
 					write_zipmember(out, dir_out, "index", sizeof("index")-1, th->zip_data, th->total_size, compression_level);
+				}
 				zipfiles++;
 			}
 		}
@@ -1865,6 +2155,9 @@ int main(int argc, char **argv)
 		usage(stderr);
 	result=argv[optind];
 	build_attrmap(map);
+#ifdef GENERATE_INDEX
+	build_countrytable();
+#endif
 
 
 	if (start == 1) {
@@ -1879,6 +2172,10 @@ int main(int argc, char **argv)
 			fclose(ways);
 		if (nodes)
 			fclose(nodes);
+#ifdef GENERATE_INDEX
+		fprintf(stderr,"PROGRESS: Phase 1: sorting countries\n");
+		sort_countries();
+#endif
 	}
 	if (end == 1 || dump_coordinates)
 		save_buffer("coords.tmp",&node_buffer);

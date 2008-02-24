@@ -18,6 +18,8 @@
 
 static int map_id;
 
+static GHashTable *search_results;
+
 struct minmax {
 	short min;
 	short max;
@@ -58,6 +60,13 @@ struct map_rect_priv {
 	int tile_depth;
 	struct tile tiles[8];
 	struct tile *t;
+	int country_id;
+};
+
+struct map_search_priv {
+	struct map_rect_priv *mr;
+	struct attr *search;
+	struct map_selection *ms;
 };
 
 
@@ -298,7 +307,20 @@ selection_contains(struct map_selection *sel, struct coord_rect *r, struct minma
 	return 0;
 }
 
-
+static void
+map_parse_country_binfile(struct map_rect_priv *mr)
+{
+	struct attr at;
+	if (binfile_attr_get(mr->item.priv_data, attr_country_id, &at)) {
+		if (at.u.num == mr->country_id)
+		{
+			if (binfile_attr_get(mr->item.priv_data, attr_zipfile_ref, &at))
+			{
+				push_zipfile_tile(mr, at.u.num);
+			}
+		}
+	}
+}
 
 static struct item *
 map_rect_get_item_binfile(struct map_rect_priv *mr)
@@ -321,7 +343,7 @@ map_rect_get_item_binfile(struct map_rect_priv *mr)
 		mr->street_name_attr=NULL;
 		mr->street_name_systematic_attr=NULL;
 		setup_pos(mr);
-		if (mr->item.type == type_submap) {
+		if ((mr->item.type == type_submap) && (!mr->country_id)) {
 			struct coord_rect r;
 			r.lu.x=t->pos_coord[0];
 			r.lu.y=t->pos_coord[3];
@@ -335,6 +357,18 @@ map_rect_get_item_binfile(struct map_rect_priv *mr)
 			push_zipfile_tile(mr, t->pos_attr[5]);
 			continue;
 				
+		}
+		if (mr->country_id)
+		{
+			if (mr->item.type == type_countryindex) {
+				map_parse_country_binfile(mr);
+			}
+			if (mr->item.type >= type_town_label && mr->item.type <= type_district_label_1e7)
+			{
+				return &mr->item;
+			} else {
+				continue;
+			}
 		}
 		return &mr->item;
 	}
@@ -357,6 +391,122 @@ map_rect_get_item_byid_binfile(struct map_rect_priv *mr, int id_hi, int id_lo)
 	return &mr->item;
 }
 
+static struct map_search_priv *
+binmap_search_new(struct map_priv *map, struct item *item, struct attr *search, int partial)
+{
+	struct map_rect_priv *map_rec;
+	int country = item->id_lo;
+	
+	switch (search->type) {
+		case attr_country_name:
+			break;
+		case attr_town_name:
+			search_results = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+			struct item *it;
+			map_rec = map_rect_new_binfile(map, NULL);
+			map_rec->country_id = country;
+			struct map_search_priv *msp = g_new(struct map_search_priv, 1);
+			msp->mr = map_rec;
+			msp->search = search;
+			return msp;
+			break;
+		case attr_town_postal:
+			break;
+		case attr_street_name:
+			search_results = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+			struct map_selection *ms = NULL;
+			ms = g_new(struct map_selection, 1);
+			int i = 0;
+			ms->next = NULL;
+			for (i = 0; i < layer_end; i++)
+			{
+				ms->order[i] = 18;
+			}
+			map_rec = map_rect_new_binfile(map, ms);
+			struct item *town = map_rect_get_item_byid_binfile(map_rec, item->id_hi, item->id_lo);
+			if (town) {
+				struct map_search_priv *msp = g_new(struct map_search_priv, 1);
+				struct coord *c = g_new(struct coord, 1);
+				int size = 10000;
+				switch (town->type) {
+					case type_town_label_2e5:
+						size = 10000;
+						break;
+					case type_town_label_2e4:
+						size = 2500;
+						break;
+					case type_town_label_2e3:
+						size = 1000;
+						break;
+					case type_town_label_2e2:
+						size = 1000;
+						break;
+					default:
+						break;
+				}
+				item_coord_get(town, c, 1);
+				ms->u.c_rect.lu.x = c->x-size;
+				ms->u.c_rect.lu.y = c->y+size;
+				ms->u.c_rect.rl.x = c->x+size;
+				ms->u.c_rect.rl.y = c->y-size;
+				
+				map_rect_destroy_binfile(map_rec);
+				map_rec = map_rect_new_binfile(map, ms);
+				msp->mr = map_rec;
+				msp->search = search;
+				return msp;
+			}
+			map_rect_destroy_binfile(map_rec);
+			g_free(ms);
+			break;
+		default:
+			break;
+	}
+	return NULL;
+}
+
+struct item *
+binmap_search_get_item(struct map_search_priv *map_search)
+{
+	struct item* it;
+	while ((it  = map_rect_get_item_binfile(map_search->mr))) {
+		if (map_search->search->type == attr_town_name) {
+			if ((it->type >= type_town_label) && (it->type <= type_town_label_1e7)) {
+				struct attr at;
+				if (binfile_attr_get(it->priv_data, attr_label, &at)) {
+					char* tmp = g_strdup(at.u.str);
+					if (g_ascii_strncasecmp(tmp, map_search->search->u.str, strlen(map_search->search->u.str)) == 0) {
+						return it;
+					}
+				}
+			}
+		} else if (map_search->search->type == attr_street_name) {
+			if ((it->type == type_street_3_city) || (it->type == type_street_2_city) || (it->type == type_street_1_city)) {
+				struct attr at;
+				if (binfile_attr_get(it->priv_data, attr_label, &at)) {
+					char* tmp = g_strdup(at.u.str);
+					if (g_ascii_strncasecmp(tmp, map_search->search->u.str, strlen(map_search->search->u.str)) == 0) {
+						if (!g_hash_table_lookup(search_results, at.u.str)) {
+							g_hash_table_insert(search_results, tmp, "");
+							return it;
+						}
+					}
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
+static void
+binmap_search_destroy(struct map_search_priv *ms)
+{
+	g_hash_table_destroy(search_results);
+	g_free(ms->mr->sel);
+	map_rect_destroy_binfile(ms->mr);
+	g_free(ms);
+}
+
 static struct map_methods map_methods_binfile = {
 	projection_mg,
 //	"utf-8",
@@ -366,6 +516,9 @@ static struct map_methods map_methods_binfile = {
 	map_rect_destroy_binfile,
 	map_rect_get_item_binfile,
 	map_rect_get_item_byid_binfile,
+	binmap_search_new,
+	binmap_search_destroy,
+	binmap_search_get_item
 };
 
 static struct map_priv *
