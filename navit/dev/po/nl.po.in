@@ -7,15 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Navit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-<<<<<<< nl.po
-<<<<<<< nl.po
-"POT-Creation-Date: 2008-02-12 19:24+0200\n"
-=======
-"POT-Creation-Date: 2008-02-14 21:09+0100\n"
->>>>>>> 1.5
-=======
 "POT-Creation-Date: 2008-02-21 17:53+0100\n"
->>>>>>> 1.6
 "PO-Revision-Date: 2007-07-10 21:53+0200\n"
 "Last-Translator: afaber <afaber_at_sourceforge_dot._net>\n"
 "Language-Team: afaber\n"
@@ -152,98 +144,35 @@ msgstr "%3$s %1$s%2$s afslaan"
 msgid "You have reached your destination %s"
 msgstr "%s bestemming bereikt"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:671 ../src/gui/gtk/gui_gtk_action.c:198
-=======
-#: ../src/navit.c:675 ../src/gui/gtk/gui_gtk_action.c:198
->>>>>>> 1.5
-=======
 #: ../src/navit.c:630 ../src/gui/gtk/gui_gtk_action.c:198
->>>>>>> 1.6
 msgid "Layout"
 msgstr "Layout"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:687
-=======
-#: ../src/navit.c:691
->>>>>>> 1.5
-=======
 #: ../src/navit.c:646
->>>>>>> 1.6
 msgid "Projection"
 msgstr "Projectie"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:742
-=======
-#: ../src/navit.c:746
->>>>>>> 1.5
-=======
 #: ../src/navit.c:701
->>>>>>> 1.6
 msgid "Former Destinations"
 msgstr "Vorige bestemmingen"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:752
-=======
-#: ../src/navit.c:756
->>>>>>> 1.5
-=======
 #: ../src/navit.c:711
->>>>>>> 1.6
 msgid "Bookmarks"
 msgstr "Bookmarks"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:790
-=======
-#: ../src/navit.c:794
->>>>>>> 1.5
-=======
 #: ../src/navit.c:749
->>>>>>> 1.6
 msgid "Vehicle"
 msgstr "Voertuig"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:840
-=======
-#: ../src/navit.c:863
->>>>>>> 1.5
-=======
 #: ../src/navit.c:818
->>>>>>> 1.6
 msgid "Command"
 msgstr "Opdracht"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:845
-=======
-#: ../src/navit.c:868
->>>>>>> 1.5
-=======
 #: ../src/navit.c:823
->>>>>>> 1.6
 msgid "Length"
 msgstr "Lengte"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:851
-=======
-#: ../src/navit.c:872 ../src/navit.c:897
-=======
 #: ../src/navit.c:827 ../src/navit.c:852
->>>>>>> 1.6
 msgid "km"
 msgstr "km"
 
@@ -251,73 +180,28 @@ msgstr "km"
 msgid "m"
 msgstr "m"
 
-<<<<<<< nl.po
-#: ../src/navit.c:882
->>>>>>> 1.5
-=======
 #: ../src/navit.c:837
->>>>>>> 1.6
 msgid "Time"
 msgstr "Tijd"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:856
-=======
-#: ../src/navit.c:894
->>>>>>> 1.5
-=======
 #: ../src/navit.c:849
->>>>>>> 1.6
 msgid "Destination Length"
 msgstr "Afstand"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
 #: ../src/navit.c:862
-=======
-#: ../src/navit.c:907
->>>>>>> 1.5
-=======
-#: ../src/navit.c:862
->>>>>>> 1.6
 msgid "Destination Time"
 msgstr "Aankomsttijd"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:885 ../src/gui/gtk/gui_gtk_action.c:202
-=======
-#: ../src/navit.c:936 ../src/gui/gtk/gui_gtk_action.c:202
->>>>>>> 1.5
-=======
 #: ../src/navit.c:891 ../src/gui/gtk/gui_gtk_action.c:202
->>>>>>> 1.6
 msgid "Roadbook"
 msgstr "Route"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:1118 ../src/gui/gtk/destination.c:368
-=======
-#: ../src/navit.c:1169 ../src/gui/gtk/destination.c:368
->>>>>>> 1.5
-=======
 #: ../src/navit.c:1124 ../src/gui/gtk/destination.c:368
->>>>>>> 1.6
 #: ../src/gui/gtk/gui_gtk_action.c:197
 msgid "Map"
 msgstr "Kaart"
 
-<<<<<<< nl.po
-<<<<<<< nl.po
-#: ../src/navit.c:1125 ../src/gui/gtk/gui_gtk_action.c:196
-=======
-#: ../src/navit.c:1176 ../src/gui/gtk/gui_gtk_action.c:196
->>>>>>> 1.5
-=======
 #: ../src/navit.c:1131 ../src/gui/gtk/gui_gtk_action.c:196
->>>>>>> 1.6
 msgid "Route"
 msgstr "Route"
 

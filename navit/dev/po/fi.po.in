@@ -7,11 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Navit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-<<<<<<< fi.po
-"POT-Creation-Date: 2008-02-12 19:24+0200\n"
-=======
 "POT-Creation-Date: 2008-02-14 21:09+0100\n"
->>>>>>> 1.7
 "PO-Revision-Date: 2007-07-10 21:53+0200\n"
 "Last-Translator: Ossi Berg <o.berg@mail.com>\n"
 "Language-Team: Ossi Berg <o.berg@mail.com>\n"
@@ -147,66 +143,35 @@ msgstr "Käänny %3$s %1$s%2$s"
 msgid "You have reached your destination %s"
 msgstr "Olet saavuttanut kohteesi %s"
 
-<<<<<<< fi.po
-#: ../src/navit.c:671 ../src/gui/gtk/gui_gtk_action.c:198
-=======
 #: ../src/navit.c:675 ../src/gui/gtk/gui_gtk_action.c:198
->>>>>>> 1.7
 msgid "Layout"
 msgstr "Pohja"
 
-<<<<<<< fi.po
-#: ../src/navit.c:687
-=======
 #: ../src/navit.c:691
->>>>>>> 1.7
 msgid "Projection"
 msgstr "Projektio"
 
-<<<<<<< fi.po
-#: ../src/navit.c:742
-=======
 #: ../src/navit.c:746
->>>>>>> 1.7
 msgid "Former Destinations"
 msgstr "Aiemmat kohteet"
 
-<<<<<<< fi.po
-#: ../src/navit.c:752
-=======
 #: ../src/navit.c:756
->>>>>>> 1.7
 msgid "Bookmarks"
 msgstr "Kirjanmerkit"
 
-<<<<<<< fi.po
-#: ../src/navit.c:790
-=======
 #: ../src/navit.c:794
->>>>>>> 1.7
 msgid "Vehicle"
 msgstr "Kulkuneuvo"
 
-<<<<<<< fi.po
-#: ../src/navit.c:840
-=======
 #: ../src/navit.c:863
->>>>>>> 1.7
 #, fuzzy
 msgid "Command"
 msgstr "Puola"
 
-<<<<<<< fi.po
-#: ../src/navit.c:845
-=======
 #: ../src/navit.c:868
->>>>>>> 1.7
 msgid "Length"
 msgstr ""
 
-<<<<<<< fi.po
-#: ../src/navit.c:851
-=======
 #: ../src/navit.c:872 ../src/navit.c:897
 msgid "km"
 msgstr ""
@@ -216,50 +181,29 @@ msgid "m"
 msgstr ""
 
 #: ../src/navit.c:882
->>>>>>> 1.7
 msgid "Time"
 msgstr ""
 
-<<<<<<< fi.po
-#: ../src/navit.c:856
-=======
 #: ../src/navit.c:894
->>>>>>> 1.7
 #, fuzzy
 msgid "Destination Length"
 msgstr "Kohde"
 
-<<<<<<< fi.po
-#: ../src/navit.c:862
-=======
 #: ../src/navit.c:907
->>>>>>> 1.7
 #, fuzzy
 msgid "Destination Time"
 msgstr "Kohde"
 
-<<<<<<< fi.po
-#: ../src/navit.c:885 ../src/gui/gtk/gui_gtk_action.c:202
-=======
 #: ../src/navit.c:936 ../src/gui/gtk/gui_gtk_action.c:202
->>>>>>> 1.7
 msgid "Roadbook"
 msgstr "Ohjeistaja"
 
-<<<<<<< fi.po
-#: ../src/navit.c:1118 ../src/gui/gtk/destination.c:368
-=======
 #: ../src/navit.c:1169 ../src/gui/gtk/destination.c:368
->>>>>>> 1.7
 #: ../src/gui/gtk/gui_gtk_action.c:197
 msgid "Map"
 msgstr "Kartta"
 
-<<<<<<< fi.po
-#: ../src/navit.c:1125 ../src/gui/gtk/gui_gtk_action.c:196
-=======
 #: ../src/navit.c:1176 ../src/gui/gtk/gui_gtk_action.c:196
->>>>>>> 1.7
 msgid "Route"
 msgstr "Reitti"
 

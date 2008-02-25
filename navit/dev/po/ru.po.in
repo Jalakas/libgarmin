@@ -7,11 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Navit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-<<<<<<< ru.po
-"POT-Creation-Date: 2008-02-12 19:24+0200\n"
-=======
 "POT-Creation-Date: 2008-02-14 21:09+0100\n"
->>>>>>> 1.2
 "PO-Revision-Date: 2008-01-24 15:46+0300\n"
 "Last-Translator: Rustam T. Usmanov\n"
 "Language-Team: Rustam T. Usmanov\n"
@@ -149,65 +145,34 @@ msgstr "Поверните %1$s%2$s %3$s"
 msgid "You have reached your destination %s"
 msgstr "Вы прибыли в пункт назначения %s"
 
-<<<<<<< ru.po
-#: ../src/navit.c:671 ../src/gui/gtk/gui_gtk_action.c:198
-=======
 #: ../src/navit.c:675 ../src/gui/gtk/gui_gtk_action.c:198
->>>>>>> 1.2
 msgid "Layout"
 msgstr "Схема"
 
-<<<<<<< ru.po
-#: ../src/navit.c:687
-=======
 #: ../src/navit.c:691
->>>>>>> 1.2
 msgid "Projection"
 msgstr "Проекция"
 
-<<<<<<< ru.po
-#: ../src/navit.c:742
-=======
 #: ../src/navit.c:746
->>>>>>> 1.2
 msgid "Former Destinations"
 msgstr "Прошлые пункты назначения"
 
-<<<<<<< ru.po
-#: ../src/navit.c:752
-=======
 #: ../src/navit.c:756
->>>>>>> 1.2
 msgid "Bookmarks"
 msgstr "Закладки"
 
-<<<<<<< ru.po
-#: ../src/navit.c:790
-=======
 #: ../src/navit.c:794
->>>>>>> 1.2
 msgid "Vehicle"
 msgstr "Т/с"
 
-<<<<<<< ru.po
-#: ../src/navit.c:840
-=======
 #: ../src/navit.c:863
->>>>>>> 1.2
 msgid "Command"
 msgstr "Команда"
 
-<<<<<<< ru.po
-#: ../src/navit.c:845
-=======
 #: ../src/navit.c:868
->>>>>>> 1.2
 msgid "Length"
 msgstr "Длина"
 
-<<<<<<< ru.po
-#: ../src/navit.c:851
-=======
 #: ../src/navit.c:872 ../src/navit.c:897
 msgid "km"
 msgstr ""
@@ -217,48 +182,27 @@ msgid "m"
 msgstr ""
 
 #: ../src/navit.c:882
->>>>>>> 1.2
 msgid "Time"
 msgstr "Время"
 
-<<<<<<< ru.po
-#: ../src/navit.c:856
-=======
 #: ../src/navit.c:894
->>>>>>> 1.2
 msgid "Destination Length"
 msgstr ""
 
-<<<<<<< ru.po
-#: ../src/navit.c:862
-=======
 #: ../src/navit.c:907
->>>>>>> 1.2
 msgid "Destination Time"
 msgstr ""
 
-<<<<<<< ru.po
-#: ../src/navit.c:885 ../src/gui/gtk/gui_gtk_action.c:202
-=======
 #: ../src/navit.c:936 ../src/gui/gtk/gui_gtk_action.c:202
->>>>>>> 1.2
 msgid "Roadbook"
 msgstr "Дорожный справочник"
 
-<<<<<<< ru.po
-#: ../src/navit.c:1118 ../src/gui/gtk/destination.c:368
-=======
 #: ../src/navit.c:1169 ../src/gui/gtk/destination.c:368
->>>>>>> 1.2
 #: ../src/gui/gtk/gui_gtk_action.c:197
 msgid "Map"
 msgstr "Карта"
 
-<<<<<<< ru.po
-#: ../src/navit.c:1125 ../src/gui/gtk/gui_gtk_action.c:196
-=======
 #: ../src/navit.c:1176 ../src/gui/gtk/gui_gtk_action.c:196
->>>>>>> 1.2
 msgid "Route"
 msgstr "Маршрут"
 

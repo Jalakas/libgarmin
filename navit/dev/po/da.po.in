@@ -7,11 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Navit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-<<<<<<< da.po
-"POT-Creation-Date: 2008-02-12 19:24+0200\n"
-=======
 "POT-Creation-Date: 2008-02-14 21:09+0100\n"
->>>>>>> 1.3
 "PO-Revision-Date: 2008-01-15 22:20+0100\n"
 "Last-Translator: Glenn Sommer <glemsom@gmail.com>>\n"
 "Language-Team: Glenn Sommer <glemsom@gmail.com>\n"
@@ -145,65 +141,34 @@ msgstr "Drej %1$s til %2$s %3$s"
 msgid "You have reached your destination %s"
 msgstr "Du er fremme ved destinationen %s"
 
-<<<<<<< da.po
-#: ../src/navit.c:671 ../src/gui/gtk/gui_gtk_action.c:198
-=======
 #: ../src/navit.c:675 ../src/gui/gtk/gui_gtk_action.c:198
->>>>>>> 1.3
 msgid "Layout"
 msgstr "Layout"
 
-<<<<<<< da.po
-#: ../src/navit.c:687
-=======
 #: ../src/navit.c:691
->>>>>>> 1.3
 msgid "Projection"
 msgstr "Visning"
 
-<<<<<<< da.po
-#: ../src/navit.c:742
-=======
 #: ../src/navit.c:746
->>>>>>> 1.3
 msgid "Former Destinations"
 msgstr "Tidligere destinationer"
 
-<<<<<<< da.po
-#: ../src/navit.c:752
-=======
 #: ../src/navit.c:756
->>>>>>> 1.3
 msgid "Bookmarks"
 msgstr "Bogmærker"
 
-<<<<<<< da.po
-#: ../src/navit.c:790
-=======
 #: ../src/navit.c:794
->>>>>>> 1.3
 msgid "Vehicle"
 msgstr "Køretøj"
 
-<<<<<<< da.po
-#: ../src/navit.c:840
-=======
 #: ../src/navit.c:863
->>>>>>> 1.3
 msgid "Command"
 msgstr "Kommando"
 
-<<<<<<< da.po
-#: ../src/navit.c:845
-=======
 #: ../src/navit.c:868
->>>>>>> 1.3
 msgid "Length"
 msgstr "Længde"
 
-<<<<<<< da.po
-#: ../src/navit.c:851
-=======
 #: ../src/navit.c:872 ../src/navit.c:897
 msgid "km"
 msgstr ""
@@ -213,48 +178,27 @@ msgid "m"
 msgstr ""
 
 #: ../src/navit.c:882
->>>>>>> 1.3
 msgid "Time"
 msgstr "Tid"
 
-<<<<<<< da.po
-#: ../src/navit.c:856
-=======
 #: ../src/navit.c:894
->>>>>>> 1.3
 msgid "Destination Length"
 msgstr "Længde til destinationen"
 
-<<<<<<< da.po
-#: ../src/navit.c:862
-=======
 #: ../src/navit.c:907
->>>>>>> 1.3
 msgid "Destination Time"
 msgstr "Tid til destinationen"
 
-<<<<<<< da.po
-#: ../src/navit.c:885 ../src/gui/gtk/gui_gtk_action.c:202
-=======
 #: ../src/navit.c:936 ../src/gui/gtk/gui_gtk_action.c:202
->>>>>>> 1.3
 msgid "Roadbook"
 msgstr "Vejbog"
 
-<<<<<<< da.po
-#: ../src/navit.c:1118 ../src/gui/gtk/destination.c:368
-=======
 #: ../src/navit.c:1169 ../src/gui/gtk/destination.c:368
->>>>>>> 1.3
 #: ../src/gui/gtk/gui_gtk_action.c:197
 msgid "Map"
 msgstr "Kort"
 
-<<<<<<< da.po
-#: ../src/navit.c:1125 ../src/gui/gtk/gui_gtk_action.c:196
-=======
 #: ../src/navit.c:1176 ../src/gui/gtk/gui_gtk_action.c:196
->>>>>>> 1.3
 msgid "Route"
 msgstr "Rute"
 
