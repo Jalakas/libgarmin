@@ -137,6 +137,18 @@ destination_action(GtkWidget *w, struct gui_priv *gui, void *dummy)
 	destination_address(gui->nav);
 }
 
+static void
+browsemap_action(GtkWidget *w, struct gui_priv *gui, void *dummy)
+{
+	fprintf(stderr, "Uninplemented\n");
+}
+
+static void
+mute_action(GtkWidget *w, struct gui_priv *gui, void *dummy)
+{
+	fprintf(stderr, "Uninplemented\n");
+}
+
 
 static void     
 quit_action (GtkWidget *w, struct gui_priv *gui, void *dummy)
@@ -206,6 +218,8 @@ static GtkActionEntry entries[] =
 #endif /*GTK_STOCK_INFO*/
 	{ "DestinationAction", "flag_icon", _n("Destination"), NULL, NULL, G_CALLBACK(destination_action) },
 	{ "RouteClearAction", NULL, _n("Clear"), NULL, NULL, G_CALLBACK(route_clear_action) },
+	{ "BrowseMapAction", GTK_STOCK_FIND, _n("Browse Map"), NULL, NULL, G_CALLBACK(browsemap_action) },
+	{ "MuteAction", GTK_STOCK_DND, _n("Mute"), NULL, NULL, G_CALLBACK(mute_action) },
 	{ "Test", NULL, _n("Test"), NULL, NULL, G_CALLBACK(destination_action) },
 	{ "QuitAction", GTK_STOCK_QUIT, _n("_Quit"), "<control>Q",NULL, G_CALLBACK (quit_action) }
 };
@@ -403,6 +417,8 @@ static char layout[] =
 				<toolitem name=\"Destination\" action=\"DestinationAction\"/>\
 				<!-- <toolitem name=\"Info\" action=\"InfoAction\"/> -->\
 				<toolitem name=\"Roadbook\" action=\"RoadbookAction\"/>\
+				<toolitem name=\"Browse Map\" action=\"BrowseMapAction\"/>\
+				<toolitem name=\"Mute\" action=\"MuteAction\"/>\
 				<toolitem name=\"Quit\" action=\"QuitAction\"/>\
 				<separator/>\
 			</placeholder>\
