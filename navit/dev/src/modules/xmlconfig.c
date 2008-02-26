@@ -218,23 +218,6 @@ xmlconfig_navit(struct xmlstate *state)
 }
 
 static int
-xmlconfig_graphics(struct xmlstate *state)
-{
-	struct attr **attrs;
-	const char *type=find_attribute(state, "type", 1);
-	if (! type)
-		return 0;
-	attrs=convert_to_attrs(state);
-	state->element_object = graphics_new(type, attrs);
-	attrs_free(attrs);
-
-	if (! state->element_object)
-		return 0;
-	navit_set_graphics(state->parent->element_object, state->element_object, type);
-	return 1;
-}
-
-static int
 xmlconfig_gui(struct xmlstate *state)
 {
 	struct attr **attrs;
@@ -623,7 +606,6 @@ struct element_func {
 	{ "config", NULL, xmlconfig_config},
 	{ "debug", "config", xmlconfig_debug},
 	{ "navit", "config", xmlconfig_navit},
-	{ "graphics", "navit", xmlconfig_graphics},
 	{ "gui", "navit", xmlconfig_gui},
 	{ "layout", "navit", xmlconfig_layout},
 	{ "layer", "layout", xmlconfig_layer},

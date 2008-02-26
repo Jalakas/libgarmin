@@ -1136,6 +1136,7 @@ navit_init(struct navit *this_)
 		navit_destroy(this_);
 		return;
 	}
+#if 0
 	if (gui_set_graphics(this_->gui, this_->gra)) {
 		g_warning("failed to connect graphics '%s' to gui '%s'\n", this_->gra_type, this_->gui_type);
 		g_warning(" Please see http://navit.sourceforge.net/wiki/index.php/Failed_to_connect_graphics_to_gui\n");
@@ -1144,6 +1145,7 @@ navit_init(struct navit *this_)
 		navit_destroy(this_);
 		return;
 	}
+#endif
 	graphics_init(this_->gra);
 	l=this_->vehicles;
 	while (l) {

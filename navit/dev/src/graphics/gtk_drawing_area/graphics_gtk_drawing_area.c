@@ -59,8 +59,12 @@ struct graphics_image_priv {
 };
 
 static void
-graphics_destroy(struct graphics_priv *gr)
+graphics_destroy(void *data)
 {
+	struct graphics_priv *gr = data;
+//	g_object_unref(gr->draw);
+//	g_object_unref(gr->colormap);
+	g_free(gr);
 }
 
 static char *fontpaths[]={
@@ -869,8 +873,14 @@ graphics_gtk_drawing_area_new(struct graphics_methods *meth, struct attr **attrs
 	return this;
 }
 
+static struct graphics_ops gtk_draw_ops = {
+	.graphics_new = graphics_gtk_drawing_area_new,
+	.graphics_free = graphics_destroy,
+};
+
 void
 plugin_init(void)
 {
-        plugin_register_graphics_type("gtk_drawing_area", graphics_gtk_drawing_area_new);
+	plugin_register_graphics_type("gtk_drawing_area", graphics_gtk_drawing_area_new);
+	graphics_register("gtk_drawing_area", &gtk_draw_ops);
 }

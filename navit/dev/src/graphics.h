@@ -130,6 +130,14 @@ void display_list_for_each(struct displaylist *displaylist, void (*cb_fn)(struct
 struct layout;
 void graphics_set_layout(struct graphics *gra, struct layout *layout);
 
+struct graphics_ops {
+	void *(*graphics_new)(struct graphics_methods *meth, struct attr **attrs);
+	void (*graphics_free)(void *data);
+};
+
+int graphics_register(char *name, struct graphics_ops *ops);
+struct graphics_ops *graphics_get_byname(const char *name);
+
 /* end of prototypes */
 #ifdef __cplusplus
 }

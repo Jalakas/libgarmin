@@ -17,6 +17,8 @@
 #include "graphics.h"
 #include "gui_gtk.h"
 #include "transform.h"
+#include "item.h"
+#include "attr.h"
 
 #ifndef GDK_Book
 #define GDK_Book XF86XK_Book
@@ -158,7 +160,21 @@ gui_gtk_new(struct navit *nav, struct gui_methods *meth, struct attr **attrs)
 	int w=792, h=547;
 	char *cp = getenv("NAVIT_XID");
 	unsigned xid = 0;
+	struct attr *gr;
+	struct graphics *gra;
 
+	gr = attr_search(attrs, NULL, attr_graphics);
+	if (!gr) {
+		debug(0, "Error no graphics specified\n");
+		return NULL;
+	}
+	gra = graphics_new(gr->u.str, attrs);
+	if (gra) {
+		navit_set_graphics(nav, gra, gr->u.str);
+	} else {
+		debug(0, "Failed to create graphics\n");
+		return NULL;
+	}
 	if (cp) {
 		xid = strtol(cp, NULL, 0);
 	}
@@ -171,7 +187,6 @@ gui_gtk_new(struct navit *nav, struct gui_methods *meth, struct attr **attrs)
 		this->win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	else
 		this->win = gtk_plug_new(xid);
-
 	g_signal_connect(G_OBJECT(this->win), "delete-event", G_CALLBACK(gui_gtk_delete), nav);
 	this->vbox = gtk_vbox_new(FALSE, 0);
 	gtk_window_set_default_size(GTK_WINDOW(this->win), w, h);
@@ -179,6 +194,7 @@ gui_gtk_new(struct navit *nav, struct gui_methods *meth, struct attr **attrs)
 	gtk_widget_realize(this->win);
 	gtk_container_add(GTK_CONTAINER(this->win), this->vbox);
 	gtk_widget_show_all(this->win);
+	gui_gtk_set_graphics(this, gra);
 
 	return this;
 }

@@ -100,20 +100,6 @@ display_list_get_type(struct displaylist *dl, unsigned int type)
 }
 
 struct graphics *
-graphics_new(const char *type, struct attr **attrs)
-{
-	struct graphics *this_;
-	struct graphics_priv * (*new)(struct graphics_methods *meth, struct attr **attrs);
-
-	new=plugin_get_graphics_type(type);
-	if (! new)
-		return NULL;
-	this_=g_new0(struct graphics, 1);
-	this_->priv=(*new)(&this_->meth, attrs);
-	return this_;
-}
-
-struct graphics *
 graphics_overlay_new(struct graphics *parent, struct point *p, int w, int h)
 {
 	struct graphics *this_;
@@ -798,14 +784,12 @@ graphics_displayitem_within_dist(struct displayitem *di, struct point *p, int di
 struct graphics_provider {
 	list_t l;
 	char *name;
-	void *(*graphics_new)(struct attr **attrs);
-	void (*graphics_free)(void *data);
+	struct graphics_ops *ops;
 };
 
 static list_head(lgraphics);
 
-int graphics_register(char *name, void *(*graphics_new)(struct attr **attrs),
-	void (*graphics_free)(void *data))
+int graphics_register(char *name, struct graphics_ops *ops)
 {
 	struct graphics_provider *gp;
 	gp = calloc(1, sizeof(*gp));
@@ -816,19 +800,49 @@ int graphics_register(char *name, void *(*graphics_new)(struct attr **attrs),
 		free(gp);
 		return -1;
 	}
-	gp->graphics_new = graphics_new;
-	gp->graphics_free = graphics_free;
+	gp->ops = ops;
 	list_append(&gp->l, &lgraphics);
 	return 1;
 }
 
-struct graphics_provider *graphics_get_provider(char *name)
+struct graphics_ops *graphics_get_byname(const char *name)
 {
 	struct graphics_provider *gp;
 	list_for_entry(gp, &lgraphics, l) {
 		if (!strcmp(gp->name, name))
-			return gp;
+			return gp->ops;
 	}
 	return NULL;
 }
 
+struct graphics *
+graphics_new(const char *type, struct attr **attrs)
+{
+	struct graphics *this_;
+	struct graphics_priv * (*new)(struct graphics_methods *meth, struct attr **attrs);
+	struct graphics_ops *grops;
+
+	grops = graphics_get_byname(type);
+	if (!grops) {
+		navit_request_module(type);
+		grops = graphics_get_byname(type);
+	}
+	if (grops) {
+		this_=g_new0(struct graphics, 1);
+		if (!this_)
+			return NULL;
+		this_->priv=grops->graphics_new(&this_->meth, attrs);
+		if (!this_->priv) {
+			debug(0, "Graphics:[%s] failed to create instance\n", type);
+			g_free(this_);
+			return NULL;
+		}
+	} else {
+		new=plugin_get_graphics_type(type);
+		if (! new)
+			return NULL;
+		this_=g_new0(struct graphics, 1);
+		this_->priv=(*new)(&this_->meth, attrs);
+	}
+	return this_;
+}
