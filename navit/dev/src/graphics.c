@@ -794,3 +794,41 @@ graphics_displayitem_within_dist(struct displayitem *di, struct point *p, int di
 	}
 	return within_dist_polygon(p, di->pnt, di->count, dist);
 }
+
+struct graphics_provider {
+	list_t l;
+	char *name;
+	void *(*graphics_new)(struct attr **attrs);
+	void (*graphics_free)(void *data);
+};
+
+static list_head(lgraphics);
+
+int graphics_register(char *name, void *(*graphics_new)(struct attr **attrs),
+	void (*graphics_free)(void *data))
+{
+	struct graphics_provider *gp;
+	gp = calloc(1, sizeof(*gp));
+	if (!gp)
+		return -1;
+	gp->name = strdup(name);
+	if (!gp->name) {
+		free(gp);
+		return -1;
+	}
+	gp->graphics_new = graphics_new;
+	gp->graphics_free = graphics_free;
+	list_append(&gp->l, &lgraphics);
+	return 1;
+}
+
+struct graphics_provider *graphics_get_provider(char *name)
+{
+	struct graphics_provider *gp;
+	list_for_entry(gp, &lgraphics, l) {
+		if (!strcmp(gp->name, name))
+			return gp;
+	}
+	return NULL;
+}
+

@@ -1250,7 +1250,6 @@ navit_set_center_cursor(struct navit *this_, struct coord *cursor, int dir, int 
 		navit_draw(this_);
 }
 
-
 void
 navit_set_center_screen(struct navit *this_, struct point *p)
 {
