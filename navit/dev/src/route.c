@@ -1223,14 +1223,14 @@ route_info_open(struct route_info *start, struct route_info *end, int dir)
 struct coord *
 route_info_get(struct route_info_handle *h)
 {
-	struct coord *new;
+	struct coord *c;
 	for (;;) {
-		new=NULL;
+		c=NULL;
 		dbg(1,"iter=%d\n", h->iter);
 		switch(h->iter) {
 		case 0:
 			if (h->start) {
-				new=&h->start->c;
+				c=&h->start->c;
 				h->iter++;
 				break;
 			} else {
@@ -1238,13 +1238,13 @@ route_info_get(struct route_info_handle *h)
 				continue;
 			}
 		case 1:
-			new=&h->start->lp;
+			c=&h->start->lp;
 			h->iter++;
 			break;
 		case 2:
 			dbg(1,"h->pos=%d\n", h->pos);
 			if (h->dir && h->pos >= 0 && h->pos < h->curr->street->count && (h->end == NULL || h->endpos!=h->pos)) {
-				new=&h->curr->street->c[h->pos];
+				c=&h->curr->street->c[h->pos];
 				h->pos+=h->dir;
 			} else {
 				h->iter++;
@@ -1253,23 +1253,23 @@ route_info_get(struct route_info_handle *h)
 			break;	
 		case 3:
 			if (h->end) {
-				new=&h->end->lp;
+				c=&h->end->lp;
 				h->iter++;
 				break;
 			}
 			break;
 		case 4:
-			new=&h->end->c;
+			c=&h->end->c;
 			h->iter++;
 			break;
 			
 		}
-		if (new) {
-			dbg(1,"new=%p (0x%x,0x%x) last=%p\n", new, new->x, new->y, h->last);
-			if (h->last && new->x == h->last->x && new->y == h->last->y)
+		if (c) {
+			dbg(1,"new=%p (0x%x,0x%x) last=%p\n", c, c->x, c->y, h->last);
+			if (h->last && c->x == h->last->x && c->y == h->last->y)
 				continue;
-			h->last=new;
-			return new;	
+			h->last=c;
+			return c;
 		}
 		return NULL;
 	}
@@ -1280,36 +1280,6 @@ route_info_close(struct route_info_handle *h)
 {
 	g_free(h);
 }
-
-
-#if 0
-struct route_crossings *
-route_crossings_get(struct route *this, struct coord *c)
-{
-      struct route_point *pnt;
-      struct route_segment *seg;
-      int crossings=0;
-      struct route_crossings *ret;
-
-       pnt=route_graph_get_point(this, c);
-       seg=pnt->start;
-       while (seg) {
-		printf("start: 0x%x 0x%x\n", seg->item.id_hi, seg->item.id_lo);
-               crossings++;
-               seg=seg->start_next;
-       }
-       seg=pnt->end;
-       while (seg) {
-		printf("end: 0x%x 0x%x\n", seg->item.id_hi, seg->item.id_lo);
-               crossings++;
-               seg=seg->end_next;
-       }
-       ret=g_malloc(sizeof(struct route_crossings)+crossings*sizeof(struct route_crossing));
-       ret->count=crossings;
-       return ret;
-}
-#endif
-
 
 struct map_rect_priv {
 	struct route_info_handle *ri;

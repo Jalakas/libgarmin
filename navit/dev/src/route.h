@@ -1,16 +1,6 @@
 #ifndef NAVIT_ROUTE_H
 #define NAVIT_ROUTE_H
 
-struct route_crossing {
-	long segid;
-	int dir;
-};
-
-struct route_crossings {
-	int count;
-	struct route_crossing crossing[0];
-};
-
 struct street_data {
 	struct item item;
 	int count;
@@ -79,6 +69,16 @@ void route_toggle_routegraph_display(struct route *route);
 void route_set_projection(struct route *this_, enum projection pro);
 void route_init(void);
 /* end of prototypes */
+
+struct route_ops {
+	void *(*route_new)(struct mapset *ms, struct map *map);
+	void (*route_set_position)(void *data, struct pcoord *pos);
+	void (*route_set_destination)(void *data, struct pcoord *dst);
+	int (*route_calculate)(void *data, int update);
+	int (*route_alternative)(void *data, int idx);
+	struct map *(*route_get_map)(void *data);
+	struct map *(*route_get_graph_map)(void *data);
+};
 
 #endif
 
