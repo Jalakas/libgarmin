@@ -421,6 +421,8 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 	off = gar_subfile_baseoffset(sub, "LBL");
 	off1 = off;
 	if (what == 0) {
+		if (lbl.lbl2_rec_size == 0)
+			goto outerr;
 		nc = lbl.lbl2_length/lbl.lbl2_rec_size;
 		log(1, "%d countries defined %d\n", nc,lbl.lbl2_length);
 		if (!nc)
@@ -465,98 +467,102 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		//return idx;
 		goto out;
 	}
-	nc = lbl.lbl3_length/lbl.lbl3_rec_size;
-	log(1, "%d regions defined sz=%d\n", nc,lbl.lbl3_rec_size);
-	if (!nc)
-		goto out;
-	sub->regions = calloc(nc + 1, sizeof(struct region_def *));
-	if (!sub->regions)
-		goto outerr;
-	rb = malloc(lbl.lbl3_length);
-	off = off1 + lbl.lbl3_offset;
-	if (glseek(gimg, off, SEEK_SET) != off) {
-		log(1, "LBL: Error can not seek to %ld\n", off);
-		goto outerr;
-	}
-	rc = gread(gimg, rb, lbl.lbl3_length);
-	if (rc != lbl.lbl3_length) {
-		log(1, "LBL: Error reading regions\n");
-		free(rb);
-		free(sub->regions);
-		sub->regions = NULL;
-		goto outerr;
-	}
-	cp = rb;
-	idx = 1;
-	while (cp < rb + lbl.lbl3_length) {
-		off = *(u_int32_t *)(cp+2);
-		off &= 0x00FFFFFF;
-		off <<= lbl.addr_shift;
-		off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
-		gar_get_at(sub, off, buf, sizeof(buf));
-		log(15, "LBL: CNT[%d] off=%03lX cnt:%d [%s]\n", idx, off, *(short *)cp,buf);
-		sub->regions[idx] = calloc(1, sizeof(struct region_def));
-		if (!sub->regions[idx])
-			break;
-		sub->regions[idx]->name = strdup(buf);
-		sub->regions[idx]->country = *(short *)cp;
-		idx++;
-		cp += lbl.lbl3_rec_size;
-	}
-	sub->rcount = idx;
-	free(rb);
-	// cities
-	nc = lbl.lbl4_length/lbl.lbl4_rec_size;
-	log(1, "%d cities defined sz=%d\n", nc,lbl.lbl4_rec_size);
-	if (!nc)
-		goto out;
-	sub->cities = calloc(nc + 1, sizeof(struct city_def *));
-	if (!sub->cities)
-		goto outerr;
-	rb = malloc(lbl.lbl4_length);
-	off = off1 + lbl.lbl4_offset;
-	if (glseek(gimg, off, SEEK_SET) != off) {
-		log(1, "LBL: Error can not seek to %ld\n", off);
-		goto outerr;
-	}
-	rc = gread(gimg, rb, lbl.lbl4_length);
-	if (rc != lbl.lbl4_length) {
-		log(1, "LBL: Error reading cities\n");
-		free(rb);
-		free(sub->cities);
-		sub->regions = NULL;
-		goto outerr;
-	}
-	cp = rb;
-	idx = 1;
-	while (cp < rb + lbl.lbl4_length) {
-		unsigned short tmp = *(unsigned short *)(cp+3);
-		sub->cities[idx] = calloc(1, sizeof(struct city_def));
-		if (!sub->cities[idx])
-			break;
-		sub->cities[idx]->region_idx = tmp & 0x1fff;
-		if (tmp & (1<<15)) {
-			sub->cities[idx]->point_idx = *(char *)cp;
-			sub->cities[idx]->subdiv_idx = *(short *)(cp+1);
-			log(15, "LBL: City def region %d at pointidx: %d, subdividx:%d\n",
-				sub->cities[idx]->region_idx,
-				sub->cities[idx]->point_idx,
-				sub->cities[idx]->subdiv_idx);
-		} else {
-			off = *(u_int32_t *)(cp);
+
+	if (lbl.lbl3_rec_size) {
+		nc = lbl.lbl3_length/lbl.lbl3_rec_size;
+		log(1, "%d regions defined sz=%d\n", nc,lbl.lbl3_rec_size);
+		if (!nc)
+			goto out;
+		sub->regions = calloc(nc + 1, sizeof(struct region_def *));
+		if (!sub->regions)
+			goto outerr;
+		rb = malloc(lbl.lbl3_length);
+		off = off1 + lbl.lbl3_offset;
+		if (glseek(gimg, off, SEEK_SET) != off) {
+			log(1, "LBL: Error can not seek to %ld\n", off);
+			goto outerr;
+		}
+		rc = gread(gimg, rb, lbl.lbl3_length);
+		if (rc != lbl.lbl3_length) {
+			log(1, "LBL: Error reading regions\n");
+			free(rb);
+			free(sub->regions);
+			sub->regions = NULL;
+			goto outerr;
+		}
+		cp = rb;
+		idx = 1;
+		while (cp < rb + lbl.lbl3_length) {
+			off = *(u_int32_t *)(cp+2);
 			off &= 0x00FFFFFF;
 			off <<= lbl.addr_shift;
 			off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
 			gar_get_at(sub, off, buf, sizeof(buf));
-			log(15, "LBL: CNT[%d] off=%03lX cnt:%d region:%d [%s]\n", idx, off, *(short *)cp,sub->cities[idx]->region_idx,buf);
-			sub->cities[idx]->label = strdup(buf);
+			log(15, "LBL: CNT[%d] off=%03lX cnt:%d [%s]\n", idx, off, *(short *)cp,buf);
+			sub->regions[idx] = calloc(1, sizeof(struct region_def));
+			if (!sub->regions[idx])
+				break;
+			sub->regions[idx]->name = strdup(buf);
+			sub->regions[idx]->country = *(short *)cp;
+			idx++;
+			cp += lbl.lbl3_rec_size;
 		}
-		idx++;
-		cp += lbl.lbl4_rec_size;
+		sub->rcount = idx;
+		free(rb);
 	}
-	free(rb);
-	sub->cicount = idx;
-
+	if (lbl.lbl4_rec_size) {
+		// cities
+		nc = lbl.lbl4_length/lbl.lbl4_rec_size;
+		log(1, "%d cities defined sz=%d\n", nc,lbl.lbl4_rec_size);
+		if (!nc)
+			goto out;
+		sub->cities = calloc(nc + 1, sizeof(struct city_def *));
+		if (!sub->cities)
+			goto outerr;
+		rb = malloc(lbl.lbl4_length);
+		off = off1 + lbl.lbl4_offset;
+		if (glseek(gimg, off, SEEK_SET) != off) {
+			log(1, "LBL: Error can not seek to %ld\n", off);
+			goto outerr;
+		}
+		rc = gread(gimg, rb, lbl.lbl4_length);
+		if (rc != lbl.lbl4_length) {
+			log(1, "LBL: Error reading cities\n");
+			free(rb);
+			free(sub->cities);
+			sub->regions = NULL;
+			goto outerr;
+		}
+		cp = rb;
+		idx = 1;
+		while (cp < rb + lbl.lbl4_length) {
+			unsigned short tmp = *(unsigned short *)(cp+3);
+			sub->cities[idx] = calloc(1, sizeof(struct city_def));
+			if (!sub->cities[idx])
+				break;
+			sub->cities[idx]->region_idx = tmp & 0x1fff;
+			if (tmp & (1<<15)) {
+				sub->cities[idx]->point_idx = *(char *)cp;
+				sub->cities[idx]->subdiv_idx = *(short *)(cp+1);
+				log(15, "LBL: City def region %d at pointidx: %d, subdividx:%d\n",
+					sub->cities[idx]->region_idx,
+					sub->cities[idx]->point_idx,
+					sub->cities[idx]->subdiv_idx);
+			} else {
+				off = *(u_int32_t *)(cp);
+				off &= 0x00FFFFFF;
+				off <<= lbl.addr_shift;
+				off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
+				gar_get_at(sub, off, buf, sizeof(buf));
+				log(15, "LBL: CNT[%d] off=%03lX cnt:%d region:%d [%s]\n", idx, off, *(short *)cp,sub->cities[idx]->region_idx,buf);
+				sub->cities[idx]->label = strdup(buf);
+			}
+			idx++;
+			cp += lbl.lbl4_rec_size;
+		}
+		free(rb);
+		sub->cicount = idx;
+	}
 	// lbl7 = index of POI types
 	log(1,"lbl7 off=%04X size=%d, recsize=%d\n",
 		lbl.lbl7_offset, lbl.lbl7_length,lbl.lbl7_rec_size);
