@@ -193,6 +193,9 @@ static struct gar_subdiv *gar_find_subdiv_by_idx(struct gar_subfile *gsub,
 	return NULL;
 }
 
+// FIXME hack set to 1 to enable map layout checking 
+// 0 to leave to the callers layout
+#define CHECKVIS 0
 static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, int level, int start, int routable)
 {
 	struct gobject *first = NULL, *o = NULL, *p;
@@ -217,7 +220,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 				/* Do not return definition areas and backgrounds */
 				if (gpoly->type == 0x4a || gpoly->type == 0x4b)
 					continue;
-				if (!gar_is_pgone_visible(gsub, level, gpoly))
+				if (CHECKVIS && !gar_is_pgone_visible(gsub, level, gpoly))
 					continue;
 				p = gar_alloc_object(GO_POLYGON, gpoly);
 				if (!p)
@@ -233,7 +236,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 		cnt = ga_get_count(&gsd->polylines);
 		for (i=0; i < cnt; i++) {
 			gpoly = ga_get(&gsd->polylines, i);
-			if (!gar_is_line_visible(gsub, level, gpoly))
+			if (CHECKVIS && !gar_is_line_visible(gsub, level, gpoly))
 				continue;
 			p = gar_alloc_object(GO_POLYLINE, gpoly);
 			if (!p)
@@ -249,7 +252,7 @@ static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, i
 			cnt = ga_get_count(&gsd->points);
 			for (i=0; i < cnt; i++) {
 				gp = ga_get(&gsd->points, i);
-				if (!gar_is_point_visible(gsub, level, gp))
+				if (CHECKVIS&& !gar_is_point_visible(gsub, level, gp))
 					continue;
 				p = gar_alloc_object(GO_POINT, gp);
 				if (!p)

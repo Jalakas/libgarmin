@@ -1084,6 +1084,7 @@ int gar_load_subfiles(struct gimg *g)
 					gar_load_roadnetwork(sub);
 				}
 				if (sub->rgnlen2) {
+					log(11, "Parse RGN2\n");
 					gar_parse_rgn2(sub);
 				}
 			}
