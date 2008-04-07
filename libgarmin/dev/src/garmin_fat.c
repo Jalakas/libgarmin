@@ -221,6 +221,7 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize, unsigned int fat
 	struct fat_entry *fe;
 	int userootdir = 0;
 	int fatend = dataoffset;
+	int seendot = 0;
 
 	if (!fatend) {
 		log(15, "FAT Will use size from rootdir\n");
@@ -250,9 +251,11 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize, unsigned int fat
 				break;
 			continue;
 		}
-		if (userootdir && !fatend) {
-			if (fent.name[0] == ' ' && fent.type[0] == ' ')
+		if (!seendot||(userootdir && !fatend)) {
+			if (fent.name[0] == ' ' && fent.type[0] == ' ') {
 				fatend = fent.size - s;
+				seendot = 1;
+			}
 		}
 		gar_add_fe(g, &fent, blocksize);
 		count ++;

@@ -582,6 +582,8 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 	}
 
 	// ZIPs
+	if (!lbl.lbl8_rec_size)
+		goto pois;
 	nc = lbl.lbl8_length/lbl.lbl8_rec_size;
 	log(1, "%d ZIPs defined sz=%d\n", nc,lbl.lbl8_rec_size);
 	if (!nc)
