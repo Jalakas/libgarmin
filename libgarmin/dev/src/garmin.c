@@ -69,6 +69,11 @@ static int g_safe_open(char *file, int fl)
 reopen:
 	fd = open(file, flags);
 	if (fd < 0 && errno == EPERM && (flags & O_NOATIME)) {
+		static int no_atime_warned;
+		if (!no_atime_warned) {
+			log(1, "WARNING: You can change the ownership of the maps to the same user for faster reading\n");
+			no_atime_warned = 1;
+		}
 		flags &= ~O_NOATIME;
 		goto reopen;
 	}
