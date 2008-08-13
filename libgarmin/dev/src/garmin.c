@@ -62,10 +62,23 @@ void gar_log_file_date(int l, char *pref, struct hdr_subfile_part_t *h)
 		h->hour, h->min, h->sec);
 }
 
+static int g_safe_open(char *file, int fl)
+{
+	int flags = fl;
+	int fd;
+reopen:
+	fd = open(file, flags);
+	if (fd < 0 && errno == EPERM && (flags & O_NOATIME)) {
+		flags &= ~O_NOATIME;
+		goto reopen;
+	}
+	return fd;
+}
+
 static void inline gcheckfd(struct gimg *g)
 {
 	if (g->fd == -1) {
-		g->fd = open(g->file, OPENFLAGS);
+		g->fd = g_safe_open(g->file, OPENFLAGS);
 		if (g->fd < 0) {
 			log(1, "Error can not open:[%s] errno=%d(%s)\n",
 				g->file, errno, strerror(errno));
@@ -76,7 +89,7 @@ static void inline gcheckfd(struct gimg *g)
 int gopen(struct gimg *g)
 {
 	if (g->fd == -1)
-		g->fd = open(g->file, OPENFLAGS);
+		g->fd = g_safe_open(g->file, OPENFLAGS);
 	return g->fd;
 }
 
