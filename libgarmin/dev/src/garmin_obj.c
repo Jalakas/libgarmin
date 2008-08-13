@@ -195,7 +195,7 @@ static struct gar_subdiv *gar_find_subdiv_by_idx(struct gar_subfile *gsub,
 
 // FIXME hack set to 1 to enable map layout checking 
 // 0 to leave to the callers layout
-#define CHECKVIS 0
+#define CHECKVIS 1
 static struct gobject *gar_get_subdiv_objs(struct gar_subdiv *gsd, int *count, int level, int start, int routable)
 {
 	struct gobject *first = NULL, *o = NULL, *p;

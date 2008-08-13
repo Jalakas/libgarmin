@@ -675,7 +675,7 @@ int gar_graph2tfmap(struct gar_graph *g, char *filename)
 				}
 				if (!arc->dest->complete)
 					continue;
-				fprintf(tfmap, "type=grapharc debug=\"l=%d  h=%.2f %.2f %.2f \"  label=\"%d->%d\"\n", 
+				fprintf(tfmap, "type=rg_segment debug=\"l=%d  h=%.2f %.2f %.2f \"  label=\"%d->%d\"\n", 
 					arc->len, arc->heading*1.4173228, arc->curve*1.4173228, arc->headout*1.4173228, n->offset, arc->dest->offset);
 				fprintf(tfmap, "garmin:0x%x 0x%x\n",
 					n->c.x, n->c.y);

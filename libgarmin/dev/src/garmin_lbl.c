@@ -168,8 +168,17 @@ static int gar_lbl_decode16(struct bspfd *bp, u_int8_t *out, ssize_t len)
 //	*(cp+sz) = '\0';
 //	return sz;
 
-	while ((c = bsp_fd_get_bits(bp,8)) > -1) {
+	sz = gread(bp->g, cp, len);
+	if (0 ) {
+		char dbuf[5*len];
+		c = 0;
+		for (i=0; i < sz; i++)
+			c+=sprintf(dbuf+c, "0x%02X,", cp[i]);
+		log(14, "LBLR:[%s]\n", dbuf);
+	}
+	return sz;
 #if 0
+	while ((c = bsp_fd_get_bits(bp,8)) > -1) {
 		if (c == 0x1A) {
 			*cp++ = '$';
 			sz++;
@@ -195,7 +204,6 @@ static int gar_lbl_decode16(struct bspfd *bp, u_int8_t *out, ssize_t len)
 			*cp++ = c;
 			sz ++;
 		}
-#endif
 /*		*cp++ = c>>8;
 		sz++;
 		if (sz >=len-1)
@@ -211,6 +219,7 @@ static int gar_lbl_decode16(struct bspfd *bp, u_int8_t *out, ssize_t len)
 	}
 	*(cp+sz) = '\0';
 	return sz;
+#endif
 }
 
 static struct gar_lbl_t *gar_alloc_lbl(void)

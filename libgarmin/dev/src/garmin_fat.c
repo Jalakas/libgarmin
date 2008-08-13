@@ -231,8 +231,10 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize, unsigned int fat
 		log(15, "FAT size %d\n", fatend);
 	}
 	/* This explains the 'reserved entries at start' */
-	if (fatoffset)
+	if (fatoffset) {
+		log(14, "FAT offset: %d\n", fatoffset);
 		glseek(g, fatoffset * 512, SEEK_SET);
+	}
 	/* Read reserved FAT entries first */
 	while ((rc = gread(g, &fent, s)) == s) {
 		if (fent.flag != 0x00)

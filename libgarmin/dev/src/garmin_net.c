@@ -450,7 +450,7 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 			for (j = 0; j < gp->npoints; j++) {
 				dc.x += gp->deltas[j].x;
 				dc.y += gp->deltas[j].y;
-				log(11, "%f/%f\n", GARDEG(dc.x), GARDEG(dc.y));
+				log(11, "%f/%f (%x/%x)\n", GARDEG(dc.x), GARDEG(dc.y),dc.x, dc.y);
 			}
 			}
 #if 0
@@ -492,8 +492,10 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 				if (!rp) {
 					log(11, "No roadptr ERROR\n");
 				} else {
-					log(11, "Road (%x) at %d b1=%x b2=%x dest %d\n",
+					log(11, "Road (%x) cl=%d %sat %d b1=%x b2=%x dest %d\n",
 						node->arcs[j].roadidx,
+						node->arcs[j].roadclass,
+						node->arcs[j].islink ? "link ": "",
 						geti24(rp->off),
 						rp->b1, rp->b2,
 						node->arcs[j].dest->offset);
