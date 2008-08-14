@@ -542,6 +542,27 @@ struct gar_road *gar_get_road(struct gar_subfile *sub, off_t offset)
 	return NULL;
 }
 
+struct gar_road *gar_get_road_by_id(struct gar_subfile *sub, int sidx, int idx)
+{
+	struct gar_road *r;
+	int i,j;
+	int ridx, rsdidx;
+	for (i=0; i < ROADS_HASH_TAB_SIZE; i++) {
+		list_for_entry(r, &sub->net->lroads[i], l) {
+			for (j=0; j < r->ri_cnt; j++) {
+				ridx = ri->ri[i] & 0xff;
+				rsdidx = ri->ri[i] >> 8;
+				rsdidx &= 0xFFFF;
+				if (rsidx == sidx &&
+					ridx == idx) {
+					return r;
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
 static void gar_free_roads(struct gar_net_info *net)
 {
 	struct gar_road *r, *rs;

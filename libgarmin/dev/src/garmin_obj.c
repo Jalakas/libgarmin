@@ -772,7 +772,7 @@ int gar_get_objects(struct gmap *gm, int level, void *select,
 		bits = gm->basebits+gm->zoomlevels;
 		log(7, "Looking for roads at last level: %d bits\n",
 		gm->basebits+gm->zoomlevels);
-		rect = NULL;
+	//	rect = NULL;
 	} else if (flags&GO_GET_SEARCH) {
 		return gar_get_search_objects(gm, ret, select);
 	} else {
