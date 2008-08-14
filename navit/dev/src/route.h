@@ -8,6 +8,17 @@ struct street_data {
 	struct coord c[0];
 };
 
+struct route_info {
+	struct coord c;
+	struct coord lp;
+	int pos;
+
+	int dist;
+	int dir;
+
+	struct street_data *street;
+};
+
 #define route_item_first type_street_0
 #define route_item_last type_ferry
 
@@ -79,6 +90,9 @@ struct route_ops {
 	struct map *(*route_get_map)(void *data);
 	struct map *(*route_get_graph_map)(void *data);
 };
+
+void route_set_priv(struct route *r, void *data);
+void *route_get_priv(struct route *r);
 
 #endif
 

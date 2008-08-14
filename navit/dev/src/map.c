@@ -16,6 +16,7 @@ struct map {
 	struct map_priv *priv;
 	char *type;
 	char *filename;
+	char *name;
 	int active;
 };
 
@@ -53,6 +54,12 @@ char *
 map_get_filename(struct map *this_)
 {
 	return this_->filename;
+}
+
+char *
+map_get_name(struct map *this_)
+{
+	return this_->name;
 }
 
 char *
@@ -163,9 +170,9 @@ map_rect_destroy(struct map_rect *mr)
 }
 
 struct map_search {
-        struct map *m;
-        struct attr search_attr;
-        void *priv;
+	struct map *m;
+	struct attr search_attr;
+	void *priv;
 };
 
 struct map_search *
@@ -247,3 +254,22 @@ map_selection_destroy(struct map_selection *sel)
 		sel = next;
 	}
 }
+
+void *map_route(struct map *m, struct route *r)
+{
+	if (m->meth.map_route)
+		return m->meth.map_route(m->priv, r);
+	return NULL;
+}
+
+void map_free_route(struct map *m, void *maproute)
+{
+	if (m->meth.map_free_route)
+		return m->meth.map_free_route(m->priv, maproute);
+}
+
+int map_can_route(struct map *m)
+{
+	return m->meth.flags & MAP_ROUTE;
+}
+

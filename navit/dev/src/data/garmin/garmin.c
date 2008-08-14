@@ -44,6 +44,7 @@
 #include <libgarmin.h>
 #include "garmin.h"
 #include "gar2navit.h"
+#include "route.h"
 
 
 static int map_id;
@@ -446,6 +447,7 @@ static struct item_methods methods_garmin_poly = {
 	poly_coord_get,
 	attr_rewind,	// point_attr_rewind,
 	point_attr_get,	// poly_attr_get,
+	NULL,
 	coord_is_segment,
 };
 
@@ -798,7 +800,7 @@ garmin_get_selection(struct map_rect_priv *map, struct map_selection *sel)
 		&& sel->order[layer_street]) {
 		// Get all roads 
 		flags = GO_GET_ROUTABLE;
-		sel = NULL;
+//		sel = NULL;
 	} else if (sel)
 		flags = GO_GET_SORTED;
 
@@ -920,6 +922,49 @@ gmap_destroy(struct map_priv *m)
 	free(m);
 }
 
+static void * 
+gmap_route(struct map_priv *m, struct route *r)
+{
+	struct gar_route *grt;
+	struct route_info *pos, *dst;
+	struct gobject *gpos, *gdst;
+	dlog(1, "%s\n", __FUNCTION__);
+	pos = route_get_pos(r);
+	dst = route_get_dst(r);
+	if (pos && dst) {
+		grt = route_get_priv(r);
+		if (!grt) {
+			// it's a new route
+		} else {
+			// either position or destination is updated
+			
+		}
+		gpos = gar_get_object_by_id(m->g, 
+			pos->street->item.id_hi,
+			pos->street->item.id_lo);
+		if (gpos) {
+			dlog(1, "Found gpos\n");
+			gar_free_objects(gpos);
+		}
+		gdst = gar_get_object_by_id(m->g, 
+			dst->street->item.id_hi,
+			dst->street->item.id_lo);
+		if (gdst) {
+			dlog(1, "Found gdst\n");
+			gar_free_objects(gdst);
+		}
+	}
+	
+	return NULL;
+}
+
+static void
+gmap_free_route(struct map_priv *m, void *maproute)
+{
+	dlog(1, "%s\n", __FUNCTION__);
+	return;
+}
+
 static struct map_methods map_methods = {
 	projection_garmin,
 //	NULL,	FIXME navit no longer displays labels without charset!
@@ -932,7 +977,9 @@ static struct map_methods map_methods = {
 	gmap_search_new,
 	gmap_search_destroy,
 	gmap_rect_get_item,
-	MAP_COUNTRYLIST,
+	gmap_route,
+	gmap_free_route,
+	MAP_COUNTRYLIST|MAP_ROUTE,
 };
 
 static struct map_priv *
@@ -947,8 +994,9 @@ gmap_new(struct map_methods *meth, struct attr **attrs)
 	struct gar_config cfg;
 
 	data=attr_search(attrs, NULL, attr_data);
-	if (! data)
+	if (!data)
 		return NULL;
+
 	debug=attr_search(attrs, NULL, attr_debug);
 	if (debug) {
 		dl = atoi(debug->u.str);

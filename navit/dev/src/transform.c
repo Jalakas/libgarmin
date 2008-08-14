@@ -241,9 +241,9 @@ transform_center(struct transformation *this_)
 void
 transform_set_angle(struct transformation *t,int angle)
 {
-        t->angle=angle;
-        t->cos_val=cos(M_PI*t->angle/180);
-        t->sin_val=sin(M_PI*t->angle/180);
+	t->angle=angle;
+	t->cos_val=cos(M_PI*t->angle/180);
+	t->sin_val=sin(M_PI*t->angle/180);
 }
 
 int
@@ -365,13 +365,13 @@ transform_get_order(struct transformation *t)
 {
 	int scale=t->scale;
 	int order=0;
-        while (scale > 1) {
-                order++;
-                scale>>=1;
-        }
-        order=18-order;
-        if (order < 0)
-                order=0;
+	while (scale > 1) {
+		order++;
+		scale>>=1;
+	}
+	order=18-order;
+	if (order < 0)
+		order=0;
 	return order;
 }
 

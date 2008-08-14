@@ -67,17 +67,6 @@ struct route_path_segment {
 	struct coord c[0];
 };
 
-struct route_info {
-	struct coord c;
-	struct coord lp;
-	int pos;
-
-	int dist;
-	int dir;
-
-	struct street_data *street;
-};
-
 struct route_path {
 	struct route_path_segment *path;
 	struct route_path_segment *path_last;
@@ -104,6 +93,8 @@ struct route {
 	struct map *map;
 	struct map *graph_map;
 	int speedlist[route_item_last-route_item_first+1];
+	void *priv;
+	void *maproute;
 };
 
 struct route_graph {
@@ -220,6 +211,21 @@ static void
 route_path_update(struct route *this)
 {
 	struct route_path *oldpath = NULL;
+	if (mapset_can_route(this->ms)) {
+		printf("Mapset will route\n");
+		if (this->maproute) {
+			if (!this->pos || !this->dst) {
+				mapset_free_route(this->ms, this->maproute);
+				this->maproute = NULL;
+				return;
+			}
+		}
+		if (this->pos && this->dst) {
+			this->maproute = mapset_route(this->ms, this);
+		}
+		return;
+	}
+
 	if (! this->pos || ! this->dst) {
 		route_path_destroy(this->path2);
 		this->path2 = NULL;
@@ -362,8 +368,6 @@ route_free_selection(struct map_selection *sel)
 		sel=next;
 	}
 }
-
-
 
 void
 route_set_destination(struct route *this, struct pcoord *dst)
@@ -969,6 +973,12 @@ route_graph_build(struct mapset *ms, struct coord *c1, struct coord *c2)
 		printf("%s:Out of memory\n", __FUNCTION__);
 		return ret;
 	}
+	/*
+	 * This is not correct for two reasons:
+	 * - You may need to go back first
+	 * - Currently we allow mixing of mapsets
+	 */
+
 	sel=route_calc_selection(c1, c2);
 	h=mapset_open(ms);
 	while ((m=mapset_next(h,1))) {
@@ -1008,11 +1018,9 @@ street_get_data (struct item *item)
 	struct street_data *ret;
 	struct attr attr;
 
-	while (count < 1000) {
-		if (!item_coord_get(item, &c[count], 1))
-			break;
-		count++;
-	}
+	count = item_coord_get(item, &c[0], 1000);
+	if (!count)
+		return NULL;
 	g_assert(count < 1000);
 	ret=g_malloc(sizeof(struct street_data)+count*sizeof(struct coord));
 	ret->item=*item;
@@ -1050,7 +1058,7 @@ route_find_nearest_street(struct mapset *ms, struct pcoord *pc)
 	struct route_info *ret=NULL;
 	int max_dist=1000;
 	struct map_selection *sel;
-	int dist,pos;
+	int dist = max_dist,pos;
 	struct mapset_handle *h;
 	struct map *m;
 	struct map_rect *mr;
@@ -1059,15 +1067,14 @@ route_find_nearest_street(struct mapset *ms, struct pcoord *pc)
 	struct street_data *sd;
 	struct coord c;
 	struct coord_geo g;
+	enum projection retpro = projection_none;
 
-	c.x = pc->x;
-	c.y = pc->y;
-	/*
-	 * This is not correct for two reasons:
-	 * - You may need to go back first
-	 * - Currently we allow mixing of mapsets
-	 */
-	sel = route_rect(18, &c, &c, 0, max_dist);
+	ret=g_new0(struct route_info, 1);
+	if (!ret) {
+		printf("%s:Out of memory\n", __FUNCTION__);
+		return ret;
+	}
+	ret->dist = INT_MAX;
 	h=mapset_open(ms);
 	while ((m=mapset_next(h,1))) {
 		c.x = pc->x;
@@ -1076,22 +1083,19 @@ route_find_nearest_street(struct mapset *ms, struct pcoord *pc)
 			transform_to_geo(pc->pro, &c, &g);
 			transform_from_geo(map_projection(m), &g, &c);
 		}
+		sel = route_rect(18, &c, &c, 0, max_dist);
 		mr=map_rect_new(m, sel);
-		if (! mr)
+		if (!mr) {
+			map_selection_destroy(sel);
 			continue;
+		}
 		while ((item=map_rect_get_item(mr))) {
 			if (item->type >= type_street_0 && item->type <= type_ferry) {
 				sd=street_get_data(item);
 				dist=transform_distance_polyline_sq(sd->c, sd->count, &c, &lp, &pos);
-				if (!ret || dist < ret->dist) {
-					if (ret) {
+				if (dist < ret->dist) {
+					if (ret->street) {
 						street_data_free(ret->street);
-						g_free(ret);
-					}
-					ret=g_new(struct route_info, 1);
-					if (!ret) {
-						printf("%s:Out of memory\n", __FUNCTION__);
-						return ret;
 					}
 					ret->c=c;
 					ret->lp=lp;
@@ -1099,15 +1103,50 @@ route_find_nearest_street(struct mapset *ms, struct pcoord *pc)
 					ret->dist=dist;
 					ret->dir=0;
 					ret->street=sd;
+					retpro = map_projection(m);
 					dbg(1,"dist=%d id 0x%x 0x%x pos=%d\n", dist, item->id_hi, item->id_lo, pos);
 				} else 
 					street_data_free(sd);
 			}
 		}  
 		map_rect_destroy(mr);
+		map_selection_destroy(sel);
 	}
 	mapset_close(h);
-	map_selection_destroy(sel);
+	if (ret->street) {
+		struct coord_geo g;
+		transform_to_geo(retpro, &ret->street->c[ret->pos], &g);
+		printf("dist=%d id 0x%x 0x%x pos=%d %f %f\n", ret->dist, ret->street->item.id_hi, 
+				ret->street->item.id_lo, ret->pos,
+				g.lng,
+				g.lat
+				);
+		item = &ret->street->item;
+		if (item->map) {
+			mr=map_rect_new(item->map,NULL);
+			item=map_rect_get_item_byid(mr, item->id_hi, item->id_lo);
+			if (item) {
+				struct attr attr;
+				for (;;) {
+					memset(&attr, 0, sizeof(attr));
+					if (item_attr_get(item, attr_any, &attr))
+						printf("%s = %s\n", attr_to_name(attr.type),
+									attr_to_text(&attr, /*map,*/ 1));
+					else
+						break;
+				}
+			}
+			map_rect_destroy(mr);
+		}
+	}
+	if (!ret->street || ret->dist > max_dist) {
+		if (ret->street) {
+			printf("Much too far %d > %d\n", ret->dist, max_dist);
+			street_data_free(ret->street);
+		}
+		g_free(ret);
+		ret = NULL;
+	}
 
 	return ret;
 }
@@ -1723,6 +1762,18 @@ struct map *
 route_get_graph_map(struct route *this_)
 {
 	return route_get_map_helper(this_, &this_->graph_map, "route_graph");
+}
+
+void 
+route_set_priv(struct route *r, void *data)
+{
+	r->priv = data;
+}
+
+void *
+route_get_priv(struct route *r)
+{
+	return r->priv;
 }
 
 void

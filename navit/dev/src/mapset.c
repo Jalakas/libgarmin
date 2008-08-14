@@ -118,3 +118,25 @@ mapset_search_destroy(struct mapset_search *this)
 	map_search_destroy(this->ms);
 	g_free(this);
 }
+
+void *mapset_route(struct mapset *ms, struct route *r)
+{
+	if (ms->maps && ms->maps->data)
+		return map_route(ms->maps->data, r);
+	return NULL;
+}
+
+void mapset_free_route(struct mapset *ms, void *maproute)
+{
+	if (maproute) {
+		if (ms->maps && ms->maps->data)
+			return map_free_route(ms->maps->data, maproute);
+	}
+}
+
+int mapset_can_route(struct mapset *ms)
+{
+	if (ms->maps && ms->maps->data)
+		return map_can_route(ms->maps->data);
+	return 0;
+}

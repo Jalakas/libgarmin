@@ -3,6 +3,7 @@
 
 struct map_priv;
 struct attr;
+struct route;
 #include "coord.h"
 #include "point.h"
 
@@ -23,6 +24,7 @@ struct map_selection {
 };
 
 #define MAP_COUNTRYLIST		(1<<0)
+#define MAP_ROUTE		(1<<1)
 
 struct attr_group;
 
@@ -37,6 +39,8 @@ struct map_methods {
 	struct map_search_priv *(*map_search_new)(struct map_priv *map, struct attr_group *ag, struct item *item, struct attr *search, int partial);
 	void			(*map_search_destroy)(struct map_search_priv *ms);
 	struct item *		(*map_search_get_item)(struct map_search_priv *ms);
+	void *			(*map_route)(struct map_priv *m, struct route *r);
+	void			(*map_free_route)(struct map_priv *m, void *mappriv);
 	unsigned flags;
 };
 
@@ -44,14 +48,14 @@ static inline int
 map_selection_contains_point(struct map_selection *sel, struct coord *c)
 {
 	struct map_selection *curr=sel;
-        while (curr) {
-                struct coord_rect *r=&curr->u.c_rect;
-                if (c->x >= r->lu.x && c->x <= r->rl.x &&
-                    c->y <= r->lu.y && c->y >= r->rl.y)
-                        return 1;
-                curr=curr->next;
-        }
-        return sel ? 0:1;
+	while (curr) {
+		struct coord_rect *r=&curr->u.c_rect;
+		if (c->x >= r->lu.x && c->x <= r->rl.x &&
+		    c->y <= r->lu.y && c->y >= r->rl.y)
+			return 1;
+		curr=curr->next;
+	}
+	return sel ? 0:1;
 }
 
 static inline int
@@ -164,6 +168,9 @@ struct item *map_search_get_item(struct map_search *this_);
 void map_search_destroy(struct map_search *this_);
 struct map_selection *map_selection_dup(struct map_selection *sel);
 void map_selection_destroy(struct map_selection *sel);
+void *map_route(struct map *m, struct route *r);
+void map_free_route(struct map *m, void *maproute);
+int map_can_route(struct map *m);
 /* end of prototypes */
 
 #endif
