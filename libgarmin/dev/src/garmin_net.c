@@ -375,7 +375,7 @@ out_err:
 	return NULL;
 }
 
-static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
+void gar_log_road_info(struct gar_road *ri)
 {
 	int i,j;
 	int idx;
@@ -384,34 +384,35 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 	int sz;
 	struct gobject *o;
 	struct gpoly *gp;
+	struct gar_subfile *sub = ri->sub;
 
 	log(11, "Labels at %ld %ld %ld %ld\n",
 		ri->labels[0],ri->labels[1],ri->labels[2],ri->labels[3]);
 	if (ri->labels[0]) {
 		gar_get_lbl(sub, ri->labels[0], L_LBL, (unsigned char*)buf, 1024);
-		log(11, "L[0]=%s\n", buf);
+		log(1, "L[0]=%s\n", buf);
 	}
 	if (ri->labels[1]) {
 		gar_get_lbl(sub, ri->labels[1], L_LBL, (unsigned char*)buf, 1024);
-		log(11, "L[1]=%s\n", buf);
+		log(1, "L[1]=%s\n", buf);
 	}
 	if (ri->labels[2]) {
 		gar_get_lbl(sub, ri->labels[2], L_LBL, (unsigned char*)buf, 1024);
-		log(11, "L[2]=%s\n", buf);
+		log(1, "L[2]=%s\n", buf);
 	}
 	if (ri->labels[3]) {
 		gar_get_lbl(sub, ri->labels[3], L_LBL, (unsigned char*)buf, 1024);
-		log(11, "L[3]=%s\n", buf);
+		log(1, "L[3]=%s\n", buf);
 	}
 
 	if (ri->sr_cnt) {
 		if (!sub->net->net2_length)
 			log(1, "Error have segmented offsets but segments section is empty\n");
-		log(11, "Segmented roads offsets:\n");
+		log(1, "Segmented roads offsets:\n");
 		for (i=0; i < ri->sr_cnt; i++)
 			log(11, "Seg at:%d\n", ri->sr_offset[i]);
 	}
-	log(11, "road_flags=%d road_len=%d hnb=%d "
+	log(1, "road_flags=%d road_len=%d hnb=%d "
 		"unk0:%d, oneway:%d, lock:%d, unk3:%d, ar:%d, mhw:%d\n",
 		ri->road_flags, ri->road_len, ri->hnb,
 		!!(ri->road_flags&RFL_UNKNOWN0),
@@ -425,7 +426,7 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 	for (i=0; i < ri->rio_cnt; i++) {
 		sz += sprintf(buf + sz, "%d %d ", i, ri->rio[i]);
 	}
-	log(11, "segments per level: %s\n", buf);
+	log(1, "segments per level: %s\n", buf);
 	sz = 0;
 	for (i=0; i < ri->ri_cnt; i++) {
 		idx = ri->ri[i] & 0xff;
@@ -439,24 +440,28 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 			if (1||i==0) {
 				char *cp = gar_object_debug_str(o);
 				if (cp) {
-					log(11, "%s\n", cp);
+					log(1, "%s\n", cp);
 					free(cp);
 				}
 			}
 			{
 			gp = o->gptr;
 			struct gcoord dc;
+			int ebset =0;
 			dc = gp->c;
 			for (j = 0; j < gp->npoints; j++) {
+				if (gp->nodemap) {
+					ebset = bm_is_set(gp->nodemap, j);
+				}
 				dc.x += gp->deltas[j].x;
 				dc.y += gp->deltas[j].y;
-				log(11, "%f/%f (%x/%x)\n", GARDEG(dc.x), GARDEG(dc.y),dc.x, dc.y);
+				log(1, "%f/%f (%x/%x) e=%d\n", GARDEG(dc.x), GARDEG(dc.y),dc.x, dc.y, ebset);
 			}
 			}
 #if 0
 			cp = gar_get_object_lbl(o);
 			if (cp) {
-				log(11, "LBL=%s\n", cp);
+				log(1, "LBL=%s\n", cp);
 				free(cp);
 			}
 #endif
@@ -465,16 +470,16 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 			log(1, "NET: Error can not find object\n");
 		}
 	}
-	log(11, "segments:%s\n", buf);
+	log(1, "segments:%s\n", buf);
 	if (ri->sai) {
-		log(11, "Have street address info:%x\n", ri->sai->flags);
+		log(1, "Have street address info:%x\n", ri->sai->flags);
 		gar_log_sai(sub, ri->sai);
 	}
 	if (ri->road_flags & RFL_NODINFO) {
-		log(11, "NOD info at %d\n",ri->nod_offset);
+		log(1, "NOD info at %d\n",ri->nod_offset);
 		if (ri->nod) {
 			int i, l = (ri->nod->bmlen+7)/8;
-			log(11, "NOD1 at %d bmlen=%d fb=%d\n", ri->nod->nodesoff, ri->nod->bmlen, ri->nod->bitmap[0]&1);
+			log(1, "NOD1 at %d bmlen=%d fb=%d\n", ri->nod->nodesoff, ri->nod->bmlen, ri->nod->bitmap[0]&1);
 			for (i = 0; i < l; i++) {
 				log(11, "BITMAP: %x\n", ri->nod->bitmap[i]);
 			}
@@ -485,14 +490,15 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 			struct roadptr *rp;
 			graph = gar_alloc_graph(sub);
 			node = gar_get_node(graph, ri->nod->nodesoff);
-			gar_read_node(graph, NULL, node);
-			log(11, "NODE at %f/%f\n", GARDEG(node->c.x),GARDEG(node->c.y));
+			if (!gar_read_node(graph, NULL, node))
+				log(1, "Failed to read node:%d\n",ri->nod->nodesoff);
+			log(1, "NODE at %f/%f\n", GARDEG(node->c.x),GARDEG(node->c.y));
 			for (j=0; j < node->narcs; j++) {
 				rp = gar_cp_idx2road(node->cpoint, node->arcs[j].roadidx);
 				if (!rp) {
-					log(11, "No roadptr ERROR\n");
+					log(1, "No roadptr ERROR\n");
 				} else {
-					log(11, "Road (%x) cl=%d %sat %d b1=%x b2=%x dest %d\n",
+					log(1, "Road (%x) cl=%d %sat %d b1=%x b2=%x dest %d\n",
 						node->arcs[j].roadidx,
 						node->arcs[j].roadclass,
 						node->arcs[j].islink ? "link ": "",
@@ -500,7 +506,7 @@ static void gar_log_road_info(struct gar_subfile *sub, struct gar_road *ri)
 						rp->b1, rp->b2,
 						node->arcs[j].dest->offset);
 					if (geti24(rp->off) == ri->offset) {
-						log(11, "Own road\n");
+						log(1, "Own road\n");
 					}
 				}
 			}
@@ -544,18 +550,20 @@ struct gar_road *gar_get_road(struct gar_subfile *sub, off_t offset)
 
 struct gar_road *gar_get_road_by_id(struct gar_subfile *sub, int sidx, int idx)
 {
-	struct gar_road *r;
+	struct gar_road *ri;
 	int i,j;
 	int ridx, rsdidx;
+
+	gar_load_roads(sub);
 	for (i=0; i < ROADS_HASH_TAB_SIZE; i++) {
-		list_for_entry(r, &sub->net->lroads[i], l) {
-			for (j=0; j < r->ri_cnt; j++) {
-				ridx = ri->ri[i] & 0xff;
-				rsdidx = ri->ri[i] >> 8;
+		list_for_entry(ri, &sub->net->lroads[i], l) {
+			for (j=0; j < ri->ri_cnt; j++) {
+				ridx = ri->ri[j] & 0xff;
+				rsdidx = ri->ri[j] >> 8;
 				rsdidx &= 0xFFFF;
-				if (rsidx == sidx &&
+				if (rsdidx == sidx &&
 					ridx == idx) {
-					return r;
+					return ri;
 				}
 			}
 		}
@@ -781,7 +789,7 @@ int gar_load_roadnetwork(struct gar_subfile *sub)
 		ri = gar_parse_road(sub, roadptr);
 		if (ri) {
 			if (gar_debug_level > 10) 
-				gar_log_road_info(sub, ri);
+				gar_log_road_info(ri);
 			gar_add_road(sub->net, ri);
 			p++;
 		} else {
@@ -790,8 +798,18 @@ int gar_load_roadnetwork(struct gar_subfile *sub)
 		c++;
 	}
 	log(11, "Total %d roads, %d parsed\n", c, p);
+	sub->net->roads_loaded = 1;
 	gar_subfile_unref(sub);
 	return c;
+}
+
+void gar_load_roads(struct gar_subfile *sub)
+{
+	if (!sub->net)
+		return;
+	if (sub->net->roads_loaded)
+		return;
+	gar_load_roadnetwork(sub);
 }
 
 void gar_free_net(struct gar_subfile *sub)

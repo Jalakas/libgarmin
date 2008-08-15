@@ -207,7 +207,20 @@ char *gar_srch_get_zip(struct gobject *o);
 unsigned int gar_srch_get_roadid(struct gobject *o);
 char *gar_srch_get_roadname(struct gobject *o);
 
-
+/* Routing */
+struct gar_route;
+struct gar_route_request {
+	struct gar_route *route;
+	unsigned int posmapid;
+	unsigned int posobjid;
+	int posidx;
+	unsigned int dstmapid;
+	unsigned int dstobjid;
+	int dstidx;
+	int route_flags;
+	int vehicle_type;
+};
+struct gar_route *gar_route(struct gar *gar, struct gar_route_request *grr);
 
 #ifdef __cplusplus
 }

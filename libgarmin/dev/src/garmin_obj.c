@@ -439,6 +439,19 @@ out:
 	return NULL;
 }
 
+struct gar_subfile *gar_subfile_get_by_mapid(struct gar *gar, unsigned int mapid)
+{
+	struct gimg *g;
+	struct gar_subfile *sub;
+	list_for_entry(g, &gar->limgs,l) {
+		list_for_entry(sub, &g->lsubfiles, l) {
+			if (sub->id == mapid)
+				return sub;
+		}
+	}
+	return NULL;
+}
+
 struct gobject *gar_get_object_by_id(struct gar *gar, unsigned int mapid,
 					unsigned int objid)
 {

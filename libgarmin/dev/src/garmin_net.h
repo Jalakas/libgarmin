@@ -13,6 +13,7 @@ struct gar_net_info {
 	u_int32_t net3_offset;
 	u_int32_t net3_length;
 	struct gar_nod_info *nod;
+	int roads_loaded;
 	list_t lroads[ROADS_HASH_TAB_SIZE];
 };
 
@@ -46,3 +47,5 @@ int gar_load_roadnetwork(struct gar_subfile *sub);
 struct gar_road *gar_get_road(struct gar_subfile *sub, off_t offset);
 int gar_match_sai(struct street_addr_info *sai, unsigned int zipid, unsigned int rid, unsigned int cid, unsigned int num);
 void gar_sai2searchres(struct street_addr_info *sai, struct gar_search_res *res);
+struct gar_road *gar_get_road_by_id(struct gar_subfile *sub, int sidx, int idx);
+void gar_log_road_info(struct gar_road *ri);

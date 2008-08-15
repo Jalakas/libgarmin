@@ -15,7 +15,8 @@ libgarmin_a_SOURCES = GarminTypedef.h  garmin_fat.c  garmin_rgn.h \
 		garmin_tdb.c garmin_tdb.h	\
 		array.h array.c \
 		garmin_nod.c garmin_nod.h	\
-		garmin_mdr.c garmin_mdr.h
+		garmin_mdr.c garmin_mdr.h	\
+		garmin_route.c
 
 if HAVEEXTRAS
 libgarmin_a_SOURCES+=extras.c
