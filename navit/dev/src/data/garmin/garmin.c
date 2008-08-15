@@ -925,36 +925,30 @@ gmap_destroy(struct map_priv *m)
 static void * 
 gmap_route(struct map_priv *m, struct route *r)
 {
-	struct gar_route *grt;
+	struct gar_route *grt = NULL;
 	struct route_info *pos, *dst;
-	struct gobject *gpos, *gdst;
+	struct gar_route_request grr;
 	dlog(1, "%s\n", __FUNCTION__);
 	pos = route_get_pos(r);
 	dst = route_get_dst(r);
 	if (pos && dst) {
-		grt = route_get_priv(r);
-		if (!grt) {
-			// it's a new route
-		} else {
-			// either position or destination is updated
-			
+		memset(&grr, 0, sizeof(struct gar_route_request));
+		grr.route = route_get_priv(r);
+		grr.posmapid = pos->street->item.id_hi;
+		grr.posobjid = pos->street->item.id_lo;
+		grr.posidx   = pos->pos;
+		grr.dstmapid = dst->street->item.id_hi;
+		grr.dstobjid = dst->street->item.id_lo;
+		grr.dstidx   = dst->pos;
+		grr.route_flags = 0;
+		grr.vehicle_type = 0;
+		grt = gar_route(m->g, &grr);
+		if (grt) {
+			route_set_priv(r, grt);
 		}
-		gpos = gar_get_object_by_id(m->g, 
-			pos->street->item.id_hi,
-			pos->street->item.id_lo);
-		if (gpos) {
-			dlog(1, "Found gpos\n");
-			gar_free_objects(gpos);
-		}
-		gdst = gar_get_object_by_id(m->g, 
-			dst->street->item.id_hi,
-			dst->street->item.id_lo);
-		if (gdst) {
-			dlog(1, "Found gdst\n");
-			gar_free_objects(gdst);
-		}
+
 	}
-	
+
 	return NULL;
 }
 
