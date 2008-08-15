@@ -449,9 +449,13 @@ void gar_log_road_info(struct gar_road *ri)
 			struct gcoord dc;
 			int ebset =0;
 			dc = gp->c;
+			if (gp->nodemap) {
+				ebset = bm_is_set(gp->nodemap, 0);
+			}
+			log(1, "%f/%f (%x/%x) e=%d\n", GARDEG(dc.x), GARDEG(dc.y),dc.x, dc.y, ebset);
 			for (j = 0; j < gp->npoints; j++) {
 				if (gp->nodemap) {
-					ebset = bm_is_set(gp->nodemap, j);
+					ebset = bm_is_set(gp->nodemap, j+1);
 				}
 				dc.x += gp->deltas[j].x;
 				dc.y += gp->deltas[j].y;
