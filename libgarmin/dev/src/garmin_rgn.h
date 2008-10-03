@@ -12,6 +12,16 @@ struct gar_subdiv {
 	unsigned terminate :1;
 	u_int32_t rgn_start;
 	u_int32_t rgn_end;
+	u_int32_t rgn2_start;
+	u_int32_t rgn2_end;
+	u_int32_t rgn3_start;
+	u_int32_t rgn3_end;
+	u_int32_t rgn4_start;
+	u_int32_t rgn4_end;
+	u_int32_t rgn5_start;
+	u_int32_t rgn5_end;
+	u_int8_t unknown1;
+
 	unsigned haspoints :1,
 		hasidxpoints :1,
 		haspolylines :1,

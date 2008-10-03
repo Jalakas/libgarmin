@@ -248,6 +248,83 @@ static int gar_load_subdivs_data(struct gar_subfile *sub)
 	return 0;
 }
 
+static void gar_parse_subdiv_nt(struct gar_subfile *sub,struct hdr_tre_t *tre)
+{
+	struct gar_subdiv *sd;
+	u_int32_t rgn2_start = 0;
+	u_int32_t rgn2_end = 0;
+	u_int32_t rgn3_start = 0;
+	u_int32_t rgn3_end = 0;
+	u_int32_t rgn4_start = 0;
+	u_int32_t rgn4_end = 0;
+	u_int32_t rgn5_start = 0;
+	u_int32_t rgn5_end = 0;
+	u_int8_t unk1 = 0;
+	int lpos = 0;
+	int sdidx = 0 ,rc = 0;
+	struct gimg *g = sub->gimg;
+	off_t off = gar_subfile_baseoffset(sub, "TRE") + tre->tre7_offset;
+	int recsize = tre->tre7_rec_size;
+	if (tre->tre7_size == 0)
+		return;
+	{
+		unsigned char rec[recsize];
+		glseek(g, off, SEEK_SET);
+		if (recsize != 13) {
+			log(1, "Extra data in tre_nt size=%d our=%d\n",
+				recsize, 13);
+		}
+		while (rc < tre->tre7_size) {
+			lpos = 0;
+			rc += gread(g, rec, recsize);
+			if (recsize >= 4) {
+				rgn2_end = *(u_int32_t *)rec;
+				lpos = 4;
+			}
+			if (recsize >= 8) {
+				rgn3_end = *(u_int32_t *)(rec+4);
+				lpos = 8;
+			}
+			if (recsize >= 12) {
+				rgn4_end = *(u_int32_t *)(rec+8);
+				lpos = 12;
+			}
+			if (recsize > lpos) {
+				unk1 = rec[lpos];
+			}
+			if (sdidx) {
+				sd = gar_find_subdiv_by_idx(sub, 0, sdidx); 
+				if (!sd) {
+					log(1, "Error subdiv %d not found aborting\n",
+								sdidx);
+					return;
+				}
+				sd->rgn2_start = rgn2_start;
+				sd->rgn2_end = rgn2_end;
+				sd->rgn3_start = rgn3_start;
+				sd->rgn3_end = rgn3_end;
+				sd->rgn4_start = rgn4_start;
+				sd->rgn4_end = rgn4_end;
+				sd->rgn5_start = rgn5_start;
+				sd->rgn5_end = rgn5_end;
+				sd->unknown1 = unk1;
+				log(11, "SD %d 2s = %x 2e = %x, 3s = %x 3e = %d, 4s = %x 5e = %x unk1=%x\n",
+					sdidx,
+					sd->rgn2_start, sd->rgn2_end,
+					sd->rgn3_start, sd->rgn3_end,
+					sd->rgn4_start, sd->rgn4_end,
+					unk1);
+			}
+			rgn2_start = rgn2_end;
+			rgn3_start = rgn3_end;
+			rgn4_start = rgn4_end;
+			rgn5_start = rgn5_end;
+			sdidx++;
+		}
+	}
+	log(1, "Loaded %d records of NT RGN data\n", sdidx);
+}
+
 static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 {
 	u_int32_t cx,cy;
@@ -471,6 +548,9 @@ static int gar_load_subdivs(struct gar_subfile *sub, struct hdr_tre_t *tre)
 //		log(10, "RGNEND: %04X\n",gsub_prev->rgn_end); 
 	}
 
+	if (sub->gimg->gar->cfg.debugmask&DBGM_NTMAP)
+		gar_parse_subdiv_nt(sub, tre);
+
 	return sub->nlevels;
 }
 
@@ -483,6 +563,15 @@ static struct gar_maplevel *gar_alloc_maplevel(int base)
 	ga_init(&ml->subdivs, base, 1024);
 	return ml;
 }
+
+#define LOCKEDMSG							\
+	"\n\n\n===================================================\n"	\
+	"Sorry, map contains locked / encypted data.\n"			\
+	"And probably its license do NOT allow you to use it\n"		\
+	"with any compatible software, only Garmin's\n"			\
+	"Unlocking maps in MapSource do not unlock them for\n"		\
+	"use with different products.\n"				\
+	"===================================================\n\n"
 
 static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 {
@@ -509,7 +598,7 @@ static int gar_load_maplevels(struct gar_subfile *sub, struct hdr_tre_t *tre)
 	}
 	fixup_tre(tre, buf);
 	if (tre->hsub.flag & 0x80) {
-		log(1, "Sorry, map contains locked / encypted data. And probably its license do NOT allow you to use it with any compatible software, only Garmin's\n");
+		log(1, "%s", LOCKEDMSG);
 		return -1;
 	}
 	nlevels = tre->tre1_size / s;
@@ -840,6 +929,75 @@ static void gar_register_subfile(struct gimg *g, struct gar_subfile *sub)
 	list_append(&sub->l, &g->lsubfiles);
 }
 
+static void gar_log_tre_header(struct hdr_tre_t *tre)
+{
+	log(11, "TRE mapID: %d[%08X] draw priority: %d\n", tre->mapID, tre->mapID, tre->drawprio);
+	log(11, "TRE header: len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
+		tre->hsub.length, tre->tre1_offset, tre->tre1_size,
+		tre->tre2_offset, tre->tre2_size);
+	if (tre->hsub.length > 120) {
+		log(11, "TRE tre7= %u len = %u rec=%d\n",
+				tre->tre7_offset, tre->tre7_size, tre->tre7_rec_size);
+		log(11, "TRE tre8= %u len = %u rec=%d\n",
+				tre->tre8_offset, tre->tre8_size, tre->tre8_rec_size);
+	}
+	if (tre->hsub.length > 188) {
+		log(11, "TRE tre9= %u len = %u rec=%d\n",
+			tre->tre9_offset, tre->tre9_size, tre->tre9_rec_size);
+		log(11, "TRE tre10= %u len = %u rec=%d\n",
+			tre->tre10_offset, tre->tre10_size, tre->tre10_rec_size);
+	}
+
+	log(19, "TRE ver=[%02X] flag=[%02X]\n",
+		tre->hsub.byte0x0000000C,
+		tre->hsub.flag);
+
+	log(19, "3B-3E[%02X][%02X][%02X][%02X]\n",
+		tre->byte0x0000003B_0x0000003E[0],
+		tre->byte0x0000003B_0x0000003E[1],
+		tre->byte0x0000003B_0x0000003E[2],
+		tre->byte0x0000003B_0x0000003E[3]);
+	log(19, "41-49[%02X][%02X][%02X][%02X]"
+		     "[%02X][%02X][%02X][%02X]"
+		     "[%02X]\n",
+		tre->byte0x00000041_0x00000049[0],
+		tre->byte0x00000041_0x00000049[1],
+		tre->byte0x00000041_0x00000049[2],
+		tre->byte0x00000041_0x00000049[3],
+		tre->byte0x00000041_0x00000049[4],
+		tre->byte0x00000041_0x00000049[5],
+		tre->byte0x00000041_0x00000049[6],
+		tre->byte0x00000041_0x00000049[7],
+		tre->byte0x00000041_0x00000049[8]);
+	log(19, "54-57[%02X][%02X][%02X][%02X]\n",
+		tre->byte0x00000054_0x00000057[0],
+		tre->byte0x00000054_0x00000057[1],
+		tre->byte0x00000054_0x00000057[2],
+		tre->byte0x00000054_0x00000057[3]);
+	log(19, "62-65[%02X][%02X][%02X][%02X]\n",
+		tre->byte0x00000062_0x00000065[0],
+		tre->byte0x00000062_0x00000065[1],
+		tre->byte0x00000062_0x00000065[2],
+		tre->byte0x00000062_0x00000065[3]);
+	log(19, "70-73[%02X][%02X][%02X][%02X]\n",
+		tre->byte0x00000070_0x00000073[0],
+		tre->byte0x00000070_0x00000073[1],
+		tre->byte0x00000070_0x00000073[2],
+		tre->byte0x00000070_0x00000073[3]);
+	
+	if (tre->hsub.flag & 0x80){
+		log(11, "TRE key: 9A:%02X 9B:%02X 9C:%02X 9D:%02X 9E:%02X 9F:%02X\n",
+			tre->key[0],
+			tre->key[1],
+			tre->key[2],
+			tre->key[3],
+			tre->key[4],
+			tre->key[5]
+			);
+	}
+
+}
+
 int gar_load_subfiles(struct gimg *g)
 {
 	ssize_t off, off1;
@@ -902,58 +1060,18 @@ int gar_load_subfiles(struct gimg *g)
 		else
 			sub->id = tre.mapID;
 		sub->drawprio =  tre.drawprio;
-		log(11, "TRE mapID: %d[%08X] draw priority: %d\n", tre.mapID, tre.mapID, tre.drawprio);
-		log(11, "TRE header: len= %u, TRE1 off=%u,size=%u TRE2 off=%u, size=%u\n",
-			tre.hsub.length, tre.tre1_offset, tre.tre1_size,
-			tre.tre2_offset, tre.tre2_size);
-		log(19, "TRE ver=[%02X] flag=[%02X]\n",
-			tre.hsub.byte0x0000000C,
-			tre.hsub.flag);
-
-		log(19, "3B-3E[%02X][%02X][%02X][%02X]\n",
-			tre.byte0x0000003B_0x0000003E[0],
-			tre.byte0x0000003B_0x0000003E[1],
-			tre.byte0x0000003B_0x0000003E[2],
-			tre.byte0x0000003B_0x0000003E[3]);
-		log(19, "41-49[%02X][%02X][%02X][%02X]"
-			     "[%02X][%02X][%02X][%02X]"
-			     "[%02X]\n",
-			tre.byte0x00000041_0x00000049[0],
-			tre.byte0x00000041_0x00000049[1],
-			tre.byte0x00000041_0x00000049[2],
-			tre.byte0x00000041_0x00000049[3],
-			tre.byte0x00000041_0x00000049[4],
-			tre.byte0x00000041_0x00000049[5],
-			tre.byte0x00000041_0x00000049[6],
-			tre.byte0x00000041_0x00000049[7],
-			tre.byte0x00000041_0x00000049[8]);
-		log(19, "54-57[%02X][%02X][%02X][%02X]\n",
-			tre.byte0x00000054_0x00000057[0],
-			tre.byte0x00000054_0x00000057[1],
-			tre.byte0x00000054_0x00000057[2],
-			tre.byte0x00000054_0x00000057[3]);
-		log(19, "62-65[%02X][%02X][%02X][%02X]\n",
-			tre.byte0x00000062_0x00000065[0],
-			tre.byte0x00000062_0x00000065[1],
-			tre.byte0x00000062_0x00000065[2],
-			tre.byte0x00000062_0x00000065[3]);
-		log(19, "70-73[%02X][%02X][%02X][%02X]\n",
-			tre.byte0x00000070_0x00000073[0],
-			tre.byte0x00000070_0x00000073[1],
-			tre.byte0x00000070_0x00000073[2],
-			tre.byte0x00000070_0x00000073[3]);
-		
-		if (tre.hsub.flag & 0x80){
-			log(11, "TRE key: 9A:%02X 9B:%02X 9C:%02X 9D:%02X 9E:%02X 9F:%02X\n",
-				tre.key[0],
-				tre.key[1],
-				tre.key[2],
-				tre.key[3],
-				tre.key[4],
-				tre.key[5]
-				);
+		if (gar_debug_level > 10) {
+			gar_log_tre_header(&tre);
 		}
-		
+		if (tre.hsub.length <= 120) {
+			tre.tre8_size = tre.tre8_offset = 0;
+			tre.tre7_size = tre.tre7_offset = 0;
+		}
+		if (tre.hsub.length <= 188) {
+			tre.tre9_size = tre.tre9_offset = 0;
+			tre.tre10_size = tre.tre10_offset = 0;
+		}
+
 		log(10, "POI_flags=%04X\n",tre.POI_flags);
 		if (tre.POI_flags & (1<<1))
 			log(10, "Show street before street number\n");
@@ -992,9 +1110,21 @@ int gar_load_subfiles(struct gimg *g)
 		off1 = gar_subfile_offset(sub, "NOD");
 		if (off1)
 			sub->have_nod = 1;
-		if (gar_load_maplevels(sub, &tre)<0) {
+		rc = gar_load_maplevels(sub, &tre);
+		if (rc<0) {
 			log(1, "Error loading map levels!\n");
 			goto out_err;
+		}
+		if (tre.tre7_size) {
+			// verify map levels
+			if (tre.tre7_size/tre.tre7_rec_size != rc + 1) {
+				log(1, "Error in maplevels have %d must be %d\n"
+					"Are you trying to use an \"unlocked/cracked map\"???",
+					rc + 1, tre.tre7_size/tre.tre7_rec_size);
+				goto out_err;
+			} else {
+				log(9, "Map levels match total %d subdivs\n", rc);
+			}
 		}
 
 		if (g->gar->cfg.opm != OPM_GPS) {

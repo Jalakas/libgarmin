@@ -157,3 +157,5 @@ struct gobject *gar_get_subfile_object_byidx(struct gar_subfile *sub,
 void gar_print_buf(char *pref, unsigned char *a, int s);
 
 struct gar_subfile *gar_subfile_get_by_mapid(struct gar *gar, unsigned int mapid);
+struct gar_subdiv *gar_find_subdiv_by_idx(struct gar_subfile *gsub,
+                                                int fromlevel, int idx);

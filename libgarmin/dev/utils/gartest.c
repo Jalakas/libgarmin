@@ -22,7 +22,7 @@ static struct gar * load(char *file)
 	struct gar *g;
 	struct gar_config cfg;
 	cfg.opm = OPM_PARSE;
-	//	cfg.debugmask = DBGM_LBLS;//0; // DBGM_LBLS | DBGM_OBJSRC;
+	//	DBGM_LBLS | DBGM_OBJSRC | DBGM_DUMP | DBGM_NTMAP
 	cfg.debugmask = debugmask;
 	cfg.debuglevel = debug;
 	g = gar_init_cfg(NULL, logfn, &cfg);
@@ -37,9 +37,10 @@ static struct gar * load(char *file)
 }
 static int usage(char *pn)
 {
-	fprintf(stderr, "%s [-d level] [-l] [-n] garmin.img\n", pn);
+	fprintf(stderr, "%s [-d level] [-l] [-n] [-r] garmin.img\n", pn);
 	fprintf(stderr, "\t-l Dump labels\n");
 	fprintf(stderr, "\t-n Dump data\n");
+	fprintf(stderr, "\t-r Read NT/Marine data\n");
 	return -1;
 }
 
@@ -67,11 +68,13 @@ int main(int argc, char **argv)
 			debugmask |= DBGM_LBLS;
 		} else if (!strcmp(argv[i], "-n")) {
 			debugmask |= DBGM_DUMP;
+		} else if (!strcmp(argv[i], "-r")) {
+			debugmask |= DBGM_NTMAP;
 		}
 		i++;
 	}
 	if (i >= argc)
-		return usage;
+		return usage(argv[0]);
 	file = argv[i];
 
 	r.lulat = 43.706080;

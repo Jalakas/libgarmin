@@ -172,7 +172,7 @@ static int gar_is_pgone_visible(struct gar_subfile *gsub, int level, struct gpol
 	return 1;
 }
 
-static struct gar_subdiv *gar_find_subdiv_by_idx(struct gar_subfile *gsub, 
+struct gar_subdiv *gar_find_subdiv_by_idx(struct gar_subfile *gsub, 
 						int fromlevel, int idx)
 {
 	int i = fromlevel;
@@ -184,7 +184,7 @@ static struct gar_subdiv *gar_find_subdiv_by_idx(struct gar_subfile *gsub,
 			if (idx != sd->n)
 				log(1, "Error subdiv found as idx:%d real is:%d\n",
 					idx, sd->n);
-			log(15, "Found in level %d\n", i);
+			log(19, "Found in level %d\n", i);
 			return sd;
 		}
 	}
