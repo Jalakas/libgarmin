@@ -358,7 +358,7 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 
 	g->tdbbasemap = tdbbase;
 	g->file = strdup(file);
-	g->fd = open(file, OPENFLAGS);
+	g->fd = g_safe_open(file, OPENFLAGS);
 	if (g->fd < 0) {
 		log(1, "Can not open file: [%s] errno=%d(%s)\n", 
 				g->file, errno, strerror(errno));
@@ -404,7 +404,7 @@ static int gar_is_gmapsupp(char *file)
 	struct hdr_img_t hdr;
 	unsigned char xor;
 	unsigned char *cp;
-	fd = open(file, OPENFLAGS);
+	fd = g_safe_open(file, OPENFLAGS);
 	if (fd < 0)
 		return -1;
 	rc = read(fd, &hdr, sizeof(struct hdr_img_t));

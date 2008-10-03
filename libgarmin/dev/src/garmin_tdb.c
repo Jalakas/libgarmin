@@ -60,7 +60,7 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 	int td4bm = 0;
 	float north, south, east, west;
 	char imgname[128];
-	fd = open(file, OPENFLAGS);
+	fd = open(file, (OPENFLAGS&~O_NOATIME));
 	if (fd <0) {
 		log(1, "Can not open:[%s] errno=%d(%s)\n",
 				file, errno, strerror(errno));
