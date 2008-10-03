@@ -158,11 +158,15 @@ static void gar_log_sai(struct gar_subfile *sub, struct street_addr_info *sai)
 		if ((fl&3)==0)
 			log(11, "Number: size=%d\n", *sai->field1);
 		else {
-			i = *(unsigned short*)sai->field1;
-			if (i < sub->czips)
+			if (sub->lbl_zips < 256)
+				i = *(unsigned char*)sai->field1;
+			else
+				i = *(unsigned short*)sai->field1;
+
+			if (i < sub->czips && i > 0)
 				log(11, "ZIP: %d[%s]\n", i, sub->zips[i]->code); 
 			else
-				log(11, "ZIP: %d[invalid]\n", i); 
+				log(11, "ZIP: %d[%s]\n", i, sub->czips ? "invalid" : "notloaded"); 
 		}
 	}
 	fl >>= 2;
@@ -170,19 +174,30 @@ static void gar_log_sai(struct gar_subfile *sub, struct street_addr_info *sai)
 		if ((fl&3)==0)
 			log(11, "Number: size=%d\n", *sai->field2);
 		else {
-			i = *(unsigned short*)sai->field2;
-			if (i < sub->cicount)
+			if (sub->lbl_cities < 256)
+				i = *(unsigned char*)sai->field2;
+			else
+				i = *(unsigned short*)sai->field2;
+			if (i < sub->cicount && i > 0)
 				log(11, "City: %d[%s]\n", i, sub->cities[i]->label);
 			else
-				log(11, "City: %d[invalid]\n", i);
+				log(11, "City: %d[%s]\n", i, sub->cicount ? "invalid" : "notloaded");
 		}
 	}
 	fl >>= 2;
 	if ((fl&3)!=3 && sai->field3) {
 		if ((fl&3)==0)
 			log(11, "Number: size=%d\n", *sai->field3);
-		else
-			log(11, "Region: %d\n", *(unsigned short*)sai->field3); 
+		else {
+			if (sub->lbl_regions < 256)
+				i = *(unsigned char*)sai->field3;
+			else
+				i = *(unsigned short*)sai->field3;
+			if (i < sub->rcount && i > 0)
+				log(11, "Region: %d[%s]\n", i, sub->regions[i]->name);
+			else
+				log(1, "Region: %d[%s]\n", i, sub->rcount ? "invalid" : "notloaded");
+		}
 	}
 }
 
@@ -281,7 +296,7 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 				goto out_err;
 			f1[0] = size;
 		} else if (fl == 2) {
-			if (sub->czips < 256)
+			if (sub->lbl_zips < 256)
 				size = 1;
 			else
 				size = 2;
@@ -311,7 +326,7 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 				goto out_err;
 			f2[0] = size;
 		} else if (fl == 2) {
-			if (sub->cicount < 256)
+			if (sub->lbl_cities < 256)
 				size = 1;
 			else
 				size = 2;
@@ -340,7 +355,7 @@ static struct street_addr_info* gar_parse_addr_info(struct gar_subfile *sub)
 				goto out_err;
 			f3[0] = size;
 		} else if (fl == 2) {
-			if (sub->rcount < 256)
+			if (sub->lbl_regions < 256)
 				size = 1;
 			else
 				size = 2;
