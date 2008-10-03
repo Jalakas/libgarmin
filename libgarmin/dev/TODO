@@ -1,11 +1,14 @@
-Make data load on demand
-Load objects into arrays instead of lists
-Utility to select .imgs from a TDB for given area
-Support locked maps?
+Move subdivs into arrays for O(1) access
+Done: Make data load on demand
+Done: Load objects into arrays instead of lists
 Done: Order polygons
 Done: Parse TDB
-Parse NET - Not complete
+Done: Parse MPS
+Done: Parse NET - unknown bytes at the end of some roads
+Parse unknown data in RGN/TRE, needed for routing.
 Parse NOD
 Parse TYP
 Parse MDR
 Parse SRT
+Parse DEM
+Parse TRF

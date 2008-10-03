@@ -1,11 +1,34 @@
-Libgarmin
-=====
+Libgarmin:
+==========
 
 Libgarmin is an open source (GPLv2) for Garmin image format maps.
+For more information, please, visit http://libgarmin.sf.net.
+or email libgarmin@gmail.com.
 
+Motivation:
+===========
+Garmin is a leader in the gps navigation, so learn from
+the best. Open source community is moving towards 
+www.openstreetmap.org data. Understanding Garmin's format
+will allow creation of Garmin compatible maps from OSM data
+and creation/design of a new map format for OSM data.
 
 Installation:
 ============
 If you are building a svn checkout. First run ./autosh.sh
-then ./configure
+then ./configure. You may want to check available options.
+Compiling is stright forward - make and make install.
 
+Usage:
+======
+This library, as other open source Garmin format support projects,
+is based on top of public documents and reverse engeneering.
+Currently there are two main types of maps - original Garmin maps
+and cgpsmapper compiled. Garmin maps do not allow reverse engeneering
+and usage with other software than Garmin's. There are a lot of free
+cgpsmapper maps that can be used. Check your map license and your 
+local country laws before using.
+
+Contacts:
+=========
+E-mail: libgarmin@gmail.com
