@@ -552,6 +552,8 @@ struct gar_road *gar_get_road(struct gar_subfile *sub, off_t offset)
 	return NULL;
 }
 
+void gar_load_roads(struct gar_subfile *sub);
+
 struct gar_road *gar_get_road_by_id(struct gar_subfile *sub, int sidx, int idx)
 {
 	struct gar_road *ri;

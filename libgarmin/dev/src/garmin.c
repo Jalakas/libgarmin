@@ -364,7 +364,10 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 				g->file, errno, strerror(errno));
 		return -1;
 	}
-	read(g->fd, &g->xor, sizeof(g->xor));
+	if (read(g->fd, &g->xor, sizeof(g->xor)) != sizeof(g->xor)) {
+		log(1, "Error reading xor byte\n");
+		return -1;
+	}
 	lseek(g->fd, 0, SEEK_SET);
 	if (g->xor) {
 		log(1, "Map is XORed you can use garxor to speed the reading\n");

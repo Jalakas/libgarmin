@@ -300,7 +300,8 @@ int gar_fat_file2fd(struct gimg *g, char *name, int fd)
 			log(1, "Error reading file\n");
 			return -1;
 		}
-		write(fd, buf, rc);
+		if (write(fd, buf, rc) != rc)
+			return -1;
 		sz -= rc;
 	}
 	return 0;

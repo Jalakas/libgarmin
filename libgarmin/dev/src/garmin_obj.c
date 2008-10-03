@@ -34,7 +34,6 @@ static void gar_ref_subdiv(struct gobject *o)
 {
 	struct gpoint *gp;
 	struct gpoly *gl;
-	struct gar_search_res *sr;
 	struct gar_subdiv *sd = NULL;
 
 	switch (o->type) {
@@ -995,7 +994,7 @@ int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 							return 1;
 						}
 					} else {
-						log(1, "Error can not find road idx/sd %d %d in level %d roadid:%d\n", idx, sdidx,rd->rio[0], rd->offset);
+						log(1, "Error can not find road idx/sd %d %d in level %d roadid:%ld\n", idx, sdidx,rd->rio[0], rd->offset);
 						return 0;
 					}
 				}
@@ -1077,7 +1076,7 @@ int gar_get_object_coord(struct gmap *gm, struct gobject *o, struct gcoord *ret)
 				}
 				gl = ga_get_abs(&sd->polylines, idx);
 			} else {
-				log(1, "Error can not find road idx/sd %d %d in level %d roadid:%d\n", idx, sdidx,rd->rio[0], rd->offset);
+				log(1, "Error can not find road idx/sd %d %d in level %d roadid:%ld\n", idx, sdidx,rd->rio[0], rd->offset);
 			}
 		}
 	} else {

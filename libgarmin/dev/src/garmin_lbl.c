@@ -163,8 +163,8 @@ static int gar_lbl_decode16(struct bspfd *bp, u_int8_t *out, ssize_t len)
 {
 	int c, sz = 0;
 	unsigned char *cp = out;
-	char d[64];
 	int i;
+
 //	*(cp+sz) = '\0';
 //	return sz;
 
@@ -346,7 +346,7 @@ int gar_init_lbl(struct gar_subfile *sub)
 			l->bits = 0x0a;
 			break;
 		case 0x0B:
-			log(11,"LBL: Unknown Uses 0x0b bit coding\n");
+			log(11,"LBL: Unknown Uses 0x0b(NT) bit coding\n");
 			l->decode = gar_lbl_decode16;
 			l->bits = 0x0b;
 			break;
@@ -757,7 +757,7 @@ void gar_free_srch(struct gar_subfile *f)
 
 void gar_log_poi_properties(struct gar_subfile *sub, struct gar_poi_properties *p)
 {
-	char buf[1024];
+	unsigned char buf[1024];
 	log(11, "POI: flags:%x, lblat:%d, number=%s,city=%d,zip=%d,phone=%s\n",
 		p->flags, p->lbloff, p->number?:"", p->cityidx,
 		p->zipidx, p->phone?:"");
@@ -875,7 +875,7 @@ struct gar_poi_properties *gar_get_poi_properties(struct gpoint *poi)
 	u_int32_t off;
 	u_int8_t fl;
 	int tmp;
-	char buf[256];
+	unsigned char buf[256];
 	char l[1024];
 	unsigned char *cp = buf;
 	if (!poi->is_poi)

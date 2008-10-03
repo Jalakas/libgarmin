@@ -48,7 +48,11 @@ static int gar_xor_file(char *in, char *out)
 			}
 			first = 0;
 		}
-		write(fd1, buf, rc);
+		if (write(fd1, buf, rc) != rc) {
+			fprintf(stderr, "Error writing %d bytes\n", rc);
+			ret = -1;
+			goto out;
+		}
 	}
 	ret = 0;
 out:

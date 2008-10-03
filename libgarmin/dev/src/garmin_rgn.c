@@ -840,75 +840,6 @@ static void gar_register_subfile(struct gimg *g, struct gar_subfile *sub)
 	list_append(&sub->l, &g->lsubfiles);
 }
 
-static void gar_init_rgndata(struct gar_rgn_data *rgn)
-{
-	ga_init(&rgn->points, 1, 512);
-	ga_init(&rgn->polylines, 1, 512);
-	ga_init(&rgn->polygons, 1, 512);
-}
-
-static int gar_parse_rgn2(struct gar_subfile *sub)
-{
-	struct gimg *g = sub->gimg;
-	ssize_t off;
-	int rc;
-	unsigned char buf[512];
-
-	gar_init_rgndata(&sub->rgn);
-
-	if (sub->rgnlen2) {
-		off = sub->rgnbase + sub->rgnoffset2;
-		if (glseek(g, off, SEEK_SET) != off) {
-			log(1, "Error can not seek to %zd\n", off);
-			goto out_err;
-		}
-		rc = gread(g, buf, sizeof(buf));
-		if (rc < 0)
-			goto out_err;
-		gar_print_buf("RGN2-Polygones", buf, rc);
-	}
-	if (sub->rgnlen3) {
-		off = sub->rgnbase + sub->rgnoffset3;
-		if (glseek(g, off, SEEK_SET) != off) {
-			log(1, "Error can not seek to %zd\n", off);
-			goto out_err;
-		}
-		rc = gread(g, buf, sizeof(buf));
-		if (rc < 0)
-			goto out_err;
-		gar_print_buf("RGN3-Lines", buf, rc);
-	}
-	if (sub->rgnlen4) {
-		off = sub->rgnbase + sub->rgnoffset4;
-		if (glseek(g, off, SEEK_SET) != off) {
-			log(1, "Error can not seek to %zd\n", off);
-			goto out_err;
-		}
-		rc = gread(g, buf, sizeof(buf));
-		if (rc < 0)
-			goto out_err;
-		log(11, "RGN4 points: %d\n", sub->rgnlen4/9);
-		gar_print_buf("RGN4-Points", buf, rc);
-	}
-	if (sub->rgnlen5) {
-		off = sub->rgnbase + sub->rgnoffset5;
-		if (glseek(g, off, SEEK_SET) != off) {
-			log(1, "Error can not seek to %zd\n", off);
-			goto out_err;
-		}
-		rc = gread(g, buf, sizeof(buf));
-		if (rc < 0)
-			goto out_err;
-		gar_print_buf("RGN5=RGN1DATA", buf, rc);
-	}
-	gar_load_rgnpoints(sub);
-	gar_load_rgnpolys(sub);
-	gar_load_rgnlines(sub);
-
-out_err:
-	return -1;
-}
-
 int gar_load_subfiles(struct gimg *g)
 {
 	ssize_t off, off1;
@@ -1082,10 +1013,6 @@ int gar_load_subfiles(struct gimg *g)
 				if (sub->net) {
 	//				gar_net_parse_nod3(sub);
 					gar_load_roadnetwork(sub);
-				}
-				if (sub->rgnlen2) {
-					log(11, "Parse RGN2\n");
-					gar_parse_rgn2(sub);
 				}
 			}
 		}
