@@ -119,6 +119,7 @@ typedef void (*dump_fn)(struct gobject *obj);
 
 #define DBGM_LBLS	(1<<0)
 #define DBGM_OBJSRC	(1<<1)
+#define DBGM_DUMP	(1<<2)
 
 
 struct gar_config {

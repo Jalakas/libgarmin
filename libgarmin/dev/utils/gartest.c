@@ -5,6 +5,7 @@
 #include "libgarmin.h"
 
 static int debug = 15;
+static int debugmask = 0;
 static void logfn(char *file, int line, int level, char *fmt, ...)
 {
 	va_list ap;
@@ -21,8 +22,8 @@ static struct gar * load(char *file)
 	struct gar *g;
 	struct gar_config cfg;
 	cfg.opm = OPM_PARSE;
-	// FIXME: make cmdline arg
-	cfg.debugmask = 0; // DBGM_LBLS | DBGM_OBJSRC;
+	//	cfg.debugmask = DBGM_LBLS;//0; // DBGM_LBLS | DBGM_OBJSRC;
+	cfg.debugmask = debugmask;
 	cfg.debuglevel = debug;
 	g = gar_init_cfg(NULL, logfn, &cfg);
 	if (!g)
@@ -36,7 +37,9 @@ static struct gar * load(char *file)
 }
 static int usage(char *pn)
 {
-	fprintf(stderr, "%s [-d level] garmin.img\n", pn);
+	fprintf(stderr, "%s [-d level] [-l] [-n] garmin.img\n", pn);
+	fprintf(stderr, "\t-l Dump labels\n");
+	fprintf(stderr, "\t-n Dump data\n");
 	return -1;
 }
 
@@ -45,23 +48,31 @@ int main(int argc, char **argv)
 	struct gar *gar;
 	struct gar_rect r;
 	char *file = argv[1];
+	int i = 1;
 	if (argc < 2) {
 		return usage(argv[0]);
 	}
-/*
-garmin_rgn.c:63:1|Boundaries - 
-North: 43.716080C, East: 29.987290C, South: 43.688679C, West: 29.932551C pnt:0, idxpnt:0
-
-*/
-	if (!strcmp(argv[1], "-d")) {
-		if (argc > 3) {
-			debug = atoi(argv[2]);
-			fprintf(stderr, "debug level set to %d\n", debug);
-			file = argv[3];
-		} else {
-			return usage(argv[0]);
+	while (i < argc) {
+		if (*argv[i] != '-')
+			break;
+		if (!strcmp(argv[i], "-d")) {
+			if (argc > i+1) {
+				debug = atoi(argv[i+1]);
+				fprintf(stderr, "debug level set to %d\n", debug);
+				i++;
+			} else {
+				return usage(argv[0]);
+			}
+		} else if (!strcmp(argv[i], "-l")) {
+			debugmask |= DBGM_LBLS;
+		} else if (!strcmp(argv[i], "-n")) {
+			debugmask |= DBGM_DUMP;
 		}
+		i++;
 	}
+	if (i >= argc)
+		return usage;
+	file = argv[i];
 
 	r.lulat = 43.706080;
 	r.lulong = 29.942551;
