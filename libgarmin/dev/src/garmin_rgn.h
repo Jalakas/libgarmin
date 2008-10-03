@@ -114,6 +114,10 @@ struct gar_subfile {
 	int nfpolyline;
 	struct mlfilter *fpolygone;
 	int nfpolygone;
+	int lbl_countries;
+	int lbl_regions;
+	int lbl_cities;
+	int lbl_zips;
 };
 
 int gar_load_subfiles(struct gimg *g);

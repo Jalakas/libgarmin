@@ -291,6 +291,22 @@ int gar_get_lbl(struct gar_subfile *sub, off_t offset, int type, u_int8_t *buf, 
 	return sub->lbl->decode(&bp, buf, buflen);
 }
 
+static int gar_lbl_init_obj_counts(struct gar_subfile *sub, struct hdr_lbl_t *lbl)
+{
+	if (lbl->lbl2_rec_size == 0)
+		sub->lbl_countries = lbl->lbl2_length/lbl->lbl2_rec_size;
+	if (lbl->lbl3_rec_size)
+		sub->lbl_regions = lbl->lbl3_length/lbl->lbl3_rec_size;
+	if (lbl->lbl4_rec_size)
+		sub->lbl_cities = lbl->lbl4_length/lbl->lbl4_rec_size;
+	if (lbl->lbl8_rec_size)
+		sub->lbl_zips = lbl->lbl8_length/lbl->lbl8_rec_size;
+	log(1, "Have %d countries, %d regions, %d cities, %d zip codes\n",
+		sub->lbl_countries, sub->lbl_regions,
+		sub->lbl_cities, sub->lbl_zips);
+	return 0;
+}
+
 int gar_init_lbl(struct gar_subfile *sub)
 {
 	struct hdr_lbl_t lbl;
@@ -372,6 +388,7 @@ int gar_init_lbl(struct gar_subfile *sub)
 	l->addrshiftpoi = lbl.lbl6_addr_shift;
 	l->lbl6_glob_mask = lbl.lbl6_glob_mask;
 	sub->lbl = l;
+	gar_lbl_init_obj_counts(sub, &lbl);
 	return 0;
 }
 
