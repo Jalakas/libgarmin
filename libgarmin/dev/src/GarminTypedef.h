@@ -135,16 +135,22 @@ struct hdr_tre_t
 	u_int8_t  byte0x00000078_0x0000007B[4];
 	u_int32_t tre7_offset;        ///< 0x0000007C .. 0x0000007F
 	u_int32_t tre7_size;          ///< 0x00000080 .. 0x00000083
-	u_int32_t tre7_rec_size;      ///< 0x00000084 .. 0x00000085
+	u_int16_t tre7_rec_size;      ///< 0x00000084 .. 0x00000085
 	u_int8_t  byte0x00000086_0x00000089[4];
 	u_int32_t tre8_offset;        ///< 0x0000008A .. 0x0000008D
 	u_int32_t tre8_size;          ///< 0x0000008E .. 0x00000091
+	u_int16_t tre8_rec_size;
 	u_int8_t  byte0x00000092_0x00000099[6];
 	/*-----------------------------------------------------*/
 	u_int8_t  key[20];            ///< 0x0000009A .. 0x000000AD
+	u_int8_t  gap1[4];
 	u_int32_t tre9_offset;        ///< 0x000000AE .. 0x000000B1
 	u_int32_t tre9_size;          ///< 0x000000B2 .. 0x000000B5
-	u_int32_t tre9_rec_size;      ///< 0x000000B6 .. 0x000000B7
+	u_int16_t tre9_rec_size;      ///< 0x000000B6 .. 0x000000B7
+	u_int8_t  gap2[4];
+	u_int32_t tre10_offset;        ///< 0x000000AE .. 0x000000B1
+	u_int32_t tre10_size;          ///< 0x000000B2 .. 0x000000B5
+	u_int16_t tre10_rec_size;      ///< 0x000000B6 .. 0x000000B7
 } __attribute((packed));
 
 struct tre_map_level_t
