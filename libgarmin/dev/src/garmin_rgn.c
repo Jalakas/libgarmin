@@ -755,6 +755,14 @@ int gar_load_subfile_data(struct gar_subfile *sub)
 		log(1, "Error can not read TRE header!\n");
 		goto out_err;
 	}
+	if (tre.hsub.length <= 120) {
+		tre.tre8_size = tre.tre8_offset = 0;
+		tre.tre7_size = tre.tre7_offset = 0;
+	}
+	if (tre.hsub.length <= 188) {
+		tre.tre9_size = tre.tre9_offset = 0;
+		tre.tre10_size = tre.tre10_offset = 0;
+	}
 	gar_init_lbl(sub);
 	gar_init_net(sub);
 
