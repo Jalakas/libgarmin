@@ -1121,15 +1121,15 @@ int gar_load_subfiles(struct gimg *g)
 		rc = gar_load_maplevels(sub, &tre);
 		if (rc<0) {
 			log(1, "Error loading map levels!\n");
-			goto out_err;
+			goto skip_subfile;
 		}
 		if (tre.tre7_size) {
 			// verify map levels
 			if (tre.tre7_size/tre.tre7_rec_size != rc + 1) {
 				log(1, "Error in maplevels have %d must be %d\n"
-					"Are you trying to use an \"unlocked/cracked map\"???",
+					"Are you trying to use an \"unlocked/cracked map\"???\n",
 					rc + 1, tre.tre7_size/tre.tre7_rec_size);
-				goto out_err;
+				goto skip_subfile;
 			} else {
 				log(9, "Map levels match total %d subdivs\n", rc);
 			}
@@ -1156,6 +1156,10 @@ int gar_load_subfiles(struct gimg *g)
 		}
 		gar_register_subfile(g, sub);
 		mapsets++;
+		continue;
+skip_subfile:
+		log(1, "ERROR Loading map id: %s\n", buf);
+		gar_free_subfile(sub);
 	}
 	g->mapsets = mapsets;
 	gar_select_basemaps(g);
@@ -1167,6 +1171,7 @@ int gar_load_subfiles(struct gimg *g)
 	free(imgs);
 	return 0;
 out_err:
+	gclose(g);
 	if (imgs)
 		free(imgs);
 	gar_free_subfile(sub);
