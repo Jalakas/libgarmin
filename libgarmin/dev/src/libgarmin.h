@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2007  Alexander Atanasov	<aatanasov@gmail.com>
+    Copyright (C) 2007,2008  Alexander Atanasov	<aatanasov@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -164,6 +164,8 @@ int gar_get_object_deltas(struct gobject *o);
 /* Get lbl as strdup'ed string */
 char *gar_get_object_lbl(struct gobject *o);
 int gar_get_object_intlbl(struct gobject *o);
+/* Code page for labels */
+char *gar_obj_codepage(struct gobject *o);
 int gar_object_get_draw_order(struct gobject *o);
 char *gar_object_debug_str(struct gobject *o);
 /* Object index is (subdividx << 16) | (idx << 8) | otype */

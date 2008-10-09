@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2007  Alexander Atanasov	<aatanasov@gmail.com>
+    Copyright (C) 2007,2008  Alexander Atanasov	<aatanasov@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1495,4 +1495,33 @@ char *gar_srch_get_roadname(struct gobject *o)
 		log(1, "Can not find road %d\n", id);
 	}
 	return strdup("");
+}
+
+char *gar_obj_codepage(struct gobject *o)
+{
+	struct gar_subdiv *sd = NULL;
+	switch (o->type) {
+		case GO_POINT:
+			sd = ((struct gpoint *)o->gptr)->subdiv;
+			break;
+		case GO_POLYLINE:
+		case GO_POLYGON:
+			sd = ((struct gpoly *)o->gptr)->subdiv;
+			break;
+		case GO_SEARCH: 
+			{
+				struct gar_search_res *s = o->gptr;
+				if (s->sub->lbl)
+					return sd->subfile->lbl->codepage;
+			}
+			break;
+		case GO_ROAD:
+		default:
+			;
+	}
+	if (sd) {
+		if (sd->subfile->lbl)
+			return sd->subfile->lbl->codepage;
+	}
+	return "ascii";
 }
