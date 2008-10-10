@@ -1227,7 +1227,9 @@ void gar_free_gmap(struct gmap *g)
 	g->minlevel = 0;
 	g->maxlevel = 0;
 	g->lastsub = 0;
-	free(g->subs);
+	g->subfiles = 0;
+	if (g->subs)
+		free(g->subs);
 	//free(g);
 }
 
