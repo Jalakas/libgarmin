@@ -126,7 +126,7 @@ struct gpoint {
 struct gpoly {
 	struct gar_subdiv *subdiv;
 	u_int16_t n;
-	u_int8_t type;
+	u_int16_t type;
 	u_int32_t lbloffset;
 	struct gcoord c;
 	unsigned dir:1,
