@@ -115,7 +115,8 @@ struct gpoint {
 	struct gcoord c;
 
 	unsigned is_poi :1,
-		has_subtype :1;
+		has_subtype :1,
+		is_nt:1;
 #ifdef DEBUG
 	unsigned char *source;
 	int slen;
@@ -133,7 +134,8 @@ struct gpoly {
 		line:1,
 		extrabit:1,
 		scase:1,
-		valid:1;
+		valid:1,
+		is_nt:1;
 	int npoints;
 	struct gcoord *deltas;
 	unsigned char *nodemap;

@@ -1289,6 +1289,19 @@ int gar_object_index(struct gobject *o)
 	return 0;
 }
 
+int gar_object_group(struct gobject *o)
+{
+	switch (o->type) {
+		case GO_POINT:
+			return ((struct gpoint *)o->gptr)->is_nt;
+		case GO_POLYLINE:
+		case GO_POLYGON:
+			return ((struct gpoly *)o->gptr)->is_nt;
+		default:
+			return 0;
+	}
+}
+
 static void gar_log_source(u_int8_t *src, int len)
 {
 	char buf[len*3+1];
