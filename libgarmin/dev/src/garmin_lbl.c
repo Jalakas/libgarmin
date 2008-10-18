@@ -293,7 +293,7 @@ int gar_get_lbl(struct gar_subfile *sub, off_t offset, int type, u_int8_t *buf, 
 
 static int gar_lbl_init_obj_counts(struct gar_subfile *sub, struct hdr_lbl_t *lbl)
 {
-	if (lbl->lbl2_rec_size == 0)
+	if (lbl->lbl2_rec_size)
 		sub->lbl_countries = lbl->lbl2_length/lbl->lbl2_rec_size;
 	if (lbl->lbl3_rec_size)
 		sub->lbl_regions = lbl->lbl3_length/lbl->lbl3_rec_size;
