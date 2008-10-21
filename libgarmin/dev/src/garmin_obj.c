@@ -1108,6 +1108,8 @@ int gar_is_object_dcoord_node(struct gmap *gm, struct gobject *o, int ndelta)
 	if  (o->type == GO_POINT)
 		return 0;
 	gp = o->gptr;
+	if (ndelta == gp->npoints - 1)
+		return 1;
 	if (gp->nodemap && ndelta < gp->npoints) {
 		return bm_is_set(gp->nodemap, ndelta);
 	}
