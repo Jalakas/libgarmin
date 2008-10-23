@@ -79,8 +79,8 @@ int gar_parse_tdb(struct gar *gar, char *file, int data)
 		cp = buf;
 		switch (block.id) {
 			case TDB_HEADER:
-				log(10, "ProductID: %d\n", *(u_int16_t *)cp);
-				log(11, "Unknown: %d\n", *(u_int16_t *)(cp+2));
+				log(1, "ProductID: %d\n", *(u_int16_t *)cp);
+				log(1, "MapID: %d\n", *(u_int16_t *)(cp+2));
 				log(1, "TDB Version: %.2f\n", (*(u_int16_t *)(cp+4))/100.0);
 				version = (*(u_int16_t *)(cp+4))/100.0;
 				log(1, "Map Series Name: [%s]\n", cp+16);
