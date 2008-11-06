@@ -22,6 +22,12 @@
 **********************************************************************************************/
 #ifndef GARMINTYPEDEF_H
 #define GARMINTYPEDEF_H
+#include "config.h"
+#ifdef TARGET_WIN32CE
+/* cegcc doesn't honor the __attribute__(packed) need pragma to work */
+#pragma pack(push)
+#pragma pack(1)
+#endif
 
 struct FATblock_t
 {
@@ -344,6 +350,10 @@ struct hdr_gmp_t
 	u_int32_t nod_offset;
 	u_int32_t unknown2;
 }  __attribute((packed));
+
+#ifdef TARGET_WIN32CE
+#pragma pack(pop)
+#endif
 
 #endif //GARMINTYPEDEF_H
 
