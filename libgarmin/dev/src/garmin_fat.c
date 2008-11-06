@@ -243,7 +243,7 @@ int gar_load_fat(struct gimg *g, int dataoffset, int blocksize, unsigned int fat
 		rsz+=rc;
 		count ++;
 	}
-	log(17, "FAT Reserved entries %d(%d)\n", count, s);
+	log(17, "FAT Reserved entries %d(%ld)\n", count, s);
 	count = 0;
 	do {
 		rsz+=rc;

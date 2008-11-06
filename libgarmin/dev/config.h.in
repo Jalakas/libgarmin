@@ -72,6 +72,9 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
+/* Building for WINCE */
+#undef TARGET_WIN32CE
+
 /* Version number of package */
 #undef VERSION
 

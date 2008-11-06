@@ -21,12 +21,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifdef WIN32
-typedef unsigned char u_int8_t;
-typedef unsigned short int u_int16_t;
-typedef unsigned int u_int32_t;
-#endif
-
 enum {
 	L_LBL,
 	L_NET,
@@ -152,7 +146,7 @@ struct gobject *gar_get_object(struct gar *gar, void *ptr);
 int gar_get_objects(struct gmap *gm, int level, void *select, 
 			struct gobject **ret, int flags);
 void gar_free_objects(struct gobject *g);
-u_int16_t gar_obj_type(struct gobject *o);
+unsigned short gar_obj_type(struct gobject *o);
 int gar_object_group(struct gobject *o);
 int gar_get_object_position(struct gobject *o, struct gcoord *ret);
 int gar_object_subtype(struct gobject *o);

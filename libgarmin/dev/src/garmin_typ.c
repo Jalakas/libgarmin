@@ -17,7 +17,9 @@
     
 */
 #include <sys/types.h>
-#include "GarminTypedef.h"
+#include <inttypes.h>
+#include "libgarmin.h"
+#include "libgarmin_priv.h"
 
 /* http://ati.land.cz/gps/typdecomp/ */
 struct hdr_typ_t

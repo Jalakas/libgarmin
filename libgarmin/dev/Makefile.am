@@ -2,7 +2,11 @@ AUTOMAKE_OPTIONS = dist-bzip2
 
 include $(top_srcdir)/Makefile.inc
 
-SUBDIRS=src utils data
+SUBDIRS=src data
+if !TARGET_WIN32CE
+SUBDIRS+=utils
+endif
+DIST_SUBDIRS=src data utils
 pkgdoc_DATA = README COPYING TODO
 EXTRA_DIST = README COPYING TODO autosh.sh
 

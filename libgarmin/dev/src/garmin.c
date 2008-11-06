@@ -16,18 +16,20 @@
    
 */
 
+#include "config.h"
 #include <malloc.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#ifndef TARGET_WIN32CE
 #include <sys/resource.h>
+#endif
 #include <unistd.h>
 #define __USE_GNU
 #include <fcntl.h>
 #include <unistd.h>
-#include <errno.h>
 #include <string.h>
 #include "version.h"
 #include "libgarmin.h"
@@ -68,7 +70,7 @@ static int g_safe_open(char *file, int fl)
 	int fd;
 reopen:
 	fd = open(file, flags);
-	if (fd < 0 && errno == EPERM && (flags & O_NOATIME)) {
+	if (fd == -1 && errno == EPERM && (flags & O_NOATIME)) {
 		static int no_atime_warned;
 		if (!no_atime_warned) {
 			log(1, "WARNING: You can change the ownership of the maps to the same user for faster reading\n");
@@ -84,7 +86,7 @@ static void inline gcheckfd(struct gimg *g)
 {
 	if (g->fd == -1) {
 		g->fd = g_safe_open(g->file, OPENFLAGS);
-		if (g->fd < 0) {
+		if (g->fd == -1) {
 			log(1, "Error can not open:[%s] errno=%d(%s)\n",
 				g->file, errno, strerror(errno));
 		}
@@ -141,7 +143,11 @@ ssize_t gread_safe(struct gimg *g, void *buf, size_t count)
 	}
 	err = errno;
 	lseek(g->fd, osave, SEEK_SET);
+#ifdef TARGET_WIN32CE
+	SetLastError(err);
+#else
 	errno = err;
+#endif
 	return rc;
 }
 
@@ -215,6 +221,7 @@ struct gar *gar_init_cfg(char *tbd, log_fn l, struct gar_config *cfg)
 	log(1, "struct gar_subfile=%d\n", sizeof(struct gar_subfile));
 	log(1, "struct gar_subdiv=%d\n", sizeof(struct gar_subdiv));
 #endif
+#ifndef TARGET_WIN32CE
 	if (0) {
 	struct rlimit rlmt;
 
@@ -224,7 +231,7 @@ struct gar *gar_init_cfg(char *tbd, log_fn l, struct gar_config *cfg)
 		log(1, "setrlimit DATA failed (%s)\n",
 			strerror(errno));
 	}
-
+#endif
 	return gar;
 }
 
@@ -359,7 +366,7 @@ int gar_img_load_dskimg(struct gar *gar, char *file, int tdbbase, int data,
 	g->tdbbasemap = tdbbase;
 	g->file = strdup(file);
 	g->fd = g_safe_open(file, OPENFLAGS);
-	if (g->fd < 0) {
+	if (g->fd == -1) {
 		log(1, "Can not open file: [%s] errno=%d(%s)\n", 
 				g->file, errno, strerror(errno));
 		return -1;
@@ -408,7 +415,7 @@ static int gar_is_gmapsupp(char *file)
 	unsigned char xor;
 	unsigned char *cp;
 	fd = g_safe_open(file, OPENFLAGS);
-	if (fd < 0)
+	if (fd == -1)
 		return -1;
 	rc = read(fd, &hdr, sizeof(struct hdr_img_t));
 	close(fd);

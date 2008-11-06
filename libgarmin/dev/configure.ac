@@ -52,6 +52,17 @@ then
 fi
 AM_CONDITIONAL([HAVEEXTRAS], [test x$extras = xtrue])
 
+AC_CANONICAL_HOST
+win32=no
+case $host_os in
+wince)
+	win32=yes
+	AC_DEFINE(TARGET_WIN32CE, 1, [Building for WINCE])
+	;;
+esac
+AM_CONDITIONAL(TARGET_WIN32CE, [test "x$win32" = "xyes"])
+
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  data/Makefile

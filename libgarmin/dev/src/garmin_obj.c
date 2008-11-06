@@ -897,9 +897,9 @@ nextlvl:
 	return objs;
 }
 
-u_int16_t gar_obj_type(struct gobject *o)
+unsigned short gar_obj_type(struct gobject *o)
 {
-	u_int16_t ret = 0;
+	unsigned short ret = 0;
 	switch (o->type) {
 	case GO_POINT:
 		{
