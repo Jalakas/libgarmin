@@ -1201,6 +1201,14 @@ void gar_subfile_unload(struct gar_subfile *s)
 	}
 }
 
+static void gar_subfiles_unload(struct gimg *g)
+{
+	struct gar_subfile *sub;
+	list_for_entry(sub, &g->lsubfiles, l) {
+		gar_subfile_unload(sub);
+	}
+}
+
 static struct gmap *gar_alloc_gmap(void)
 {
 	struct gmap *gm;
@@ -1221,6 +1229,8 @@ void gar_free_gmap(struct gmap *g)
 	for (i=0; i < g->lastsub; i++) {
 		sub = g->subs[i];
 		gar_subfile_unref(sub);
+		// Disable caching temporary 
+		gar_subfiles_unload(sub->gimg);
 		gclose(sub->gimg);
 	}
 	g->subs = NULL;
@@ -1286,14 +1296,6 @@ static int gar_find_subs(struct gmap *files, struct gimg *g, struct gar_rect *re
 static int gar_prio_comp(const void *a, const void *b)
 {
 	return (*(struct gar_subfile **)a)->drawprio - (*(struct gar_subfile **)b)->drawprio;
-}
-
-static void gar_subfiles_unload(struct gimg *g)
-{
-	struct gar_subfile *sub;
-	list_for_entry(sub, &g->lsubfiles, l) {
-		gar_subfile_unload(sub);
-	}
 }
 
 // public api
