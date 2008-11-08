@@ -72,20 +72,21 @@ struct gar_nod_info {
 	off_t nodoff;
 	u_int32_t nod1_offset;
 	u_int32_t nod1_length;
-	u_int8_t cpalign;
-	u_int8_t roadptrsize;
-	u_int8_t nodbits;
 	u_int32_t nod2_offset;
 	u_int32_t nod2_length;
 	u_int32_t nod3_offset;
 	u_int32_t nod3_length;
 	u_int8_t nod3_recsize;
+	u_int8_t cpalign;
+	u_int8_t roadptrsize;
+	u_int8_t nodbits;
 };
 
 struct gar_road_nod {
-	unsigned char flags;
 	u_int32_t nodesoff;
 	unsigned short bmlen;
+	unsigned char flags;
+	unsigned char _pad;
 	unsigned char bitmap[0];
 };
 

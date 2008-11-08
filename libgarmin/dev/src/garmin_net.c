@@ -507,6 +507,7 @@ void gar_log_road_info(struct gar_road *ri)
 			struct gar_graph *graph;
 			struct node *node;
 			struct roadptr *rp;
+			int rpoff;
 			graph = gar_alloc_graph(sub);
 			node = gar_get_node(graph, ri->nod->nodesoff);
 			if (!gar_read_node(graph, NULL, node))
@@ -517,14 +518,15 @@ void gar_log_road_info(struct gar_road *ri)
 				if (!rp) {
 					log(1, "No roadptr ERROR\n");
 				} else {
+					rpoff = get_u24(rp->off);
 					log(1, "Road (%x) cl=%d %sat %d b1=%x b2=%x dest %d\n",
 						node->arcs[j].roadidx,
 						node->arcs[j].roadclass,
 						node->arcs[j].islink ? "link ": "",
-						geti24(rp->off),
+						rpoff,
 						rp->b1, rp->b2,
 						node->arcs[j].dest->offset);
-					if (geti24(rp->off) == ri->offset) {
+					if (rpoff == ri->offset) {
 						log(1, "Own road\n");
 					}
 				}

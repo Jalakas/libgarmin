@@ -61,6 +61,11 @@ wince)
 	;;
 esac
 AM_CONDITIONAL(TARGET_WIN32CE, [test "x$win32" = "xyes"])
+if test "x$win32" = "xyes";
+then
+#	adding -Wcast-align gives a lot of false positives for lists
+	CFLAGS="$CFLAGS  -Wpadded"
+fi
 
 
 AC_CONFIG_FILES([Makefile

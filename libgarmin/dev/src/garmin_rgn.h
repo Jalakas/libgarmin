@@ -47,6 +47,7 @@ struct gar_maplevel {
 struct mlfilter {
 	unsigned short type;
 	unsigned char maxlevel;
+	unsigned char __padd;
 };
 
 struct region_def {
@@ -72,7 +73,6 @@ struct gar_subfile {
 	int loaded;
 	unsigned int refcnt;
 	struct gimg *gimg;
-	char *mapid;
 	unsigned int id;
 	unsigned char drawprio;
 	ssize_t rgnoffset;
@@ -118,6 +118,7 @@ struct gar_subfile {
 	int lbl_regions;
 	int lbl_cities;
 	int lbl_zips;
+	char *mapid;
 };
 
 int gar_load_subfiles(struct gimg *g);

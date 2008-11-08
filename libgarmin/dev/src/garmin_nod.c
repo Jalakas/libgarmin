@@ -210,8 +210,9 @@ gar_find_node(struct gar_graph *graph, u_int32_t offset)
 {
 	struct node *n;
 	unsigned hash = NODE_HASH(offset);
+	list_t *list = &graph->lnodes[hash];
 
-	list_for_entry(n, &graph->lnodes[hash], l) {
+	list_for_entry(n, list, l) {
 		if (n->offset == offset)
 			return n;
 	}
@@ -338,8 +339,8 @@ static void *gar_read_nod1node(struct gar_subfile *sub, off_t offset, unsigned c
 	}
 	if (gread(sub->gimg, &n, sizeof(n)) < 0)
 		return NULL;
-	lng = *(u_int32_t *)&n.c1 & 0xffffff;
-	lat = *(u_int32_t *)&n.c2 & 0xffffff;
+	lng = get_u24(&n.c1);
+	lat = get_u24(&n.c2);
 	log(11, "nod1 off %ld 1 %x c1 %f[%x] c2 %f[%x] 2 %x 3 %x\n",
 		off, n.b1, GARDEG(lng), lng, GARDEG(lat), lat, n.b2, n.b3);
 	return NULL;
@@ -407,7 +408,7 @@ struct gar_road_nod *gar_read_nod2(struct gar_subfile *sub, u_int32_t offset)
 		return NULL;
 	if (HAVENODES(nrd.flags)) {
 		int len = 0;
-		n1 = *(u_int32_t*)nrd.nod1off & 0x00FFFFFF;
+		n1 = get_u24(&nrd.nod1off);
 		if (nrd.bmlen)
 			len = (7+nrd.bmlen)/8;
 		nr = calloc(1, sizeof(*nr)+len);
@@ -808,15 +809,13 @@ static void gar_put_cpoint(struct cpoint *p)
 
 u_int32_t gar_cp_idx2off(struct cpoint *p, u_int8_t idx)
 {
-	u_int32_t i;
 #ifdef DEBUG
 	if (idx >= p->cidxs) {
 		log(1, "NOD Error idx %d not valid max %d\n",
 				idx, p->cidxs);
 	}
 #endif
-	i = *(u_int32_t*)(p->idx+3*idx);
-	return i & 0xFFFFFF;
+	return get_u24(p->idx+3*idx);
 }
 
 struct roadptr *gar_cp_idx2road(struct cpoint *p, u_int8_t idx)

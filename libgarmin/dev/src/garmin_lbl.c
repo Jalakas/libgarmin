@@ -31,6 +31,7 @@
 #include "garmin_rgn.h"
 #include "garmin_net.h"
 #include "bsp.h"
+
 // process .LBL 
 
 static const char str6tbl1[] = {
@@ -249,7 +250,7 @@ static u_int32_t gar_lbl_offset(struct gar_subfile *sub ,u_int32_t offlbl, int t
 				rc = gread(gimg, b, 3);
 				if (rc!=3)
 					return 0xFFFFFFFF;
-				off = *(u_int32_t *)b;
+				off = get_u24(b);
 				off &= 0x3FFFFF;
 				off = sub->lbl->offset + sub->lbl->lbl1off + ( off << sub->lbl->addrshift);
 			}
@@ -478,8 +479,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		}
 		cp = rb;
 		while (cp < rb + lbl.lbl2_length) {
-			off = *(u_int32_t *)cp;
-			off &= 0x00FFFFFF;
+			off = get_u24(cp);
 			off <<= lbl.addr_shift;
 			off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
 			gar_get_at(sub, off, buf, sizeof(buf));
@@ -519,17 +519,16 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		cp = rb;
 		idx = 1;
 		while (cp < rb + lbl.lbl3_length) {
-			off = *(u_int32_t *)(cp+2);
-			off &= 0x00FFFFFF;
+			off = get_u24(cp+2);
 			off <<= lbl.addr_shift;
 			off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
 			gar_get_at(sub, off, buf, sizeof(buf));
-			log(15, "LBL: CNT[%d] off=%03lX cnt:%d [%s]\n", idx, off, *(short *)cp,buf);
+			log(15, "LBL: CNT[%d] off=%03lX cnt:%d [%s]\n", idx, off, get_u16(cp),buf);
 			sub->regions[idx] = calloc(1, sizeof(struct region_def));
 			if (!sub->regions[idx])
 				break;
 			sub->regions[idx]->name = strdup(buf);
-			sub->regions[idx]->country = *(short *)cp;
+			sub->regions[idx]->country = get_u16(cp);
 			idx++;
 			cp += lbl.lbl3_rec_size;
 		}
@@ -562,21 +561,20 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		cp = rb;
 		idx = 1;
 		while (cp < rb + lbl.lbl4_length) {
-			unsigned short tmp = *(unsigned short *)(cp+3);
+			unsigned short tmp = get_u16(cp+3);
 			sub->cities[idx] = calloc(1, sizeof(struct city_def));
 			if (!sub->cities[idx])
 				break;
 			sub->cities[idx]->region_idx = tmp & 0x1fff;
 			if (tmp & (1<<15)) {
 				sub->cities[idx]->point_idx = *(char *)cp;
-				sub->cities[idx]->subdiv_idx = *(short *)(cp+1);
+				sub->cities[idx]->subdiv_idx = get_u16(cp+1);
 				log(15, "LBL: City def region %d at pointidx: %d, subdividx:%d\n",
 					sub->cities[idx]->region_idx,
 					sub->cities[idx]->point_idx,
 					sub->cities[idx]->subdiv_idx);
 			} else {
-				off = *(u_int32_t *)(cp);
-				off &= 0x00FFFFFF;
+				off = get_u24(cp);
 				off <<= lbl.addr_shift;
 				off += off1 + lbl.lbl1_offset;// + sizeof(struct hdr_lbl_t);
 				gar_get_at(sub, off, buf, sizeof(buf));
@@ -597,7 +595,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		goto outerr;
 	}
-	if (0) {
+	if (sub->gimg->gar->cfg.opm == OPM_PARSE) {
 		unsigned char rec[lbl.lbl7_rec_size];
 		idx = 0;
 		while (idx < lbl.lbl7_length) {
@@ -637,8 +635,7 @@ int gar_init_srch(struct gar_subfile *sub, int what)
 		sub->zips[idx] = calloc(1, sizeof(struct zip_def));
 		if (!sub->zips[idx])
 			break;
-		off = *(u_int32_t *)(cp);
-		off &= 0x00FFFFFF;
+		off = get_u24(cp);
 		off <<= lbl.addr_shift;
 		off += off1 + lbl.lbl1_offset;
 		gar_get_at(sub, off, buf, sizeof(buf));
@@ -659,7 +656,7 @@ pois:
 		log(1, "LBL: Error can not seek to %ld\n", off);
 		goto outerr;
 	}
-	if (1) {
+	if (sub->gimg->gar->cfg.opm == OPM_PARSE) {
 		struct gar_poi_properties *pr;
 		unsigned char rec[lbl.lbl5_rec_size];
 		int of,si,id;
@@ -672,7 +669,7 @@ pois:
 				goto outerr;
 			}
 			gread(gimg, rec, lbl.lbl5_rec_size);
-			of = *(int*)(rec) & 0xffffff;
+			of = get_u24(rec);
 			si = of >> 8;
 			id = of & 0xff;
 			log(11, "%d: type:%d sdidx:%d idx:%d %x\n", idx, *(u_int8_t *)(rec+3),si,id, *(int *)rec);
@@ -912,7 +909,7 @@ struct gar_poi_properties *gar_get_poi_properties(struct gpoint *poi)
 	p = calloc(1, sizeof(*p));
 	if (!p)
 		return NULL;
-	tmp = *(int *)cp&0xFFFFFF;
+	tmp = get_u24(cp);
 	cp+=3;
 	p->lbloff = tmp & 0x3fffff;
 	if (tmp & (1<<23)) {
@@ -929,7 +926,7 @@ struct gar_poi_properties *gar_get_poi_properties(struct gpoint *poi)
 			p->number = strdup(l);
 		} else {
 			// ptr to lbl
-			tmp = *(int *)cp&0x3FFFFF;
+			tmp = get_u24(cp);
 			if (gar_get_lbl(poi->subdiv->subfile, L_LBL, tmp, (unsigned char*)l, sizeof(l)))
 				p->number = strdup(l); 
 			cp+=3;
@@ -938,7 +935,7 @@ struct gar_poi_properties *gar_get_poi_properties(struct gpoint *poi)
 
 	if (fl & POI_STREET) {
 		// 3 bytes ptr to lbl1
-		p->streetoff = *(int *)cp & 0x3fffff;
+		p->streetoff = get_u24(cp)&0x3fffff;
 		cp+=3;
 	}
 
@@ -946,7 +943,7 @@ struct gar_poi_properties *gar_get_poi_properties(struct gpoint *poi)
 		if (poi->subdiv->subfile->cicount < 256)
 			p->cityidx = *cp++;
 		else {
-			p->cityidx = *(u_int16_t*)cp;
+			p->cityidx = get_u16(cp);
 			cp+=2;
 		}
 	}
@@ -955,7 +952,7 @@ struct gar_poi_properties *gar_get_poi_properties(struct gpoint *poi)
 		if (poi->subdiv->subfile->czips < 256)
 			p->zipidx = *cp++;
 		else {
-			p->zipidx = *(u_int16_t*)cp;
+			p->zipidx = get_u16(cp);
 			cp+=2;
 		}
 	}
@@ -966,12 +963,12 @@ struct gar_poi_properties *gar_get_poi_properties(struct gpoint *poi)
 	}
 	if (fl & POI_EXIT) {
 		// ptr to lblX exits
-		p->exitoff = *(int *)cp & 0xffffff;
+		p->exitoff = get_u24(cp);
 		cp+=3;
 	}
 	if (fl & POI_TIDE_PREDICT) {
 		// ptr to lblX tide
-		p->tideoff = *(int *)cp & 0xffffff;
+		p->tideoff = get_u24(cp);
 		cp+=3;
 	}
 	return p;

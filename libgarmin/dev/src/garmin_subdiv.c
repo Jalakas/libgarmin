@@ -288,21 +288,17 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	if (0 &&(gp->type == 0x21 || gp->type == 0x20 || gp->type == 0x22))
 		dl = 1;
 	dp++;
-	lbloffset = *(u_int32_t *)dp;
-	lbloffset &= 0x00FFFFFF;
+	lbloffset = get_u24(dp);
 	extra_bit = !!(lbloffset & 0x400000);
 	if (line) {
 		gp->netlbl = !!(lbloffset & 0x800000);
-		if (gp->netlbl) {
-		// FIXME read .NET file
-		}
 	}
-	lbloffset = *(u_int32_t *)dp;
+	lbloffset = get_u24(dp);
 	gp->lbloffset = lbloffset & 0x3FFFFF;
 	dp+=3;
-	gp->c.x = *(u_int16_t *)dp;
+	gp->c.x = get_u16(dp);
 	dp+=2;
-	gp->c.y = *(u_int16_t *)dp;
+	gp->c.y = get_u16(dp);
 	dp+=2;
 	gp->c.y = SIGN2B(gp->c.y);
 	gp->c.x = SIGN2B(gp->c.x);
@@ -315,7 +311,7 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 		GARDEG(gp->c.x));
 
 	if (two_byte) {
-		bs_len = *(u_int16_t*)dp;
+		bs_len = get_u16(dp);
 		dp+=2;
 		total_bytes += bs_len + 1;
 	} else {
@@ -415,15 +411,14 @@ static int gar_parse_point(u_int8_t *dp, struct gpoint **ret)
 	*ret = gp;
 	gp->type = *dp;
 	dp++;
-	i = *(u_int32_t *)dp;
-	i &= 0x00FFFFFF;
+	i = get_u24(dp);
 	gp->has_subtype = !!(i & 0x800000);
 	gp->is_poi = !!(i & 0x400000);
 	gp->lbloffset = i & 0x3FFFFF;
 	dp+=3;
-	gp->c.x = *(u_int16_t *)dp;
+	gp->c.x = get_u16(dp);
 	dp+=2;
-	gp->c.y = *(u_int16_t *)dp;
+	gp->c.y = get_u16(dp);
 	dp+=2;
 	gp->c.x = SIGN2B(gp->c.x);
 	gp->c.y = SIGN2B(gp->c.y);

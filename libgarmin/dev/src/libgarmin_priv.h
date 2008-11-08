@@ -10,6 +10,7 @@
 #ifndef TARGET_WIN32CE
 #include <errno.h>
 #endif
+#include "align.h"
 
 #ifndef O_NOATIME
 #define O_NOATIME 0
@@ -29,18 +30,6 @@ extern int gar_debug_level;
 
 #define SIGN2B(x) (((x) < 0x8000)   ?  (x) : ((x)-0x10000))
 #define SIGN3B(x) (((x) < 0x800000) ?  (x) : ((x)-0x1000000))
-
-/**
- * container_of - cast a member of a structure out to the containing structure
- * @ptr:        the pointer to the member.
- * @type:       the type of the container struct this is embedded in.
- * @member:     the name of the member within the struct.
- *
- */
-#define container_of(ptr, type, member) ({                      \
-        const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
-        (type *)( (char *)__mptr - offsetof(type,member) );})
-
 
 //#define TWOPI (M_PI*2)
 #define TWOPI 6.283185307179586476925287
@@ -86,13 +75,12 @@ struct gar_mdr;
 
 struct gimg {
 	list_t l;
+	list_t lfatfiles;
+	list_t lsubfiles;
 	struct gar *gar;
-	char *file;
 	int fd;
 	unsigned char xor;
 	int is_nt;
-	list_t lfatfiles;
-	list_t lsubfiles;
 	int tdbbasemap;
 	int basebits;
 	int zoomlevels;
@@ -104,6 +92,7 @@ struct gimg {
 	double south; 
 	double west;
 	struct gar_mdr *mdr;
+	char *file;
 };
 
 struct gpoint {

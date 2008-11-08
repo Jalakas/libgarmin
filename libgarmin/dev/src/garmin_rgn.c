@@ -331,7 +331,7 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 	u_int32_t width, height;
 
 	gsub->terminate = sub->terminate;
-	gsub->rgn_start    = (*(u_int32_t*)(sub->rgn_offset)) & 0x00FFFFFF;
+	gsub->rgn_start    = get_u24(&sub->rgn_offset);
 	log(14, "rgn_start: %04X terminate=%d elements=%x\n", gsub->rgn_start, gsub->terminate,sub->elements);
 	/* In the imgformat points and POIs are swapped*/
 	gsub->haspoints  = !!(sub->elements & 0x10);
@@ -339,9 +339,9 @@ static void gar_parse_subdiv(struct gar_subdiv *gsub, struct tre_subdiv_t *sub)
 	gsub->haspolylines = !!(sub->elements & 0x40);
 	gsub->haspolygons = !!(sub->elements & 0x80);
 
-	cx = *(unsigned int *)sub->center_lng & 0x00FFFFFF;
+	cx = get_u24(&sub->center_lng);
 	gsub->icenterlng = SIGN3B(cx);
-	cy = *(unsigned int *)sub->center_lat & 0x00FFFFFF;
+	cy = get_u24(&sub->center_lat);
 	gsub->icenterlat = SIGN3B(cy);
 	width	= sub->width & 0x7fff;
 	height	= sub->height;
@@ -1018,6 +1018,7 @@ int gar_load_subfiles(struct gimg *g)
 	char *cp;
 	char buf[20];
 	int mapsets=0;
+	char *ap;
 
 	imgs = gar_file_get_subfiles(g, &nimgs, "TRE");
 	log(4, "Have %d mapsets\n", nimgs);
@@ -1086,14 +1087,15 @@ int gar_load_subfiles(struct gimg *g)
 		if (tre.POI_flags & (1<<2))
 			log(10, "Show Zip before city\n");
 		sub->transparent = tre.POI_flags & 0x0001;
-		i32 = (*(u_int32_t*)tre.northbound) & 0x00FFFFFF;
+		i32 = get_u24(&tre.northbound);
 		sub->north = SIGN3B(i32);
-		i32 = (*(u_int32_t*)tre.eastbound) & 0x00FFFFFF;
+		i32 = get_u24(&tre.eastbound);
 		sub->east = SIGN3B(i32);
-		i32 = (*(u_int32_t*)tre.southbound) & 0x00FFFFFF;
+		i32 = get_u24(&tre.southbound);
 		sub->south = SIGN3B(i32);
-		i32 = (*(u_int32_t*)tre.westbound) & 0x00FFFFFF;
+		i32 = get_u24(&tre.westbound);
 		sub->west = SIGN3B(i32);
+		log(5, "Bounds\n");
 		log(5, "Boundaries - North: %fC, East: %fC, South: %fC, West: %fC\n",
 			GARDEG(sub->north),
 			GARDEG(sub->east),

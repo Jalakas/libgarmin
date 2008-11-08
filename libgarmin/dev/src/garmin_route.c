@@ -85,7 +85,7 @@ static int gar_get_road_nodes(struct gar_route *route, struct gar_road *road ,st
 		if (!rp) {
 			log(1, "arc:%d do not have rp\n", j);
 		} else {
-			if (geti24(rp->off) == road->offset) {
+			if (get_u24(rp->off) == road->offset) {
 				ret[rc++] = gar_get_node(route->graph, n->arcs[j].dest->offset);
 			}
 		}
@@ -125,7 +125,7 @@ static struct node *gar_select_node(struct gar_route *route, struct gar_road *ro
 		if (!rp) {
 			log(1, "arc:%d do not have rp\n", j);
 		} else {
-			if (geti24(rp->off) == road->offset) {
+			if (get_u24(rp->off) == road->offset) {
 				n1 = gar_get_node(route->graph, n->arcs[j].dest->offset);
 				roadnodes[nrn++] = n1;
 				if (!gar_read_node(route->graph, NULL, n1)) {
@@ -156,7 +156,7 @@ static struct node *gar_select_node(struct gar_route *route, struct gar_road *ro
 			if (!rp) {
 				log(1, "arc:%d do not have rp\n", k);
 			} else {
-				if (geti24(rp->off) == road->offset) {
+				if (get_u24(rp->off) == road->offset) {
 					int add = 1;
 					n2 = gar_get_node(route->graph, n1->arcs[k].dest->offset);
 					for (p = 0; p < nrn; p++) {
