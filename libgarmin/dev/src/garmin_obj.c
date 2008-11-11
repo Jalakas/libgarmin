@@ -1241,6 +1241,18 @@ int gar_object_flags(struct gobject *o)
 			ret |= F_ONEWAY;
 		if (gp->extrabit)
 			ret |= F_SEGMENTED;
+		if (gp->netlbl) {
+			struct gar_road *road;
+			road = gar_get_road(gp->subdiv->subfile, gp->lbloffset);
+			if (road) {
+				if (road->road_flags&RFL_ONEWAY)
+					ret |= F_ONEWAY;
+				if (road->road_flags&RFL_LOCKTOROAD)
+					ret |= F_LOCKONROAD;
+				gar_free_road(road);
+			}
+		}
+
 		break;
 	default:
 		log(1, "Error unknown object type:%d\n", o->type);

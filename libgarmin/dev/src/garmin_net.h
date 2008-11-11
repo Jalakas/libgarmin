@@ -1,3 +1,13 @@
+#define RFL_UNKNOWN0		(1<<0)
+#define RFL_ONEWAY		(1<<1)
+#define RFL_LOCKTOROAD		(1<<2)
+#define RFL_UNKNOWN3		(1<<3)
+#define RFL_STREETADDRINFO	(1<<4)
+#define RFL_ADDRONRIGHT		(1<<5)
+#define RFL_NODINFO		(1<<6)
+/* This or some of the unknow flags is high congestion probability */
+#define RFL_MAJORHW		(1<<7)
+
 
 #define ROADS_HASH_TAB_SIZE	128      /* must be power of 2 */
 #define ROAD_HASH(offset)	(((offset) * 40503)& (ROADS_HASH_TAB_SIZE-1))
@@ -45,6 +55,7 @@ off_t gar_net_get_lbl_offset(struct gar_subfile *sub, off_t offset, int idx);
 // int gar_net_parse_sorted(struct gar_subfile *sub);
 int gar_load_roadnetwork(struct gar_subfile *sub);
 struct gar_road *gar_get_road(struct gar_subfile *sub, off_t offset);
+void gar_free_road(struct gar_road *ri);
 int gar_match_sai(struct street_addr_info *sai, unsigned int zipid, unsigned int rid, unsigned int cid, unsigned int num);
 void gar_sai2searchres(struct street_addr_info *sai, struct gar_search_res *res);
 struct gar_road *gar_get_road_by_id(struct gar_subfile *sub, int sidx, int idx);

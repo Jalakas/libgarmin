@@ -31,15 +31,6 @@
 #include "garmin_nod.h"
 #include "garmin_lbl.h"
 
-#define RFL_UNKNOWN0		(1<<0)
-#define RFL_ONEWAY		(1<<1)
-#define RFL_LOCKTOROAD		(1<<2)
-#define RFL_UNKNOWN3		(1<<3)
-#define RFL_STREETADDRINFO	(1<<4)
-#define RFL_ADDRONRIGHT		(1<<5)
-#define RFL_NODINFO		(1<<6)
-#define RFL_MAJORHW		(1<<7)
-
 struct street_addr_info {
 	u_int8_t	flags;
 	u_int8_t	*field1;
@@ -538,7 +529,7 @@ void gar_log_road_info(struct gar_road *ri)
 	}
 }
 
-static void gar_free_road(struct gar_road *ri)
+void gar_free_road(struct gar_road *ri)
 {
 	if (ri->sr_offset)
 		free(ri->sr_offset);

@@ -176,6 +176,7 @@ struct gimg *gar_get_dskimg(struct gar *gar, char *file);
 
 #define F_ONEWAY	(1<<0)
 #define F_SEGMENTED	(1<<1)
+#define F_LOCKONROAD	(1<<2)
 
 int gar_object_flags(struct gobject *o);
 
