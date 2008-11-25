@@ -1,2 +1,2 @@
 #! /bin/bash
-aclocal && autoreconf && autoheader && automake && ./configure
+aclocal && autoheader && automake --add-missing && autoreconf && ./configure
