@@ -23,11 +23,7 @@
 #ifndef GARMINTYPEDEF_H
 #define GARMINTYPEDEF_H
 #include "config.h"
-#ifdef TARGET_WIN32CE
-/* cegcc doesn't honor the __attribute__(packed) need pragma to work */
-#pragma pack(push)
-#pragma pack(1)
-#endif
+#pragma pack(push, 1)
 
 struct FATblock_t
 {
@@ -38,7 +34,7 @@ struct FATblock_t
 	u_int16_t part;		///< 0x00000010 .. 0x00000011
 	u_int8_t  byte0x00000012_0x0000001F[14];
 	u_int16_t blocks[240];	///< 0x00000020 .. 0x000001FF
-} __attribute((packed));
+} __attribute__((packed));
 
 struct hdr_img_t
 {
@@ -59,7 +55,7 @@ struct hdr_img_t
 	u_int32_t dataoffset;         ///< 0x0000040C .. 0x0000040F
 	u_int8_t  byte0x00000410_0x0000041F[16];
 	u_int16_t blocks[240];        ///< 0x00000420 .. 0x000005FF
-} __attribute((packed));
+} __attribute__((packed));
 
 static int inline get_blocksize(struct hdr_img_t *i) {
 	return (1<<(i->e1+i->e2));
@@ -77,7 +73,7 @@ struct hdr_subfile_part_t
 	u_int8_t hour;
 	u_int8_t min;
 	u_int8_t sec;
-} __attribute((packed));
+} __attribute__((packed));
 
 struct hdr_rgn_t
 {
@@ -100,7 +96,7 @@ struct hdr_rgn_t
 	u_int32_t offset5;
 	u_int32_t length5;
 	u_int32_t unknown9;
-} __attribute((packed));
+} __attribute__((packed));
 
 
 typedef u_int8_t u_int24_t[3];
@@ -156,7 +152,7 @@ struct hdr_tre_t
 	u_int32_t tre10_offset;        ///< 0x000000AE .. 0x000000B1
 	u_int32_t tre10_size;          ///< 0x000000B2 .. 0x000000B5
 	u_int16_t tre10_rec_size;      ///< 0x000000B6 .. 0x000000B7
-} __attribute((packed));
+} __attribute__((packed));
 
 struct tre_map_level_t
 {
@@ -167,7 +163,7 @@ struct tre_map_level_t
 	u_int8_t  inherited   :1;
 	u_int8_t  bits;
 	u_int16_t nsubdiv;
-} __attribute((packed));
+} __attribute__((packed));
 
 struct tre_subdiv_t
 {
@@ -178,13 +174,13 @@ struct tre_subdiv_t
 	u_int16_t width       :15;
 	u_int16_t terminate   :1;
 	u_int16_t height;
-} __attribute((packed));
+} __attribute__((packed));
 
 struct tre_subdiv_next_t
 {
 	struct tre_subdiv_t tresub;
 	u_int16_t next;
-} __attribute((packed));
+} __attribute__((packed));
 
 struct hdr_lbl_t
 {
@@ -237,7 +233,7 @@ struct hdr_lbl_t
 	u_int8_t  byte0x000000A6_0x000000AB[4];
 	u_int16_t codepage;           ///< 0x000000AA .. 0x000000AB  optional check length
 
-} __attribute((packed));
+} __attribute__((packed));
 
 struct hdr_net_t
 {
@@ -253,7 +249,7 @@ struct hdr_net_t
 	// Sorted Roads
 	u_int32_t net3_offset;        ///< 0x00000027 .. 0x0000002A
 	u_int32_t net3_length;        ///< 0x0000002B .. 0x0000002E
-} __attribute((packed));
+} __attribute__((packed));
 
 
 
@@ -276,7 +272,7 @@ struct garmin_bmp_t{
 	u_int32_t biClrImportant;
 	u_int32_t clrtbl[0x100];
 	u_int8_t  data[];
-} __attribute((packed));
+} __attribute__((packed));
 
 struct hdr_nod_t
 {
@@ -311,9 +307,9 @@ struct hdr_nod_t
 	u_int32_t	u1lenght;
 	u_int32_t	u2offset;
 	u_int32_t	u2lenght;
-} __attribute((packed));
+} __attribute__((packed));
 
-#define SPEEDCLASS(x)	((x>>1)&0x07)
+#define SPEEDCLASS(x)	(((x)>>1)&0x07)
 #define ROADTYPE(x)	(((x)>>4)&0x07)
 #define HAVENODES(x)	((x) & 1)
 #define CHARINFO(x)	((x) & (1<<7))
@@ -336,7 +332,7 @@ struct nod_bond {
 struct tdb_block {
 	u_int8_t id;
 	u_int16_t size;
-} __attribute((packed));
+} __attribute__((packed));
 
 struct hdr_gmp_t
 {
@@ -348,11 +344,9 @@ struct hdr_gmp_t
 	u_int32_t net_offset;
 	u_int32_t nod_offset;
 	u_int32_t unknown2;
-}  __attribute((packed));
+}  __attribute__((packed));
 
-#ifdef TARGET_WIN32CE
 #pragma pack(pop)
-#endif
 
 #endif //GARMINTYPEDEF_H
 
