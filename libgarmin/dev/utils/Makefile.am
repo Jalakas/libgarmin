@@ -1,4 +1,4 @@
-AM_CPPFLAGS=-I../src -Wall
+AM_CPPFLAGS=-I$(top_srcdir)/src -Wall
 bin_PROGRAMS = garxtract garxor
 noinst_PROGRAMS = gartest bsptest garroute
 gartest_LDADD = ../src/libgarmin.a

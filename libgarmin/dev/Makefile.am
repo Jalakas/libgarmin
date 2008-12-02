@@ -18,7 +18,7 @@ CLEANFILES=version.h
 BUILT_SOURCES=version.h
 
 clean-local:
-	rm -rf *~ *.bak core
+	rm -rf *~ *.bak core 
 
 ##
 ## on every build, record the working copy revision string
