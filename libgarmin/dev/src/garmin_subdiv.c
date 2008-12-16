@@ -114,7 +114,7 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 	u_int32_t ymask = ~0;
 	u_int32_t xsign, xsign2;
 	u_int32_t ysign, ysign2;
-	int i,x,y,j;
+	int i=0,x,y,j;
 	int scasex, scasey, scase = 0;
 	int total = 0;
 	int valid = 0;
@@ -128,16 +128,16 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 
 	reg = bsp_get_bits(bp, si->sign_info_bits);
 	j = 0;
+	if (si->extrabit) {
+		reg = bsp_get_bits(bp, 1);
+		if (reg==-1)
+			goto out;
+		if (reg)
+			bm_set_bit(gp->nodemap, 0);
+	}
 	for (i=0; i < gp->npoints; i++) {
 		scasex =0;
 		x = 0;
-		if (si->extrabit) {
-			reg = bsp_get_bits(bp, 1);
-			if (reg==-1)
-				goto out;
-			if (reg)
-				bm_set_bit(gp->nodemap, total);
-		}
 		reg = bsp_get_bits(bp, bpx);
 		if (reg==-1)
 			goto out;
@@ -190,6 +190,13 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 			if(si->ny)
 				y = -y;
 		}
+		if (si->extrabit) {
+			reg = bsp_get_bits(bp, 1);
+			if (reg==-1)
+				goto out;
+			if (reg)
+				bm_set_bit(gp->nodemap, total+1);
+		}
 		if (x == 0 && y == 0) {
 			log(15, "Point %d have zero deltas eb=%d\n", total, si->extrabit);
 //			break;
@@ -202,7 +209,6 @@ static int bs_get_long_lat(struct bsp *bp, struct sign_info_t *si, int bpx, int 
 	}
 out:
 	gp->valid = !!valid;
-	// XX move to _extra
 	gp->extrabit = si->extrabit;
 	gp->scase = scase;
 	if (i == gp->npoints)
@@ -348,7 +354,8 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	bits_per_coord(bs_info, *dp, extra_bit, &bpx, &bpy, &si);
 	log(dl ,"%d/%d bits per long/lat  len=%d extra_bit=%d\n", 
 		bpx, bpy, bs_len, extra_bit);
-	cnt = 1 + ((bs_len*8)-si.sign_info_bits)/(bpx+bpy+si.extrabit);
+	cnt = 1 + ((bs_len*8)-si.sign_info_bits+si.extrabit)/
+				(bpx+bpy+si.extrabit);
 	log(dl, "Total coordinates: %d\n", cnt);
 	gp->deltas = calloc(cnt, sizeof(struct gcoord));
 	if (!gp->deltas) {
