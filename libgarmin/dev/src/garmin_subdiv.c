@@ -354,7 +354,7 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 	bits_per_coord(bs_info, *dp, extra_bit, &bpx, &bpy, &si);
 	log(dl ,"%d/%d bits per long/lat  len=%d extra_bit=%d\n", 
 		bpx, bpy, bs_len, extra_bit);
-	cnt = 1 + ((bs_len*8)-si.sign_info_bits+si.extrabit)/
+	cnt = 1 + ((bs_len*8)-si.sign_info_bits-si.extrabit)/
 				(bpx+bpy+si.extrabit);
 	log(dl, "Total coordinates: %d\n", cnt);
 	gp->deltas = calloc(cnt, sizeof(struct gcoord));
