@@ -131,3 +131,4 @@ u_int32_t gar_cp_idx2off(struct cpoint *p, u_int8_t idx);
 struct roadptr *gar_cp_idx2road(struct cpoint *p, u_int8_t idx);
 int gar_read_node(struct gar_graph *graph, struct node *from, struct node *node);
 
+int gar_nod_parse_nod3(struct gar_subfile *sub);
