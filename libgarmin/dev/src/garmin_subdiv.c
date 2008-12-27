@@ -286,7 +286,7 @@ static int gar_parse_poly(u_int8_t *dp, u_int8_t *ep, struct gpoly **ret, int li
 
 	if (line) {
 		gp->line = 1;
-		gp->dir = gp->type & 0x40;
+		gp->dir = (gp->type & 0x40) != 0;
 		gp->type &= 0x3F;
 	} else {
 		gp->type &= 0x7F;
